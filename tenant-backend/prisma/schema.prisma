@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // URL moved to prisma.config.ts
+}
+
+// Rest of your schema remains the same...
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  organizations OrganizationMember[]
+  outlines      Outline[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  accountId         String
+  providerId        String
+  providerAccountId String
+  accessToken       String?
+  refreshToken      String?
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope             String?
+  idToken           String?
+  password          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Verification {
+  id        String   @id @default(cuid())
+  identifier String
+  value     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([identifier, value])
+  @@map("verifications")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members  OrganizationMember[]
+  outlines Outline[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  role           String   @default("member")
+  joinedAt       DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@map("organization_members")
+}
+
+model Outline {
+  id             String   @id @default(cuid())
+  header         String
+  sectionType    SectionType
+  status         Status   @default(PENDING)
+  target         Int
+  limit          Int
+  reviewer       Reviewer
+  organizationId String
+  userId         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("outlines")
+}
+
+enum SectionType {
+  TABLE_OF_CONTENTS
+  EXECUTIVE_SUMMARY
+  TECHNICAL_APPROACH
+  DESIGN
+  CAPABILITIES
+  FOCUS_DOCUMENT
+  NARRATIVE
+}
+
+enum Status {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum Reviewer {
+  ASSIM
+  BINI
+  MAMI
+}
