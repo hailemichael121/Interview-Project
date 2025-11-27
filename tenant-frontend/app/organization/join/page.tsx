@@ -1,15 +1,20 @@
 "use client";
-
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Users } from "lucide-react";
 import { toast } from "sonner";
 
-export default function JoinOrganizationPage() {
+function JoinOrganizationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -19,11 +24,9 @@ export default function JoinOrganizationPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // This would call your backend API to join an organization
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // This would call your backend API to join an organization
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       toast.success("Joined organization successfully!");
       router.push("/dashboard");
     } catch (error) {
@@ -42,7 +45,9 @@ export default function JoinOrganizationPage() {
               <Users className="h-6 w-6 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-center">Join Organization</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">
+            Join Organization
+          </CardTitle>
           <CardDescription className="text-center">
             Enter your invite code to join a workspace
           </CardDescription>
@@ -60,7 +65,6 @@ export default function JoinOrganizationPage() {
                 required
               />
             </div>
-
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Joining..." : "Join Organization"}
             </Button>
@@ -68,5 +72,19 @@ export default function JoinOrganizationPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function JoinOrganizationPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div className="animate-pulse">Loading...</div>
+        </div>
+      }
+    >
+      <JoinOrganizationContent />
+    </Suspense>
   );
 }

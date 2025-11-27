@@ -1,25 +1,28 @@
+// prisma/schema.prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  // URL moved to prisma.config.ts
 }
-
-// Rest of your schema remains the same...
+// ──────────────────────────────────────
+// Better Auth + Organization + Your Models
+// ──────────────────────────────────────
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  image     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  organizations OrganizationMember[]
-  outlines      Outline[]
+  accounts            Account[]
+  sessions            Session[]
+  organizationMembers OrganizationMember[]
+  outlines            Outline[]
 
   @@map("users")
 }
@@ -27,50 +30,40 @@ model User {
 model Account {
   id                String  @id @default(cuid())
   userId            String
-  accountId         String
-  providerId        String
+  type              String
+  provider          String
   providerAccountId String
-  accessToken       String?
-  refreshToken      String?
-  accessTokenExpiresAt DateTime?
-  refreshTokenExpiresAt DateTime?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
   scope             String?
-  idToken           String?
-  password          String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id_token          String? @db.Text
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([providerId, providerAccountId])
+  @@unique([provider, providerAccountId])
   @@map("accounts")
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  ipAddress String?
-  userAgent String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
 
-model Verification {
-  id        String   @id @default(cuid())
+model VerificationToken {
   identifier String
-  value     String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  token      String   @unique
+  expires    DateTime
 
-  @@unique([identifier, value])
-  @@map("verifications")
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }
 
 model Organization {
@@ -80,41 +73,56 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members  OrganizationMember[]
-  outlines Outline[]
+  members   OrganizationMember[]
+  invites   OrganizationInvite[]
+  outlines  Outline[]
 
   @@map("organizations")
 }
 
 model OrganizationMember {
   id             String   @id @default(cuid())
-  userId         String
   organizationId String
+  userId         String
   role           String   @default("member")
   joinedAt       DateTime @default(now())
 
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, organizationId])
+  @@unique([organizationId, userId])
   @@map("organization_members")
 }
 
-model Outline {
+model OrganizationInvite {
   id             String   @id @default(cuid())
+  organizationId String
+  email          String
+  role           String   @default("member")
+  token          String   @unique
+  expires        DateTime
+  invitedById    String?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("organization_invites")
+}
+
+model Outline {
+  id             String      @id @default(cuid())
   header         String
   sectionType    SectionType
-  status         Status   @default(PENDING)
+  status         Status      @default(PENDING)
   target         Int
   limit          Int
   reviewer       Reviewer
   organizationId String
   userId         String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("outlines")
 }

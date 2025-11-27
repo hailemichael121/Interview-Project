@@ -1,49 +1,87 @@
 @import "tailwindcss";
 
+
+/* --- Light Mode Brand Palette --- */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
+  /* Brand-derived HSL values for Shadcn */
+  --background: 217 100% 97%; /* F1F5F9 (Vapor Gray - closest match) */
+  --foreground: 215 28% 24%; /* 2C3E50 (Deep Steel) */
+
+  --card: 0 0% 100%; /* FFFFFF (Pure White) */
+  --card-foreground: 215 28% 24%; /* 2C3E50 (Deep Steel) */
+
+  --popover: 0 0% 100%; /* FFFFFF (Pure White) */
+  --popover-foreground: 215 28% 24%; /* 2C3E50 (Deep Steel) */
+
+  --primary: 215 28% 24%; /* 2C3E50 (Deep Steel) */
+  --primary-foreground: 0 0% 100%; /* FFFFFF (Pure White) */
+
+  --secondary: 210 21% 45%; /* 5D768B (Slate Glass) */
+  --secondary-foreground: 0 0% 100%; /* FFFFFF (Pure White - assuming white text on secondary buttons) */
+
+  --muted: 217 19% 70%; /* 94A3B8 (Fog Blue) */
+  --muted-foreground: 215.4 16.3% 46.9%; /* Standard muted text, can adjust to Fog Blue for consistency */
+
+  --accent: 217 19% 70%; /* 94A3B8 (Fog Blue) */
+  --accent-foreground: 215 28% 24%; /* 2C3E50 (Deep Steel) */
+
+  --destructive: 0 84.2% 60.2%; /* Standard red */
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
+
+  --border: 217 19% 70%; /* 94A3B8 (Fog Blue) */
+  --input: 217 19% 70%; /* 94A3B8 (Fog Blue) */
+  --ring: 215 28% 24%; /* 2C3E50 (Deep Steel) */
+
+  --radius: 0.5rem; /* Standard border-radius */
+
+  /* --- BRAND SPECIFIC CSS VARIABLES (Hex values for direct use if needed) --- */
+  --brand-deep-steel: #2C3E50;
+  --brand-slate-glass: #5D768B;
+  --brand-fog-blue: #94A3B8;
+  --brand-vapor-gray: #F1F5F9;
+  --brand-pure-white: #FFFFFF;
 }
 
+/* --- Dark Mode Brand Palette --- */
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
+  /* Brand-derived HSL values for Shadcn in dark mode */
+  --background: 220 10% 12%; /* Dark background, close to your dark logo's background */
+  --foreground: 210 40% 98%; /* Off-white for readability */
+
+  --card: 220 10% 12%;
   --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
+
+  --popover: 220 10% 12%;
   --popover-foreground: 210 40% 98%;
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
+
+  --primary: 210 40% 98%; /* Off-white for primary buttons */
+  --primary-foreground: 220 10% 12%; /* Dark text on primary buttons */
+
+  --secondary: 217 10% 25%; /* Darker slate */
   --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
+
+  --muted: 217 10% 25%;
   --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
+
+  --accent: 217 10% 25%;
   --accent-foreground: 210 40% 98%;
+
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
+
+  --border: 217 10% 25%;
+  --input: 217 10% 25%;
   --ring: 212.7 26.8% 83.9%;
+
+  /* --- BRAND SPECIFIC CSS VARIABLES (Dark Mode Hex values) --- */
+  --brand-deep-steel: #E0E7EB; /* Lighter version */
+  --brand-slate-glass: #A9BCCF;
+  --brand-fog-blue: #60748F;
+  --brand-vapor-gray: #1E293B; /* Dark background */
+  --brand-pure-white: #101827; /* Very dark surface */
 }
 
+/* Global styles */
 * {
   border-color: hsl(var(--border));
 }
@@ -51,4 +89,11 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  /* Ensure font-sans is properly defined, typically through Tailwind */
+  /* font-family: var(--font-sans); */
+}
+
+@keyframes blink {
+  from, to { border-right-color: transparent }
+  50% { border-right-color: currentColor; }
 }

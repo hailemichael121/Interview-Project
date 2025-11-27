@@ -20,8 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "prisma db seed",
-    "prisma:reset": "prisma migrate reset"
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "db:reset": "prisma migrate reset --force && npm run prisma:seed"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -31,6 +31,7 @@
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@prisma/adapter-pg": "^7.0.1",
     "@prisma/client": "^7.0.1",
     "bcryptjs": "^3.0.3",
     "better-auth": "^1.4.3",

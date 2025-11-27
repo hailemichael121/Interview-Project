@@ -35,7 +35,7 @@ export class AuthController {
       });
 
       res.status(handler.status);
-      
+
       // Set headers
       if (handler.headers) {
         for (const [key, value] of Object.entries(handler.headers)) {

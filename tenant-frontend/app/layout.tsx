@@ -1,3 +1,4 @@
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -17,6 +18,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Workspace - Multi-Tenant App",
   description: "A modern multi-tenant workspace application",
+  icons: {
+    icon: "/images/tenant-light.png",
+  },
 };
 
 export default function RootLayout({

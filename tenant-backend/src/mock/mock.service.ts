@@ -23,7 +23,8 @@ export class MockService {
         data: {
           email: 'john.doe@example.com',
           name: 'John Doe',
-          image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+          image:
+            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
         },
       });
 
@@ -31,7 +32,8 @@ export class MockService {
         data: {
           email: 'jane.smith@example.com',
           name: 'Jane Smith',
-          image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+          image:
+            'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
         },
       });
 
