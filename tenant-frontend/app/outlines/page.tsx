@@ -1,6 +1,5 @@
+// app/outlines/page.tsx (update)
 import OutlinesTable from "@/components/outlines/outlines-table";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 
 export default function OutlinesPage() {
   return (
@@ -14,10 +13,6 @@ export default function OutlinesPage() {
             Manage your project outlines and track progress
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Section
-        </Button>
       </div>
 
       <OutlinesTable />
