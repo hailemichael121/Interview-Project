@@ -1,52 +1,57 @@
+// app/organization/create/page.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { authClient } from "@/lib/auth-client";
-import { Eye, EyeOff, Mail, Lock, User, Github, Chrome } from "lucide-react";
+import { Building2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { createOrganization } from "@/lib/api";
+import { useOrg } from "@/lib/org-context";
+import { authClient } from "@/lib/auth-client";
 
-export default function SignUpPage() {
+export default function CreateOrganizationPage() {
   const router = useRouter();
+  const { setCurrentOrg } = useOrg();
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ name: "" });
 
-  const handleEmailSignUp = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { data, error } = await authClient.signUp.email({
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-    });
+    try {
+      const session = await authClient.getSession();
+      if (!session.data?.session) {
+        toast.error("Please sign in to create an organization");
+        router.push("/auth/signin");
+        return;
+      }
 
-    if (error) {
-      toast.error(error.message);
-    } else if (data) {
-      toast.success("Account created successfully!");
-      router.push("/dashboard");
-    }
-    setIsLoading(false);
-  };
+      const organization = await createOrganization({ name: formData.name });
 
-  const handleSocialSignUp = async (provider: "github" | "google") => {
-    const { data, error } = await authClient.signIn.social({
-      provider,
-      callbackURL: "/dashboard",
-    });
+      setCurrentOrg({
+        id: organization.id,
+        name: organization.name,
+        role: "owner",
+      });
 
-    if (error) {
-      toast.error(error.message);
+      toast.success("Organization created successfully!");
+      router.push("/outlines");
+    } catch (error) {
+      toast.error("Failed to create organization");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -54,118 +59,39 @@ export default function SignUpPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Sign Up</CardTitle>
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-gray-900 to-gray-700 rounded-lg flex items-center justify-center">
+              <Building2 className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold text-center">
+            Create Organization
+          </CardTitle>
           <CardDescription className="text-center">
-            Create your account to get started
+            Create a new workspace for your team
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Social Sign Up */}
-          <div className="grid grid-cols-2 gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => handleSocialSignUp("github")}
-              disabled={isLoading}
-            >
-              <Github className="h-4 w-4 mr-2" />
-              GitHub
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => handleSocialSignUp("google")}
-              disabled={isLoading}
-            >
-              <Chrome className="h-4 w-4 mr-2" />
-              Google
-            </Button>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or sign up with email
-              </span>
-            </div>
-          </div>
-
-          {/* Email Sign Up */}
-          <form onSubmit={handleEmailSignUp} className="space-y-4">
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="pl-10 pr-10"
-                  required
-                  minLength={8}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+              <Label htmlFor="name">Organization Name</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Acme Inc"
+                value={formData.name}
+                onChange={(e) => setFormData({ name: e.target.value })}
+                required
+                minLength={2}
+                maxLength={100}
+              />
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create Account"}
+              {isLoading ? "Creating..." : "Create Organization"}
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </form>
-
-          <div className="text-center text-sm">
-            Already have an account?{" "}
-            <Button variant="link" className="p-0" onClick={() => router.push("/auth/signin")}>
-              Sign in
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>
