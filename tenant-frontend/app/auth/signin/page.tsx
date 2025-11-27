@@ -23,6 +23,7 @@ export default function SignInPage() {
   const { navigate, transitionClass } = useAuthTransition();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [imageError, setImageError] = useState(false); // Added missing state
   const [formData, setFormData] = useState({ email: "", password: "" });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,7 +49,7 @@ export default function SignInPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
-      {/* Full-Screen Wavy Background – Same as SignUp */}
+      {/* Full-Screen Wavy Background */}
       <div className="fixed inset-0 -z-10">
         <svg
           className="absolute inset-0 w-full h-full"
@@ -63,9 +64,9 @@ export default function SignInPage() {
               <stop offset="100%" stopColor="#94A3B8" />
             </linearGradient>
             <linearGradient id="wave-dark" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#94A3B8" />
-              <stop offset="50%" stopColor="#5D768B" />
-              <stop offset="100%" stopColor="#2C3E50" />
+              <stop offset="0%" stopColor="#1E293B" />
+              <stop offset="50%" stopColor="#334155" />
+              <stop offset="100%" stopColor="#475569" />
             </linearGradient>
           </defs>
 
@@ -90,14 +91,21 @@ export default function SignInPage() {
         <div className="hidden lg:flex lg:w-1/2 items-center justify-center px-12">
           <div className="text-center max-w-lg">
             <Link href="/" className="inline-block mb-12">
-              <Image
-                src="/images/tenant-light.png"
-                alt="Tenant Logo - Go to homepage"
-                width={160}
-                height={160}
-                className="object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-300"
-                priority
-              />
+              <div className="relative w-40 h-40">
+                <Image
+                  src={
+                    imageError
+                      ? "/images/tenant-light.png"
+                      : "/images/tenant-light.png"
+                  }
+                  alt="Tenant Logo"
+                  fill
+                  className="object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-300"
+                  priority
+                  onError={() => setImageError(true)}
+                  unoptimized={process.env.NODE_ENV === "production"}
+                />
+              </div>
             </Link>
             <AnimatedTitle text="Welcome Back" size="md" />
             <h2 className="mt-8 text-5xl font-bold text-white drop-shadow-lg">
@@ -110,7 +118,7 @@ export default function SignInPage() {
               onClick={() => navigate("/auth/signup")}
               size="lg"
               variant="secondary"
-              className="mt-12 bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30"
+              className="mt-12 bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 hover:text-gray-900"
             >
               New here? Create Account <ArrowRight className="ml-2" />
             </Button>
@@ -122,24 +130,26 @@ export default function SignInPage() {
           <div className="w-full max-w-md animate-in slide-in-from-left-32 duration-700">
             <Card className="border-0 shadow-2xl backdrop-blur-xl bg-white/95 dark:bg-gray-900/95">
               <CardHeader className="text-center pb-10">
-                <CardTitle className="text-4xl font-bold text-brand-deep-steel dark:text-white">
+                <CardTitle className="text-4xl font-bold text-gray-900 dark:text-white">
                   Sign In
                 </CardTitle>
-                <CardDescription className="text-lg">
+                <CardDescription className="text-lg text-gray-600 dark:text-gray-300">
                   Access your workspace instantly
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label className="text-base">Email</Label>
+                    <Label className="text-base text-gray-900 dark:text-white">
+                      Email
+                    </Label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
+                      <Mail className="absolute left-4 top-3.5 h-5 w-5 text-gray-500 dark:text-gray-400" />
                       <Input
                         required
                         type="email"
                         placeholder="you@company.com"
-                        className="pl-12 h-14 text-base"
+                        className="pl-12 h-14 text-base bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
                         value={formData.email}
                         onChange={(e) =>
                           setFormData({ ...formData, email: e.target.value })
@@ -149,14 +159,16 @@ export default function SignInPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base">Password</Label>
+                    <Label className="text-base text-gray-900 dark:text-white">
+                      Password
+                    </Label>
                     <div className="relative">
-                      <Lock className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
+                      <Lock className="absolute left-4 top-3.5 h-5 w-5 text-gray-500 dark:text-gray-400" />
                       <Input
                         required
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="pl-12 pr-14 h-14 text-base"
+                        className="pl-12 pr-14 h-14 text-base bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
                         value={formData.password}
                         onChange={(e) =>
                           setFormData({ ...formData, password: e.target.value })
@@ -166,7 +178,7 @@ export default function SignInPage() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute right-2 top-2"
+                        className="absolute right-2 top-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
@@ -182,7 +194,7 @@ export default function SignInPage() {
                     type="submit"
                     size="lg"
                     disabled={isLoading}
-                    className="relative w-full h-16 text-xl font-semibold text-white bg-brand-deep-steel hover:bg-[#1e2d3d] disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-brand-deep-steel/40 overflow-hidden group rounded-2xl"
+                    className="relative w-full h-16 text-xl font-semibold text-white bg-blue-950 hover:bg-blue-900 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-blue-600/40 overflow-hidden group rounded-2xl"
                   >
                     <span className="relative z-10">
                       {isLoading ? "Signing in..." : "Sign In"}
@@ -191,11 +203,11 @@ export default function SignInPage() {
                   </Button>
                 </form>
 
-                <p className="text-center mt-8 text-muted-foreground">
-                  Don’t have an account?{" "}
+                <p className="text-center mt-8 text-gray-600 dark:text-gray-400">
+                  Don&apos;t have an account?{" "}
                   <Button
                     variant="link"
-                    className="font-medium"
+                    className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                     onClick={() => navigate("/auth/signup")}
                   >
                     Sign up

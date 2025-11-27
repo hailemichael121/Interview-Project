@@ -44,43 +44,31 @@
 
 /* --- Dark Mode Brand Palette --- */
 .dark {
-  /* Brand-derived HSL values for Shadcn in dark mode */
-  --background: 220 10% 12%; /* Dark background, close to your dark logo's background */
-  --foreground: 210 40% 98%; /* Off-white for readability */
+  --background: 222 47% 11%; /* Much darker background */
+  --foreground: 210 40% 98%; /* Brighter text */
 
-  --card: 220 10% 12%;
+  --card: 222 47% 11%;
   --card-foreground: 210 40% 98%;
 
-  --popover: 220 10% 12%;
+  --popover: 222 47% 11%;
   --popover-foreground: 210 40% 98%;
 
-  --primary: 210 40% 98%; /* Off-white for primary buttons */
-  --primary-foreground: 220 10% 12%; /* Dark text on primary buttons */
+  --primary: 210 40% 98%;
+  --primary-foreground: 222 47% 11%;
 
-  --secondary: 217 10% 25%; /* Darker slate */
+  --secondary: 217 33% 17%;
   --secondary-foreground: 210 40% 98%;
 
-  --muted: 217 10% 25%;
-  --muted-foreground: 215 20.2% 65.1%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
 
-  --accent: 217 10% 25%;
+  --accent: 217 33% 17%;
   --accent-foreground: 210 40% 98%;
 
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-
-  --border: 217 10% 25%;
-  --input: 217 10% 25%;
+  --border: 217 33% 17%;
+  --input: 217 33% 17%;
   --ring: 212.7 26.8% 83.9%;
-
-  /* --- BRAND SPECIFIC CSS VARIABLES (Dark Mode Hex values) --- */
-  --brand-deep-steel: #E0E7EB; /* Lighter version */
-  --brand-slate-glass: #A9BCCF;
-  --brand-fog-blue: #60748F;
-  --brand-vapor-gray: #1E293B; /* Dark background */
-  --brand-pure-white: #101827; /* Very dark surface */
 }
-
 /* Global styles */
 * {
   border-color: hsl(var(--border));

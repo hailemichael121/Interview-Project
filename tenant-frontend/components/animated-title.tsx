@@ -42,11 +42,8 @@ export function AnimatedTitle({
     return () => clearInterval(interval);
   }, [index, text]);
 
-  // Reset animation when text changes (via key in parent)
-  // No need for extra effect — key={text} in parent handles reset perfectly
-
   return (
-    <div key={text} className="flex justify-center overflow-hidden">
+    <div key={text} className="flex justify-center overflow-visible">
       {/* Classic blinking underscore cursor */}
       <style jsx global>{`
         @keyframes blink-underscore {
@@ -63,7 +60,7 @@ export function AnimatedTitle({
       <h1
         className={`
           font-bold tracking-tight whitespace-nowrap
-          text-brand-deep-steel dark:text-white
+          text-foreground  
           ${sizeClasses[size]}
           ${className}
         `}
@@ -73,7 +70,7 @@ export function AnimatedTitle({
         {/* Blinking Underscore Cursor */}
         <span
           aria-hidden="true"
-          className="inline-block ml-1 align-bottom font-bold text-brand-deep-steel dark:text-white"
+          className="inline-block ml-1 align-bottom font-bold text-black" // <<< FIXED: Use text-foreground
           style={{
             fontSize: "1.1em",
             lineHeight: "1",
