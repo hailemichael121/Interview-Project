@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Building2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { useOrg } from "@/lib/org-context";
-import { authClient } from "@/lib/auth-client";
+import authClient from "@/lib/auth-client";
 
 export default function CreateOrganizationPage() {
   const router = useRouter();

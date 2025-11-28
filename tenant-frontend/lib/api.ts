@@ -1,10 +1,18 @@
 // lib/api.ts
-import { authClient } from "./auth-client";
-
 const apiBase = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
-const useMockApi =
-  process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true" ||
-  !process.env.NEXT_PUBLIC_BACKEND_URL;
+
+function isMockApiActive() {
+  // If backend url is missing, default to mock
+  if (!process.env.NEXT_PUBLIC_BACKEND_URL) return true;
+  // If build-time env forces it
+  if (process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true") return true;
+  // If running in browser and toggle exists, respect it
+  if (typeof window !== "undefined") {
+    const v = localStorage.getItem("use-mock-auth");
+    if (v !== null) return v === "true";
+  }
+  return false;
+}
 
 // Mock data
 const mockOutlines = [
@@ -75,24 +83,31 @@ const mockTeamMembers = [
 ];
 
 export async function apiFetch(url: string, options: RequestInit = {}) {
-  if (useMockApi) {
+  if (isMockApiActive()) {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    // Mock responses based on URL
-    if (url === "/organizations") {
+    console.log(`[api][mock] ${options.method || 'GET'} ${url}`);
+    const path = url.startsWith("/api") ? url.slice(4) : url; // strip /api prefix for matching
+
+    // Mock responses based on URL/path
+    if (path === "/organizations") {
       return mockOrganizations;
     }
 
-    if (url.match(/\/organizations\/.+\/outlines/)) {
+    if (path === "/outlines" || path === "/api/outlines") {
       return mockOutlines;
     }
 
-    if (url.match(/\/organizations\/.+\/members/)) {
+    if (path.match(/\/organizations\/.+\/outlines/) || path.match(/\/api\/outlines/)) {
+      return mockOutlines;
+    }
+
+    if (path.match(/\/organizations\/.+\/members/) || path === "/team/members" || path === "/api/team/members") {
       return mockTeamMembers;
     }
 
-    if (url === "/organizations" && options.method === "POST") {
+    if (path === "/organizations" && options.method === "POST") {
       const body = JSON.parse(options.body as string);
       const newOrg = {
         id: Date.now().toString(),
@@ -103,10 +118,8 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
       return newOrg;
     }
 
-    if (
-      url.match(/\/organizations\/.+\/outlines/) &&
-      options.method === "POST"
-    ) {
+    // create outline via /api/outlines or /organizations/:id/outlines
+    if ((path === "/outlines" || path.match(/\/organizations\/.+\/outlines/)) && options.method === "POST") {
       const body = JSON.parse(options.body as string);
       const newOutline = {
         id: Date.now().toString(),
@@ -116,7 +129,8 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
       return newOutline;
     }
 
-    if (url.match(/\/organizations\/.+\/outlines\/.+/)) {
+    // update/delete outline by id (support /api/outlines/:id or /organizations/:orgId/outlines/:id)
+    if (path.match(/\/outlines\/[^/]+/) || path.match(/\/organizations\/.+\/outlines\/.+/)) {
       if (options.method === "PUT") {
         const body = JSON.parse(options.body as string);
         const outlineId = url.split("/").pop();
@@ -146,6 +160,8 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
     ...options.headers as Record<string, string>,
   };
 
+  console.log(`[api] ${options.method || 'GET'} ${apiBase}${url}`);
+
   const res = await fetch(`${apiBase}${url}`, {
     ...options,
     headers,
@@ -166,8 +182,10 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
 
   const contentType = res.headers.get("content-type");
   if (contentType && contentType.includes("application/json")) {
+    console.log(`[api] response ok json ${url}`);
     return res.json();
   }
+  console.log(`[api] response ok text ${url}`);
   return res.text();
 }
 

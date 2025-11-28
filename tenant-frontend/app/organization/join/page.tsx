@@ -13,7 +13,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Users } from "lucide-react";
 import { toast } from "sonner";
-import { authClient } from "@/lib/auth-client";
+import authClient from "@/lib/auth-client";
 
 function JoinOrganizationContent() {
   const router = useRouter();

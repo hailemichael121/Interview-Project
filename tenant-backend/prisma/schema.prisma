@@ -29,7 +29,7 @@ model Account {
   id                String  @id @default(cuid())
   userId            String
   type              String?
-  provider          String    // ← This is REQUIRED now
+  provider          String    @default("credential")
   providerAccountId String
   refresh_token     String?   @db.Text
   access_token      String?   @db.Text

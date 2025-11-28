@@ -3,71 +3,68 @@
 
 /* --- Light Mode Brand Palette --- */
 :root {
-  /* Brand-derived HSL values for Shadcn */
-  --background: 217 100% 97%; /* F1F5F9 (Vapor Gray - closest match) */
-  --foreground: 215 28% 24%; /* 2C3E50 (Deep Steel) */
+  /* Light mode: white backgrounds with dark text */
+  --background: 0 0% 100%; /* pure white */
+  --foreground: 210 10% 10%; /* near black / dark gray */
 
-  --card: 0 0% 100%; /* FFFFFF (Pure White) */
-  --card-foreground: 215 28% 24%; /* 2C3E50 (Deep Steel) */
+  --card: 0 0% 100%; /* white */
+  --card-foreground: 210 10% 10%; /* dark text for cards */
 
-  --popover: 0 0% 100%; /* FFFFFF (Pure White) */
-  --popover-foreground: 215 28% 24%; /* 2C3E50 (Deep Steel) */
+  --popover: 0 0% 100%;
+  --popover-foreground: 210 10% 10%;
 
-  --primary: 215 28% 24%; /* 2C3E50 (Deep Steel) */
-  --primary-foreground: 0 0% 100%; /* FFFFFF (Pure White) */
+  --primary: 220 14% 18%; /* deep slate for accents */
+  --primary-foreground: 0 0% 100%; /* white text on primary */
 
-  --secondary: 210 21% 45%; /* 5D768B (Slate Glass) */
-  --secondary-foreground: 0 0% 100%; /* FFFFFF (Pure White - assuming white text on secondary buttons) */
+  --secondary: 210 21% 45%; /* complementary slate */
+  --secondary-foreground: 0 0% 100%;
 
-  --muted: 217 19% 70%; /* 94A3B8 (Fog Blue) */
-  --muted-foreground: 215.4 16.3% 46.9%; /* Standard muted text, can adjust to Fog Blue for consistency */
+  --muted: 210 16% 74%; /* light muted gray */
+  --muted-foreground: 210 10% 30%;
 
-  --accent: 217 19% 70%; /* 94A3B8 (Fog Blue) */
-  --accent-foreground: 215 28% 24%; /* 2C3E50 (Deep Steel) */
+  --accent: 210 16% 74%;
+  --accent-foreground: 210 10% 10%;
 
-  --destructive: 0 84.2% 60.2%; /* Standard red */
-  --destructive-foreground: 210 40% 98%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
 
-  --border: 217 19% 70%; /* 94A3B8 (Fog Blue) */
-  --input: 217 19% 70%; /* 94A3B8 (Fog Blue) */
-  --ring: 215 28% 24%; /* 2C3E50 (Deep Steel) */
+  --border: 210 16% 90%; /* very light border */
+  --input: 210 16% 96%;
+  --ring: 220 14% 18%;
 
-  --radius: 0.5rem; /* Standard border-radius */
+  --radius: 0.5rem;
 
-  /* --- BRAND SPECIFIC CSS VARIABLES (Hex values for direct use if needed) --- */
-  --brand-deep-steel: #2C3E50;
-  --brand-slate-glass: #5D768B;
-  --brand-fog-blue: #94A3B8;
-  --brand-vapor-gray: #F1F5F9;
-  --brand-pure-white: #FFFFFF;
+  --brand-deep-steel: #0f1724;
+  --brand-white: #ffffff;
 }
 
 /* --- Dark Mode Brand Palette --- */
 .dark {
-  --background: 222 47% 11%; /* Much darker background */
-  --foreground: 210 40% 98%; /* Brighter text */
+  /* Dark mode: gray base with white foreground */
+  --background: 220 11% 12%; /* deep gray */
+  --foreground: 210 40% 98%; /* white */
 
-  --card: 222 47% 11%;
+  --card: 220 11% 16%; /* slightly lighter than background */
   --card-foreground: 210 40% 98%;
 
-  --popover: 222 47% 11%;
+  --popover: 220 11% 16%;
   --popover-foreground: 210 40% 98%;
 
   --primary: 210 40% 98%;
-  --primary-foreground: 222 47% 11%;
+  --primary-foreground: 220 11% 12%;
 
-  --secondary: 217 33% 17%;
+  --secondary: 217 20% 30%;
   --secondary-foreground: 210 40% 98%;
 
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 65%;
+  --muted: 217 20% 30%;
+  --muted-foreground: 210 40% 98%;
 
-  --accent: 217 33% 17%;
+  --accent: 217 20% 30%;
   --accent-foreground: 210 40% 98%;
 
-  --border: 217 33% 17%;
-  --input: 217 33% 17%;
-  --ring: 212.7 26.8% 83.9%;
+  --border: 217 20% 22%;
+  --input: 217 20% 22%;
+  --ring: 210 40% 98%;
 }
 /* Global styles */
 * {

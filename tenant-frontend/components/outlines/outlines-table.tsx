@@ -170,7 +170,7 @@ export default function OutlinesTable() {
 
   if (!currentOrg) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-8 text-white">
         <p>Please select an organization to view outlines</p>
       </div>
     );
@@ -179,7 +179,7 @@ export default function OutlinesTable() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Outlines</h2>
+        <h2 className="text-2xl font-bold text-white">Outlines</h2>
         <Sheet
           open={isSheetOpen}
           onOpenChange={(open) => {
@@ -188,202 +188,219 @@ export default function OutlinesTable() {
           }}
         >
           <SheetTrigger asChild>
-            <Button>
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
               <Plus className="h-4 w-4 mr-2" />
               Add Section
             </Button>
           </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>
-                {editingOutline ? "Edit Outline" : "Create New Outline"}
-              </SheetTitle>
-              <SheetDescription>
-                {editingOutline
-                  ? "Update the outline details"
-                  : "Add a new outline section to your project"}
-              </SheetDescription>
-            </SheetHeader>
+          <SheetContent className="w-full sm:max-w-2xl bg-[#101111] border-l border-gray-800">
+            <div className="bg-[#101111] h-full overflow-y-auto">
+              <SheetHeader className="text-left bg-[#101111]">
+                <SheetTitle className="text-2xl text-white">
+                  {editingOutline ? "Edit Outline" : "Create New Outline"}
+                </SheetTitle>
+                <SheetDescription className="text-base text-gray-400">
+                  {editingOutline
+                    ? "Update the outline details"
+                    : "Add a new outline section to your project"}
+                </SheetDescription>
+              </SheetHeader>
 
-            <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-              <div className="space-y-2">
-                <label htmlFor="header" className="text-sm font-medium">
-                  Header
-                </label>
-                <Input
-                  id="header"
-                  value={formData.header}
-                  onChange={(e) =>
-                    setFormData({ ...formData, header: e.target.value })
-                  }
-                  placeholder="Enter header name"
-                  required
-                />
-              </div>
+              <form onSubmit={handleSubmit} className="space-y-6 mt-8 mx-6 bg-[#101111]">
+                <div className="space-y-3 max-w-md w-full">
+                  <label htmlFor="header" className="text-sm font-medium block text-white">
+                    Header
+                  </label>
+                  <Input
+                    id="header"
+                    value={formData.header}
+                    onChange={(e) =>
+                      setFormData({ ...formData, header: e.target.value })
+                    }
+                    placeholder="Enter header name"
+                    required
+                    className="text-left bg-gray-900 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:bg-gray-800"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <label htmlFor="sectionType" className="text-sm font-medium">
-                  Section Type
-                </label>
-                <Select
-                  value={formData.sectionType}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, sectionType: value })
-                  }
-                >
-                  <SelectTrigger>
+                <div className="space-y-3 max-w-md w-full">
+                  <label htmlFor="sectionType" className="text-sm font-medium block text-white">
+                    Section Type
+                  </label>
+                  <Select
+                    value={formData.sectionType}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, sectionType: value })
+                    }
+                  >
+                    <SelectTrigger className="text-left bg-gray-900 border-gray-700 text-white focus:border-blue-500 focus:bg-gray-800">
                     <SelectValue placeholder="Select section type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SECTION_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="status" className="text-sm font-medium">
-                  Status
-                </label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(
-                    value: "Pending" | "In-Progress" | "Completed"
-                  ) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="In-Progress">In-Progress</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="target" className="text-sm font-medium">
-                    Target
-                  </label>
-                  <Input
-                    id="target"
-                    type="number"
-                    value={formData.target}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        target: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    min="0"
-                  />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-gray-700 text-white">
+                      {SECTION_TYPES.map((type) => (
+                        <SelectItem key={type} value={type} className="text-white hover:bg-gray-800 focus:bg-gray-800">
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="limit" className="text-sm font-medium">
-                    Limit
+                <div className="space-y-3 max-w-md w-full">
+                  <label htmlFor="status" className="text-sm font-medium block text-white">
+                    Status
                   </label>
-                  <Input
-                    id="limit"
-                    type="number"
-                    value={formData.limit}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        limit: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    min="0"
-                  />
+                  <Select
+                    value={formData.status}
+                    onValueChange={(
+                      value: "Pending" | "In-Progress" | "Completed"
+                    ) => setFormData({ ...formData, status: value })}
+                  >
+                    <SelectTrigger className="text-left bg-gray-900 border-gray-700 text-white focus:border-blue-500 focus:bg-gray-800">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-gray-700 text-white">
+                      <SelectItem value="Pending" className="text-white hover:bg-gray-800 focus:bg-gray-800">Pending</SelectItem>
+                      <SelectItem value="In-Progress" className="text-white hover:bg-gray-800 focus:bg-gray-800">In-Progress</SelectItem>
+                      <SelectItem value="Completed" className="text-white hover:bg-gray-800 focus:bg-gray-800">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label htmlFor="reviewer" className="text-sm font-medium">
-                  Reviewer
-                </label>
-                <Select
-                  value={formData.reviewer}
-                  onValueChange={(value: "Assim" | "Bini" | "Mami") =>
-                    setFormData({ ...formData, reviewer: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {REVIEWERS.map((reviewer) => (
-                      <SelectItem key={reviewer} value={reviewer}>
-                        {reviewer}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="grid grid-cols-2 gap-4 max-w-md w-full">
+                  <div className="space-y-3">
+                    <label htmlFor="target" className="text-sm font-medium block text-white">
+                      Target
+                    </label>
+                    <Input
+                      id="target"
+                      type="number"
+                      value={formData.target}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          target: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      min="0"
+                      className="text-center bg-gray-900 border-gray-700 text-white focus:border-blue-500 focus:bg-gray-800"
+                    />
+                  </div>
 
-              <Button type="submit" className="w-full">
-                {editingOutline ? "Update Outline" : "Create Outline"}
-              </Button>
-            </form>
+                  <div className="space-y-3">
+                    <label htmlFor="limit" className="text-sm font-medium block text-white">
+                      Limit
+                    </label>
+                    <Input
+                      id="limit"
+                      type="number"
+                      value={formData.limit}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          limit: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      min="0"
+                      className="text-center bg-gray-900 border-gray-700 text-white focus:border-blue-500 focus:bg-gray-800"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3 max-w-md w-full">
+                  <label htmlFor="reviewer" className="text-sm font-medium block text-white">
+                    Reviewer
+                  </label>
+                  <Select
+                    value={formData.reviewer}
+                    onValueChange={(value: "Assim" | "Bini" | "Mami") =>
+                      setFormData({ ...formData, reviewer: value })
+                    }
+                  >
+                    <SelectTrigger className="text-center bg-gray-900 border-gray-700 text-white focus:border-blue-500 focus:bg-gray-800">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-gray-700 text-white">
+                      {REVIEWERS.map((reviewer) => (
+                        <SelectItem key={reviewer} value={reviewer} className="text-white hover:bg-gray-800 focus:bg-gray-800">
+                          {reviewer}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="max-w-md w-full pt-4">
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {editingOutline ? "Update Outline" : "Create Outline"}
+                  </Button>
+                </div>
+              </form>
+            </div>
           </SheetContent>
         </Sheet>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="border border-gray-800 rounded-lg bg-[#101111]">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Header</TableHead>
-              <TableHead>Section type</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Target</TableHead>
-              <TableHead>Limit</TableHead>
-              <TableHead>Reviewer</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+            <TableRow className="border-gray-800 hover:bg-transparent">
+              <TableHead className="text-gray-300 font-semibold">Header</TableHead>
+              <TableHead className="text-gray-300 font-semibold">Section type</TableHead>
+              <TableHead className="text-gray-300 font-semibold">Status</TableHead>
+              <TableHead className="text-gray-300 font-semibold">Target</TableHead>
+              <TableHead className="text-gray-300 font-semibold">Limit</TableHead>
+              <TableHead className="text-gray-300 font-semibold">Reviewer</TableHead>
+              <TableHead className="text-gray-300 font-semibold w-[100px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-4">
+              <TableRow className="border-gray-800 hover:bg-gray-900">
+                <TableCell colSpan={7} className="text-center py-4 text-gray-400">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : outlines.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-4">
+              <TableRow className="border-gray-800 hover:bg-gray-900">
+                <TableCell colSpan={7} className="text-center py-4 text-gray-400">
                   No outlines found. Create your first outline!
                 </TableCell>
               </TableRow>
             ) : (
               outlines.map((outline) => (
-                <TableRow key={outline.id}>
+                <TableRow key={outline.id} className="border-gray-800 hover:bg-gray-900">
                   <TableCell
-                    className="font-medium cursor-pointer hover:text-blue-600"
+                    className="font-medium cursor-pointer text-white hover:text-blue-400"
                     onClick={() => handleEdit(outline)}
                   >
                     {outline.header}
                   </TableCell>
-                  <TableCell>{outline.sectionType}</TableCell>
+                  <TableCell className="text-gray-300">{outline.sectionType}</TableCell>
                   <TableCell>
-                    <Badge variant={getStatusVariant(outline.status)}>
+                    <Badge variant={getStatusVariant(outline.status)} className={
+                      outline.status === 'Completed' 
+                        ? 'bg-green-900 text-green-100 border-green-700' 
+                        : outline.status === 'In-Progress'
+                        ? 'bg-blue-900 text-blue-100 border-blue-700'
+                        : 'bg-gray-800 text-gray-300 border-gray-600'
+                    }>
                       {outline.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{outline.target}</TableCell>
-                  <TableCell>{outline.limit}</TableCell>
-                  <TableCell>{outline.reviewer}</TableCell>
+                  <TableCell className="text-gray-300">{outline.target}</TableCell>
+                  <TableCell className="text-gray-300">{outline.limit}</TableCell>
+                  <TableCell className="text-gray-300">{outline.reviewer}</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEdit(outline)}
+                        className="text-gray-400 hover:text-white hover:bg-gray-800"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -391,6 +408,7 @@ export default function OutlinesTable() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(outline.id)}
+                        className="text-gray-400 hover:text-red-400 hover:bg-gray-800"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

@@ -5,14 +5,21 @@ import { useTheme } from "next-themes";
 import { Sun, Moon, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function ThemeToggler() {
+export function ThemeToggler({ compact = false }: { compact?: boolean }) {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme, systemTheme } = useTheme();
 
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
-    return <div className="w-14 h-8 rounded-full bg-muted animate-pulse" />;
+    return (
+      <div
+        className={cn(
+          "rounded-full bg-muted animate-pulse",
+          compact ? "w-10 h-6" : "w-14 h-8"
+        )}
+      />
+    );
   }
 
   const isDark =
@@ -24,13 +31,15 @@ export function ThemeToggler() {
     <button
       onClick={toggleTheme}
       className={cn(
-        "group relative w-14 h-8 rounded-full p-1 transition-all duration-500 overflow-hidden", // Added overflow-hidden to contain movement
+        "group relative rounded-full p-1 transition-all duration-500 overflow-hidden",
+        compact ? "w-10 h-6" : "w-14 h-8",
         "bg-gradient-to-r from-background to-card dark:from-background dark:to-card",
         "ring-2 ring-border dark:ring-border ring-offset-1 ring-offset-background",
         "hover:scale-100 hover:ring-1 hover:ring-primary/50",
         "shadow-lg hover:shadow-2xl shadow-black/5"
       )}
       aria-label="Toggle theme"
+      title="Toggle theme"
     >
       {/* Sliding Background Blob - Now uses brand colors and is contained */}
       <div
@@ -48,11 +57,12 @@ export function ThemeToggler() {
       {/* Floating Orb (the actual toggle) - Now correctly constrained */}
       <div
         className={cn(
-          "relative z-10 w-6 h-6 rounded-full transition-all duration-500",
-          "shadow-2xl flex items-center justify-center",
+          "relative z-10 rounded-full transition-all duration-500 flex items-center justify-center",
+          compact ? "w-4 h-4" : "w-6 h-6",
+          "shadow-2xl",
           "bg-card dark:bg-background",
           "ring-4 ring-primary/50 dark:ring-primary/50",
-          isDark ? "translate-x-full" : "translate-x-0" // Corrected translate to x-full
+          isDark ? "translate-x-full" : "translate-x-0"
         )}
       >
         {/* Sun Icon: Visible in Light Mode, hidden in Dark */}
@@ -77,7 +87,10 @@ export function ThemeToggler() {
         />
 
         {/* Tiny sparkle on dark mode */}
-        {isDark && (
+        {isDark && compact && (
+          <Sparkles className="absolute -top-1 -right-1 h-2 w-2 text-secondary animate-pulse" />
+        )}
+        {isDark && !compact && (
           <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-secondary animate-pulse" />
         )}
       </div>

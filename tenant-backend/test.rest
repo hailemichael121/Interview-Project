@@ -15,7 +15,7 @@ Origin: http://localhost:3001
 
 {
   "name": "Test User",
-  "email": "test@example.com",
+  "email": "testy@example.com",
   "password": "password123"
 }
 
