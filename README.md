@@ -197,3 +197,16 @@ NEXT_PUBLIC_BACKEND_URL="http://localhost:3001"
 ```
 
 Copy each block into their respective files using a text editor.
+
+
+# Database
+DATABASE_URL="postgresql://tenant_user:1234567890@localhost:5432/tenant_db"
+
+# Better Auth
+BETTER_AUTH_SECRET=dr0oolYI3wmCH61pheVRAhcSY5o6e46m
+BETTER_AUTH_URL="http://localhost:3000"
+
+ 
+
+# Frontend URL for CORS
+FRONTEND_URL="http://localhost:3001"
