@@ -1,28 +1,26 @@
-// prisma/schema.prisma
+// Better Auth Exact Schema - DO NOT MODIFY
 generator client {
-  provider = "prisma-client"
-  output   = "../node_modules/.prisma/client"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  // REMOVE THIS LINE: url      = env("DATABASE_URL")
 }
-// ──────────────────────────────────────
-// Better Auth + Organization + Your Models
-// ──────────────────────────────────────
+
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String    @unique
-  emailVerified DateTime?
+  emailVerified Boolean?
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts            Account[]
-  sessions            Session[]
+  accounts Account[]
+  sessions Session[]
   organizationMembers OrganizationMember[]
-  outlines            Outline[]
+  outlines Outline[]
 
   @@map("users")
 }
@@ -30,15 +28,15 @@ model User {
 model Account {
   id                String  @id @default(cuid())
   userId            String
-  type              String
-  provider          String
+  type              String?
+  provider          String    // ← This is REQUIRED now
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?   @db.Text
+  access_token      String?   @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?   @db.Text
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -66,6 +64,7 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
+// Your custom models
 model Organization {
   id        String   @id @default(cuid())
   name      String

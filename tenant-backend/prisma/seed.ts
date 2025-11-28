@@ -1,7 +1,15 @@
-// prisma/seed.ts
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
-const prisma = new PrismaClient();
+// Create connection pool and adapter for seed
+const connectionString = process.env.DATABASE_URL;
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+
+const prisma = new PrismaClient({
+  adapter: adapter, // Add the adapter here
+});
 
 async function main() {
   console.log('Starting seed...');
@@ -14,7 +22,7 @@ async function main() {
     await prisma.account.deleteMany();
     await prisma.session.deleteMany();
     await prisma.user.deleteMany();
-  } catch (error) {
+  } catch {
     console.log('Note: Some tables may not exist yet, continuing...');
   }
 

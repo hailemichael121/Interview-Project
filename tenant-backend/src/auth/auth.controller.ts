@@ -2,6 +2,11 @@ import { Controller, Get, Post, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 
+interface BetterAuthHeaders {
+  get: (name: string) => string | undefined;
+  has: (name: string) => boolean;
+}
+
 @Controller('api/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -18,71 +23,150 @@ export class AuthController {
 
   private async handleAuthRequest(req: Request, res: Response) {
     try {
-      // Convert headers to plain object
-      const headers: Record<string, string> = {};
+      console.log(`🔐 Auth request: ${req.method} ${req.originalUrl}`);
+
+      // Create headers map
+      const headersMap = new Map<string, string>();
       Object.entries(req.headers).forEach(([key, value]) => {
         if (value) {
-          headers[key] = Array.isArray(value) ? value.join(', ') : value;
+          const headerValue = Array.isArray(value)
+            ? value.join(', ')
+            : String(value);
+          headersMap.set(key.toLowerCase(), headerValue);
         }
       });
 
-      // Better Auth expects routes like /sign-in/email (without /api/auth prefix)
-      // The controller is already at /api/auth, so we need to remove that prefix
+      // Add Origin header if missing
+      if (!headersMap.has('origin')) {
+        const origin = String(
+          req.headers.origin ||
+            req.headers.referer ||
+            process.env.FRONTEND_URL ||
+            'http://localhost:3001',
+        );
+        headersMap.set('origin', origin);
+        console.log(`📍 Added Origin header: ${origin}`);
+      }
+
+      // Create headers object with proper typing
+      const headers: BetterAuthHeaders = {
+        get: (name: string) => headersMap.get(name.toLowerCase()),
+        has: (name: string) => headersMap.has(name.toLowerCase()),
+      };
+
+      // Extract auth path
       let authPath = req.originalUrl;
       if (authPath.startsWith('/api/auth')) {
         authPath = authPath.replace('/api/auth', '') || '/';
       }
       if (!authPath.startsWith('/')) {
-        authPath = '/' + authPath;
+        authPath = `/${authPath}`;
       }
 
-      // Handle body - Better Auth handles raw body
-      // If body is Buffer, convert to string, otherwise use as-is
-      let body: any = undefined;
+      // Create absolute URL
+      const baseUrl = process.env.BETTER_AUTH_URL || 'http://localhost:3000';
+      const absoluteAuthUrl = new URL(authPath, baseUrl).toString();
+
+      // Handle body
+      let body: string | undefined;
       if (req.method !== 'GET' && req.body) {
-        if (Buffer.isBuffer(req.body)) {
-          try {
-            body = JSON.parse(req.body.toString());
-          } catch {
-            body = req.body.toString();
-          }
-        } else if (typeof req.body === 'string') {
-          try {
-            body = JSON.parse(req.body);
-          } catch {
-            body = req.body;
-          }
-        } else {
-          body = req.body;
-        }
+        body = JSON.stringify(req.body);
+        console.log('📦 Request body prepared');
       }
 
-      const handler = await this.authService.auth.handler({
+      console.log(`🔄 Calling Better Auth: ${req.method} ${absoluteAuthUrl}`);
+
+      // Create request object
+      const requestLike = {
         method: req.method as 'GET' | 'POST' | 'PUT' | 'DELETE',
-        body: body,
-        headers: headers,
-        query: new URLSearchParams(req.query as Record<string, string>),
-        url: authPath,
-      });
+        headers,
+        body,
+        url: absoluteAuthUrl,
+        json: async () => {
+          if (!body) return null;
+          try {
+            return JSON.parse(body) as unknown;
+          } catch {
+            console.error('❌ JSON parse error');
+            return null;
+          }
+        },
+        text: async () => body || '',
+      };
 
-      res.status(handler.status);
+      // Call Better Auth handler
+      let handler = await this.authService.auth.handler(requestLike);
 
-      // Set headers
-      if (handler.headers) {
-        for (const [key, value] of Object.entries(handler.headers)) {
-          res.setHeader(key, value as string);
+      // Fallback with /api/auth prefix if 404
+      if (handler?.status === 404) {
+        console.log('🔄 404 received, trying with /api/auth prefix');
+        const prefixedUrl = new URL(`/api/auth${authPath}`, baseUrl).toString();
+
+        const fallbackRequest = {
+          ...requestLike,
+          url: prefixedUrl,
+        };
+
+        handler = await this.authService.auth.handler(fallbackRequest);
+      }
+
+      console.log(`✅ Auth response: ${handler.status}`);
+
+      // Handle response body
+      let responseBody = handler.body;
+      if (
+        responseBody &&
+        typeof responseBody === 'object' &&
+        'getReader' in responseBody
+      ) {
+        console.log('📄 Response is ReadableStream, converting to text...');
+        const reader = (responseBody as ReadableStream).getReader();
+        const chunks: Uint8Array[] = [];
+
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) chunks.push(value);
+        }
+
+        const combined = Buffer.concat(chunks);
+        responseBody = combined.toString('utf-8');
+
+        try {
+          responseBody = JSON.parse(responseBody) as unknown;
+        } catch {
+          // If not JSON, keep as string
         }
       }
+
+      console.log('📄 Response body processed');
 
       // Send response
-      if (typeof handler.body === 'string') {
-        res.send(handler.body);
-      } else {
-        res.json(handler.body);
+      res.status(handler.status);
+
+      if (handler.headers) {
+        Object.entries(handler.headers).forEach(([key, value]) => {
+          res.setHeader(key, String(value));
+        });
       }
+
+      if (typeof responseBody === 'string') {
+        res.send(responseBody);
+      } else {
+        res.json(responseBody);
+      }
+
+      console.log(`📨 Response sent: ${handler.status}`);
     } catch (error) {
-      console.error('Auth handler error:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      console.error('❌ Auth handler error:', errorMessage);
+      res.status(500).json({
+        error: 'Authentication service unavailable',
+        message:
+          process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+      });
     }
   }
 }

@@ -1,0 +1,148 @@
+###
+# Root - Health check
+GET http://localhost:3000/
+### Test session endpoint (should work without auth)
+GET http://localhost:3000/api/auth/session
+Content-Type: application/json
+
+### Test if Better Auth is responding
+GET http://localhost:3000/api/auth
+###
+# Better Auth: Sign up (Email + Password)
+POST http://localhost:3000/api/auth/sign-up/email
+Content-Type: application/json
+Origin: http://localhost:3001
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+###
+# Better Auth: Sign in (Email + Password)
+POST http://localhost:3000/api/auth/sign-in/email
+Content-Type: application/json
+Origin: http://localhost:3001
+
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+###
+# Better Auth: Get session (requires Cookie from sign-in)
+GET http://localhost:3000/api/auth/session
+Accept: application/json
+# Copy cookie from the Set-Cookie response of sign-in and paste here to test session retrieval
+# Cookie: better-auth-session=...; path=/; HttpOnly
+
+###
+# Better Auth: Create Organization (requires authenticated session)
+POST http://localhost:3000/api/auth/organization/create
+Content-Type: application/json
+# Use cookie from sign-in OR the fallback headers below
+# Cookie: better-auth-session=...
+
+{
+  "name": "Test Organization",
+  "slug": "test-organization"
+}
+
+###
+# Create Outline (Authenticated via fallback headers)
+POST http://localhost:3000/api/outlines
+Content-Type: application/json
+# HEADER AUTH Fallback (if you don't have a Better Auth cookie):
+# x-user-id: REPLACE_WITH_USER_ID
+# x-organization-id: REPLACE_WITH_ORGANIZATION_ID
+
+{
+  "header": "Example Outline",
+  "sectionType": "NARRATIVE",
+  "status": "PENDING",
+  "target": 3,
+  "limit": 5,
+  "reviewer": "ASSIM"
+}
+
+###
+# List Outlines (Authenticated via Cookie or fallback headers)
+GET http://localhost:3000/api/outlines
+Accept: application/json
+# x-user-id: REPLACE_WITH_USER_ID
+# x-organization-id: REPLACE_WITH_ORGANIZATION_ID
+
+###
+# Update an Outline (Authenticated)
+PUT http://localhost:3000/api/outlines/{{outlineId}}
+Content-Type: application/json
+# x-user-id: REPLACE_WITH_USER_ID
+# x-organization-id: REPLACE_WITH_ORGANIZATION_ID
+
+{
+  "header": "Updated Outline Title"
+}
+
+###
+# Delete an Outline (Authenticated)
+DELETE http://localhost:3000/api/outlines/{{outlineId}}
+# x-user-id: REPLACE_WITH_USER_ID
+# x-organization-id: REPLACE_WITH_ORGANIZATION_ID
+
+###
+# Team: List Members (Authenticated)
+GET http://localhost:3000/api/team/members
+# x-user-id: REPLACE_WITH_USER_ID
+# x-organization-id: REPLACE_WITH_ORGANIZATION_ID
+
+###
+# Team: Invite member (Authenticated, owner only)
+POST http://localhost:3000/api/team/invite
+Content-Type: application/json
+# Use cookie from sign-in OR fallback headers
+# x-user-id: REPLACE_WITH_OWNER_USER_ID
+# x-organization-id: REPLACE_WITH_ORGANIZATION_ID
+
+{
+  "email": "invitee+test@example.com",
+  "role": "member"
+}
+
+###
+# Team: Revoke member (Authenticated, owner only)
+POST http://localhost:3000/api/team/revoke
+Content-Type: application/json
+# Use cookie from sign-in OR fallback headers
+# x-user-id: REPLACE_WITH_OWNER_USER_ID
+# x-organization-id: REPLACE_WITH_ORGANIZATION_ID
+
+{
+  "userId": "REPLACE_WITH_MEMBER_USER_ID"
+}
+
+###
+# Additional sample: Get account details (external example preserved from your file)
+GET http://10.101.14.84:8080/TCMB-container-22.0.0/api/v1.0.0/party/other/accDetail?account=24132978
+Accept: application/json
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9,es;q=0.8
+Authorization: Bearer REPLACE_LONG_TOKEN
+Connection: keep-alive
+Content-Type: application/json
+Host: 10.101.14.84:8080
+Origin: http://localhost:5173
+Referer: http://localhost:5173/
+User-Agent: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N)
+```}Explanation={
+
+
+
+#     # .env — FINAL WORKING VERSION FOR PRISMA 7 + WINDOWS
+# DATABASE_URL=postgresql://postgres:1234567890@localhost:5432/tenantdb
+
+# BETTER_AUTH_SECRET=VVGVcSQGGb8BU6MaWHqgIek4cLF4bEBR
+# BETTER_AUTH_URL=http://localhost:3000
+# BETTER_AUTH_BASE_URL=http://localhost:3000
+# FRONTEND_URL=http://localhost:3001

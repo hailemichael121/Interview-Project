@@ -6,7 +6,11 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  getHello(): { message: string; timestamp: string } {
+    console.log('🌐 Root endpoint called');
+    return {
+      message: this.appService.getHello(),
+      timestamp: new Date().toISOString(),
+    };
   }
 }
