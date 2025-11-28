@@ -60,7 +60,7 @@ export function AnimatedTitle({
       <h1
         className={`
           font-bold tracking-tight whitespace-nowrap
-          text-foreground  
+          text-gray-900 dark:text-gray-50 drop-shadow-lg
           ${sizeClasses[size]}
           ${className}
         `}
@@ -70,7 +70,7 @@ export function AnimatedTitle({
         {/* Blinking Underscore Cursor */}
         <span
           aria-hidden="true"
-          className="inline-block ml-1 align-bottom font-bold text-black" // <<< FIXED: Use text-foreground
+          className="inline-block ml-1 align-bottom font-bold text-gray-900 dark:text-gray-50"
           style={{
             fontSize: "1.1em",
             lineHeight: "1",

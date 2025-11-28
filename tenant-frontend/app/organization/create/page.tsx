@@ -15,7 +15,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Building2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { createOrganization } from "@/lib/api";
 import { useOrg } from "@/lib/org-context";
 import { authClient } from "@/lib/auth-client";
 
@@ -37,18 +36,31 @@ export default function CreateOrganizationPage() {
         return;
       }
 
-      const organization = await createOrganization({ name: formData.name });
-
-      setCurrentOrg({
-        id: organization.id,
-        name: organization.name,
-        role: "owner",
+      // Use Better Auth organization plugin
+      const slug = formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      
+      const result = await authClient.organization.create({
+        name: formData.name,
+        slug: slug,
       });
 
-      toast.success("Organization created successfully!");
-      router.push("/outlines");
-    } catch (error) {
-      toast.error("Failed to create organization");
+      if (result.error) {
+        toast.error(result.error.message || "Failed to create organization");
+        return;
+      }
+
+      if (result.data) {
+        setCurrentOrg({
+          id: result.data.organization.id,
+          name: result.data.organization.name,
+          role: "owner",
+        });
+
+        toast.success("Organization created successfully!");
+        router.push("/outlines");
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to create organization");
       console.error(error);
     } finally {
       setIsLoading(false);

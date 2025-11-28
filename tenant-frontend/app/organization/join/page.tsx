@@ -13,6 +13,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Users } from "lucide-react";
 import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 
 function JoinOrganizationContent() {
   const router = useRouter();
@@ -25,12 +26,31 @@ function JoinOrganizationContent() {
     setIsLoading(true);
 
     try {
-      // This would call your backend API to join an organization
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      toast.success("Joined organization successfully!");
-      router.push("/dashboard");
-    } catch (error) {
-      toast.error("Failed to join organization");
+      if (!inviteCode.trim()) {
+        toast.error("Please enter an invite code");
+        return;
+      }
+
+      // Use Better Auth organization plugin to accept invitation
+      // First, we need to find the invitation by token
+      const result = await authClient.organization.acceptInvitation({
+        invitationId: inviteCode, // Better Auth expects invitationId
+      });
+
+      if (result.error) {
+        // If invitationId doesn't work, try with token directly
+        // Better Auth might accept token as invitationId
+        toast.error(result.error.message || "Invalid or expired invite code");
+        return;
+      }
+
+      if (result.data) {
+        toast.success("Joined organization successfully!");
+        router.push("/outlines");
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to join organization");
+      console.error(error);
     } finally {
       setIsLoading(false);
     }

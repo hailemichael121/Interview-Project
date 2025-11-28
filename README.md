@@ -32,29 +32,35 @@ cd Interview-Project
 cd tenant-backend
 # Install dependencies
 npm install
-# Setup environment
-cp .env.example .env
-# Edit .env with your database URL
+# Setup environment variables
+# Create .env file with:
+# DATABASE_URL=postgresql://user:password@localhost:5432/tenant_db
+# BETTER_AUTH_SECRET=your-secret-key-here-change-in-production
+# BETTER_AUTH_URL=http://localhost:3000
+# FRONTEND_URL=http://localhost:3001
+# PORT=3000
+
 # Database setup
 npx prisma generate
 npx prisma migrate dev --name init
 # Start development server
 npm run start:dev
 ```
-Backend runs on http://localhost:3001
+Backend runs on http://localhost:3000
 
 ### 3. Frontend Setup
 ```bash
 cd ../tenant-frontend
 # Install dependencies
 npm install
-# Setup environment
-cp .env.example .env.local
-# Edit .env.local with your backend URL
+# Setup environment variables
+# Create .env.local file with:
+# NEXT_PUBLIC_BACKEND_URL=http://localhost:3000
+
 # Start development server
 npm run dev
 ```
-Frontend runs on http://localhost:3000
+Frontend runs on http://localhost:3001 (or port 3000 if 3001 is taken)
 
 ## Project Structure
 ```
@@ -83,21 +89,31 @@ Interview-Project/
 - **Outlines** - Document management system
 
 ## API Endpoints
-### Authentication
-- `POST /auth/signup` - User registration
-- `POST /auth/login` - User login
-- `POST /auth/logout` - User logout
 
-### Organizations
-- `POST /organizations` - Create organization
-- `GET /organizations` - List user's organizations
-- `POST /organizations/invite` - Invite member
+All authentication endpoints are handled by Better Auth at `/api/auth/*`
+
+### Authentication (Better Auth)
+- `POST /api/auth/sign-up/email` - User registration
+- `POST /api/auth/sign-in/email` - User login
+- `POST /api/auth/sign-out` - User logout
+- `GET /api/auth/session` - Get current session
+
+### Organizations (Better Auth Organization Plugin)
+- `POST /api/auth/organization/create` - Create organization
+- `POST /api/auth/organization/invite-member` - Invite member
+- `POST /api/auth/organization/accept-invitation` - Accept invitation
+- `GET /api/auth/organization/list` - List user's organizations
 
 ### Outlines
-- `GET /organizations/:id/outlines` - List outlines
-- `POST /organizations/:id/outlines` - Create outline
-- `PUT /organizations/:id/outlines/:id` - Update outline
-- `DELETE /organizations/:id/outlines/:id` - Delete outline
+- `GET /api/outlines` - List outlines for current organization
+- `POST /api/outlines` - Create outline
+- `PUT /api/outlines/:id` - Update outline
+- `DELETE /api/outlines/:id` - Delete outline
+
+### Team Management
+- `GET /api/team/members` - List organization members
+- `POST /api/team/invite` - Invite member (owner only)
+- `POST /api/team/revoke` - Remove member (owner only)
 
 ## Roles & Permissions
 - **Owner**: Full access, can invite/remove members
@@ -119,16 +135,32 @@ npm run lint # Run ESLint
 ```
 
 ## Environment Variables
+
 ### Backend (.env)
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/workspace_db"
-BETTER_AUTH_SECRET="your-auth-secret"
-BETTER_AUTH_URL="http://localhost:3001"
+# Better Auth Configuration
+BETTER_AUTH_SECRET=your-secret-key-here-change-in-production
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_BASE_URL=http://localhost:3000
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/tenant_db
+
+# Server Configuration
+PORT=3000
+FRONTEND_URL=http://localhost:3001
+
+# Node Environment
+NODE_ENV=development
 ```
 
 ### Frontend (.env.local)
 ```env
-NEXT_PUBLIC_BACKEND_URL="http://localhost:3001"
+# Backend API URL (where NestJS is running)
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3000
+
+# Mock Auth (optional - set to "true" to use mock auth)
+NEXT_PUBLIC_USE_MOCK_AUTH=
 ```
 
 ## Contributing

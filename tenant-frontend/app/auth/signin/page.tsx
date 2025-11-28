@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,7 +22,6 @@ export default function SignInPage() {
   const { navigate, transitionClass } = useAuthTransition();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [imageError, setImageError] = useState(false); // Added missing state
   const [formData, setFormData] = useState({ email: "", password: "" });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,20 +89,8 @@ export default function SignInPage() {
         <div className="hidden lg:flex lg:w-1/2 items-center justify-center px-12">
           <div className="text-center max-w-lg">
             <Link href="/" className="inline-block mb-12">
-              <div className="relative w-40 h-40">
-                <Image
-                  src={
-                    imageError
-                      ? "/images/tenant-light.png"
-                      : "/images/tenant-light.png"
-                  }
-                  alt="Tenant Logo"
-                  fill
-                  className="object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-300"
-                  priority
-                  onError={() => setImageError(true)}
-                  unoptimized={process.env.NODE_ENV === "production"}
-                />
+              <div className="w-40 h-40 bg-gradient-to-br from-blue-600 to-blue-800 dark:from-blue-500 dark:to-blue-700 rounded-2xl flex items-center justify-center shadow-2xl hover:scale-105 transition-transform duration-300">
+                <span className="text-white font-bold text-5xl">T</span>
               </div>
             </Link>
             <AnimatedTitle text="Welcome Back" size="md" />
@@ -130,26 +116,26 @@ export default function SignInPage() {
           <div className="w-full max-w-md animate-in slide-in-from-left-32 duration-700">
             <Card className="border-0 shadow-2xl backdrop-blur-xl bg-white/95 dark:bg-gray-900/95">
               <CardHeader className="text-center pb-10">
-                <CardTitle className="text-4xl font-bold text-gray-900 dark:text-white">
+                <CardTitle className="text-4xl font-bold text-gray-900 dark:text-gray-50">
                   Sign In
                 </CardTitle>
-                <CardDescription className="text-lg text-gray-600 dark:text-gray-300">
+                <CardDescription className="text-lg text-gray-700 dark:text-gray-200">
                   Access your workspace instantly
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label className="text-base text-gray-900 dark:text-white">
+                    <Label className="text-base font-semibold text-gray-900 dark:text-gray-100">
                       Email
                     </Label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-3.5 h-5 w-5 text-gray-500 dark:text-gray-400" />
+                      <Mail className="absolute left-4 top-3.5 h-5 w-5 text-gray-600 dark:text-gray-300" />
                       <Input
                         required
                         type="email"
                         placeholder="you@company.com"
-                        className="pl-12 h-14 text-base bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                        className="pl-12 h-14 text-base bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
                         value={formData.email}
                         onChange={(e) =>
                           setFormData({ ...formData, email: e.target.value })
@@ -159,16 +145,16 @@ export default function SignInPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base text-gray-900 dark:text-white">
+                    <Label className="text-base font-semibold text-gray-900 dark:text-gray-100">
                       Password
                     </Label>
                     <div className="relative">
-                      <Lock className="absolute left-4 top-3.5 h-5 w-5 text-gray-500 dark:text-gray-400" />
+                      <Lock className="absolute left-4 top-3.5 h-5 w-5 text-gray-600 dark:text-gray-300" />
                       <Input
                         required
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="pl-12 pr-14 h-14 text-base bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
+                        className="pl-12 pr-14 h-14 text-base bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
                         value={formData.password}
                         onChange={(e) =>
                           setFormData({ ...formData, password: e.target.value })
@@ -178,7 +164,7 @@ export default function SignInPage() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute right-2 top-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                        className="absolute right-2 top-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
@@ -203,7 +189,7 @@ export default function SignInPage() {
                   </Button>
                 </form>
 
-                <p className="text-center mt-8 text-gray-600 dark:text-gray-400">
+                <p className="text-center mt-8 text-gray-700 dark:text-gray-200">
                   Don&apos;t have an account?{" "}
                   <Button
                     variant="link"

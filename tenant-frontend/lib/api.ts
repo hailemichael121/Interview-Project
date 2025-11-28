@@ -1,7 +1,7 @@
-// lib/api.ts (update with mock data)
+// lib/api.ts
 import { authClient } from "./auth-client";
 
-const apiBase = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+const apiBase = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
 const useMockApi =
   process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true" ||
   !process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -140,82 +140,93 @@ export async function apiFetch(url: string, options: RequestInit = {}) {
     return { success: true };
   }
 
-  // Real API implementation
-  const session = await authClient.getSession();
-  const headers = {
+  // Real API implementation - uses cookies for authentication
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(session.data?.session
-      ? {
-          Authorization: `Bearer ${session.data.session.token}`,
-        }
-      : {}),
-    ...options.headers,
+    ...options.headers as Record<string, string>,
   };
 
-  const res = await fetch(`${apiBase}${url}`, { ...options, headers });
-  if (!res.ok) throw new Error(`API Error: ${res.status}`);
-  return res.json();
+  const res = await fetch(`${apiBase}${url}`, {
+    ...options,
+    headers,
+    credentials: "include", // Important for cookies
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    let errorMessage = `API Error: ${res.status}`;
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorMessage = errorJson.error || errorJson.message || errorMessage;
+    } catch {
+      errorMessage = errorText || errorMessage;
+    }
+    throw new Error(errorMessage);
+  }
+
+  const contentType = res.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return res.json();
+  }
+  return res.text();
 }
 
 // Rest of your API functions remain the same...
-export async function getOrganizations() {
-  return apiFetch("/organizations");
+export async function getOutlines() {
+  return apiFetch("/api/outlines");
 }
 
-export async function createOrganization(data: {
-  name: string;
-  description?: string;
+export async function createOutline(data: {
+  header: string;
+  sectionType: string;
+  status?: string;
+  target: number;
+  limit: number;
+  reviewer: string;
 }) {
-  return apiFetch("/organizations", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-}
-
-export async function getOutlines(orgId: string) {
-  return apiFetch(`/organizations/${orgId}/outlines`);
-}
-
-export async function createOutline(orgId: string, data: any) {
-  return apiFetch(`/organizations/${orgId}/outlines`, {
+  return apiFetch("/api/outlines", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
 export async function updateOutline(
-  orgId: string,
   outlineId: string,
-  data: any
+  data: Partial<{
+    header: string;
+    sectionType: string;
+    status: string;
+    target: number;
+    limit: number;
+    reviewer: string;
+  }>
 ) {
-  return apiFetch(`/organizations/${orgId}/outlines/${outlineId}`, {
+  return apiFetch(`/api/outlines/${outlineId}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
 }
 
-export async function deleteOutline(orgId: string, outlineId: string) {
-  return apiFetch(`/organizations/${orgId}/outlines/${outlineId}`, {
+export async function deleteOutline(outlineId: string) {
+  return apiFetch(`/api/outlines/${outlineId}`, {
     method: "DELETE",
   });
 }
 
-export async function getTeamMembers(orgId: string) {
-  return apiFetch(`/organizations/${orgId}/members`);
+export async function getTeamMembers() {
+  return apiFetch("/api/team/members");
 }
 
-export async function inviteMember(
-  orgId: string,
-  data: { email: string; role: "owner" | "member" }
-) {
-  return apiFetch(`/organizations/${orgId}/invite`, {
+export async function inviteMember(data: { email: string; role?: string }) {
+  return apiFetch("/api/team/invite", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export async function removeMember(orgId: string, userId: string) {
-  return apiFetch(`/organizations/${orgId}/members/${userId}`, {
-    method: "DELETE",
+export async function removeMember(userId: string) {
+  return apiFetch("/api/team/revoke", {
+    method: "POST",
+    body: JSON.stringify({ userId }),
   });
 }

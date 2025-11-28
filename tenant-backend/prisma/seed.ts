@@ -6,15 +6,17 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Starting seed...');
 
-  // Clear existing data
-  await prisma.outline.deleteMany();
-  await prisma.organizationMember.deleteMany();
-  await prisma.organizationInvite.deleteMany();
-  await prisma.organization.deleteMany();
-  await prisma.account.deleteMany();
-  await prisma.session.deleteMany();
-  await prisma.verificationToken.deleteMany();
-  await prisma.user.deleteMany();
+  // Clear existing data (in reverse order of dependencies)
+  try {
+    await prisma.outline.deleteMany();
+    await prisma.organizationMember.deleteMany();
+    await prisma.organization.deleteMany();
+    await prisma.account.deleteMany();
+    await prisma.session.deleteMany();
+    await prisma.user.deleteMany();
+  } catch (error) {
+    console.log('Note: Some tables may not exist yet, continuing...');
+  }
 
   console.log('Creating users...');
 
@@ -22,7 +24,6 @@ async function main() {
     data: {
       email: 'john@acme.com',
       name: 'John Doe',
-      emailVerified: new Date(),
     },
   });
 
@@ -30,7 +31,6 @@ async function main() {
     data: {
       email: 'jane@acme.com',
       name: 'Jane Smith',
-      emailVerified: new Date(),
     },
   });
 
@@ -38,7 +38,6 @@ async function main() {
     data: {
       email: 'alex@techflow.com',
       name: 'Alex Rivera',
-      emailVerified: new Date(),
     },
   });
 

@@ -1,49 +1,125 @@
-import { AppSidebar } from "@/components/app-sidebar";
-import { Separator } from "@/components/ui/separator";
-import data from "./data.json";
-import { ChartAreaInteractive } from "@/components/charts/chart-area-interactive";
-import { DataTable } from "@/components/data-table/data-table";
-import { SectionCards } from "@/components/section-cards";
+// app/dashboard/page.tsx
+"use client";
 
-export default function Page() {
-  return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
-            />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">
-                    Building Your Application
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </header>
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <SectionCards />
-              <div className="px-4 lg:px-6">
-                <ChartAreaInteractive />
-              </div>
-              <DataTable data={data} />
-            </div>
+import { useOrg } from "@/lib/org-context";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Building2, Plus, Users, FileText, ArrowRight } from "lucide-react";
+import Link from "next/link";
+
+export default function DashboardPage() {
+  const { currentOrg } = useOrg();
+
+  if (!currentOrg) {
+    return (
+      <div className="space-y-6 px-4 lg:px-6">
+        <div className="text-center py-12">
+          <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            No Organization Selected
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Please create or join an organization to get started
+          </p>
+          <div className="flex gap-4 justify-center">
+            <Link href="/organization/create">
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Organization
+              </Button>
+            </Link>
+            <Link href="/organization/join">
+              <Button variant="outline">
+                <Users className="h-4 w-4 mr-2" />
+                Join Organization
+              </Button>
+            </Link>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 px-4 lg:px-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">
+          Welcome to your {currentOrg.name} workspace
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Outlines
+            </CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">Get started by creating outlines</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">1</div>
+            <p className="text-xs text-muted-foreground">Invite more members</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">Complete your first outline</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Common tasks for your workspace</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Link href="/outlines">
+              <Button variant="outline" className="w-full justify-start">
+                <FileText className="h-4 w-4 mr-2" />
+                Manage Outlines
+              </Button>
+            </Link>
+            <Link href="/team">
+              <Button variant="outline" className="w-full justify-start">
+                <Users className="h-4 w-4 mr-2" />
+                Manage Team
+              </Button>
+            </Link>
+            <Link href="/organization/create">
+              <Button variant="outline" className="w-full justify-start">
+                <Building2 className="h-4 w-4 mr-2" />
+                Create New Organization
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

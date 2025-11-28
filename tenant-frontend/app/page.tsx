@@ -10,7 +10,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { FileText, Users, ArrowRight } from "lucide-react";
-import Image from "next/image";
 import { useTheme } from "next-themes";
 import { AnimatedTitle } from "@/components/animated-title";
 import React, { useEffect, useState } from "react";
@@ -19,18 +18,10 @@ import { ThemeToggler } from "@/components/theme-toggler";
 export default function HomePage() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const isDark = mounted && resolvedTheme === "dark";
-  const logoSrc = imageError
-    ? "/images/tenant-light.png"
-    : isDark
-    ? "/images/tenant-dark.png"
-    : "/images/tenant-light.png";
 
   if (!mounted) {
     return (
@@ -99,34 +90,27 @@ export default function HomePage() {
       <div className="relative z-10 min-h-screen">
         <div className="container mx-auto px-4 py-16">
           {/* Hero */}
-          <div className="text-center mb-20">
+          <div className="text-center mb-20 pt-8">
             <div className="flex justify-center">
-              <div className="relative w-48 h-48 sm:w-64 sm:h-64 mb-10">
-                <Image
-                  src={logoSrc}
-                  alt="Tenant Logo"
-                  fill
-                  className="object-contain drop-shadow-2xl"
-                  priority
-                  onError={() => setImageError(true)}
-                />
+              <div className="w-48 h-48 sm:w-64 sm:h-64 mb-10 bg-gradient-to-br from-blue-600 to-blue-800 dark:from-blue-500 dark:to-blue-700 rounded-3xl flex items-center justify-center shadow-2xl">
+                <span className="text-white font-bold text-6xl sm:text-7xl">T</span>
               </div>
             </div>
 
             <AnimatedTitle />
-            <h2 className="text-2xl md:text-4xl font-medium text-gray-800 dark:text-gray-100 mt-8 max-w-5xl mx-auto">
-              <span className="font-bold text-gray-700 dark:text-gray-200">
+            <h2 className="text-2xl md:text-4xl font-medium text-gray-900 dark:text-gray-50 mt-8 max-w-5xl mx-auto">
+              <span className="font-bold text-gray-950 dark:text-white drop-shadow-lg">
                 Tenancy, Connectivity, and Collaboration.
               </span>
             </h2>
-            <p className="text-lg md:text-xl text-gray-700 dark:text-gray-300 mt-6 max-w-4xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-gray-900 dark:text-gray-100 mt-6 max-w-4xl mx-auto leading-relaxed font-medium drop-shadow-md">
               A modern, collaborative multi-tenant platform for team management
               and project outlines.
             </p>
           </div>
 
           {/* Features */}
-          <div className="grid md:grid-cols-3 gap-8 mb-24">
+          <div className="grid md:grid-cols-3 gap-8 mb-24 mt-12">
             <Card className="border-gray-200 dark:border-gray-700 shadow-xl bg-white dark:bg-gray-800">
               <CardHeader>
                 <div className="w-14 h-14 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center mb-4">
@@ -213,11 +197,11 @@ export default function HomePage() {
 
           {/* CTA */}
           <div className="text-center py-16">
-            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-3xl p-12 border border-gray-200 dark:border-gray-700 max-w-3xl mx-auto shadow-2xl">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-6">
+            <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-3xl p-12 border-2 border-gray-300 dark:border-gray-600 max-w-3xl mx-auto shadow-2xl">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-50 mb-6">
                 Ready to get started?
               </h2>
-              <p className="text-xl text-gray-700 dark:text-gray-300 mb-10">
+              <p className="text-xl text-gray-800 dark:text-gray-200 mb-10 font-medium">
                 Join your organization or create a new one to start
                 collaborating with your team.
               </p>
@@ -235,7 +219,7 @@ export default function HomePage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="text-lg px-10 h-14 border-2 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-300"
+                    className="text-lg px-10 h-14 border-2 border-gray-400 dark:border-gray-500 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-500 dark:hover:border-gray-400 transition-all duration-300 font-semibold"
                   >
                     Create Account
                   </Button>
