@@ -12,16 +12,77 @@ import {
 import { FileText, Users, ArrowRight } from "lucide-react";
 import { useTheme } from "next-themes";
 import { AnimatedTitle } from "@/components/animated-title";
-import React, { useEffect, useState } from "react";
-import { ThemeToggler } from "@/components/theme-toggler";
+import { useEffect, useState, useRef } from "react";
+import { Logo } from "@/components/logo";
 
 export default function HomePage() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isOverWave, setIsOverWave] = useState(false);
+  const textRef = useRef<HTMLDivElement>(null);
+  const waveRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!textRef.current || !waveRef.current) return;
+
+      const textRect = textRef.current.getBoundingClientRect();
+      const waveRect = waveRef.current.getBoundingClientRect();
+
+      // Calculate if text is overlapping with the wave's lighter sections
+      const isOverlapping = textRect.bottom > waveRect.top + 100;
+
+      setIsOverWave(isOverlapping);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", handleScroll);
+
+    // Initial check
+    handleScroll();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, []);
+
+  // Get text colors based on theme and wave position
+  const getTextColors = () => {
+    const isDark = resolvedTheme === "dark";
+
+    if (isDark) {
+      // In dark mode, always use white text for best visibility
+      return {
+        title: "text-white",
+        subtitle: "text-white",
+        description: "text-white",
+      };
+    }
+
+    // In light mode, change color based on wave position
+    if (isOverWave) {
+      return {
+        title: "text-gray-900",
+        subtitle: "text-gray-950",
+        description: "text-gray-800",
+      };
+    }
+
+    // Default for light mode when not over wave
+    return {
+      title: "text-white",
+      subtitle: "text-white",
+      description: "text-white",
+    };
+  };
+
+  const textColors = getTextColors();
 
   if (!mounted) {
     return (
@@ -45,14 +106,10 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Theme Toggler */}
-      <div className="fixed top-6 right-6 z-50">
-        <ThemeToggler />
-      </div>
-
       {/* Full-Screen Fixed Wave Background */}
       <div className="fixed inset-0 -z-10 pointer-events-none">
         <svg
+          ref={waveRef}
           className="absolute bottom-0 left-0 w-full h-[120vh]"
           viewBox="0 0 1440 800"
           preserveAspectRatio="xMidYMax slice"
@@ -87,29 +144,38 @@ export default function HomePage() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 min-h-screen">
+      <div className="relative z-10 min-h-screen isolation">
         <div className="container mx-auto px-4 py-16">
-          {/* Hero */}
-          <div className="text-center mb-20 pt-8">
+          <div ref={textRef} className="text-center mb-20 pt-8">
             <div className="flex justify-center">
-              <div className="w-48 h-48 sm:w-64 sm:h-64 mb-10 bg-gradient-to-br from-blue-600 to-blue-800 dark:from-blue-500 dark:to-blue-700 rounded-3xl flex items-center justify-center shadow-2xl">
-                <span className="text-white font-bold text-6xl sm:text-7xl">T</span>
-              </div>
+              <Logo className="w-40 h-40 mb-8" />
             </div>
 
-            <AnimatedTitle />
-            <h2 className="text-2xl md:text-4xl font-medium text-gray-900 dark:text-gray-50 mt-8 max-w-5xl mx-auto">
-              <span className="font-bold text-gray-950 dark:text-white drop-shadow-lg">
+            <AnimatedTitle
+              isOverWave={isOverWave}
+              resolvedTheme={resolvedTheme}
+            />
+
+            {/* Dynamic text color based on theme and wave overlap */}
+            <h2
+              className={`text-2xl md:text-4xl font-medium mt-8 max-w-5xl mx-auto transition-colors duration-300 ${textColors.title}`}
+            >
+              <span
+                className={`font-bold drop-shadow-lg ${textColors.subtitle}`}
+              >
                 Tenancy, Connectivity, and Collaboration.
               </span>
             </h2>
-            <p className="text-lg md:text-xl text-gray-900 dark:text-gray-100 mt-6 max-w-4xl mx-auto leading-relaxed font-medium drop-shadow-md">
+
+            <p
+              className={`text-lg md:text-xl mt-6 max-w-4xl mx-auto leading-relaxed font-medium drop-shadow-md transition-colors duration-300 ${textColors.description}`}
+            >
               A modern, collaborative multi-tenant platform for team management
               and project outlines.
             </p>
           </div>
 
-          {/* Features */}
+          {/* Rest of your content remains the same */}
           <div className="grid md:grid-cols-3 gap-8 mb-24 mt-12">
             <Card className="border-gray-200 dark:border-gray-700 shadow-xl bg-white dark:bg-gray-800">
               <CardHeader>

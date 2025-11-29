@@ -1,4 +1,3 @@
-// components/animated-title.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -7,12 +6,16 @@ interface AnimatedTitleProps {
   text?: string;
   className?: string;
   size?: "sm" | "md" | "lg" | "xl";
+  isOverWave?: boolean;
+  resolvedTheme?: string;
 }
 
 export function AnimatedTitle({
   text = "Tenant Activity",
   className = "",
   size = "lg",
+  isOverWave = false,
+  resolvedTheme = "light",
 }: AnimatedTitleProps) {
   const [displayText, setDisplayText] = useState("");
   const [index, setIndex] = useState(0);
@@ -25,7 +28,19 @@ export function AnimatedTitle({
     xl: "text-7xl sm:text-8xl md:text-9xl",
   };
 
-  // Typing + blinking cursor effect
+  // Get text color based on theme and wave position
+  const getTextColor = () => {
+    const isDark = resolvedTheme === "dark";
+
+    if (isDark) {
+      // In dark mode, always use white text
+      return "text-white";
+    }
+
+    // In light mode, change color based on wave position
+    return isOverWave ? "text-gray-900" : "text-white";
+  };
+
   useEffect(() => {
     if (index < text.length) {
       const timeout = setTimeout(() => {
@@ -35,16 +50,16 @@ export function AnimatedTitle({
       return () => clearTimeout(timeout);
     }
 
-    // Blink cursor when typing is complete
     const interval = setInterval(() => {
       setShowCursor((prev) => !prev);
     }, 530);
     return () => clearInterval(interval);
   }, [index, text]);
 
+  const textColor = getTextColor();
+
   return (
     <div key={text} className="flex justify-center overflow-visible">
-      {/* Classic blinking underscore cursor */}
       <style jsx global>{`
         @keyframes blink-underscore {
           0%,
@@ -60,17 +75,17 @@ export function AnimatedTitle({
       <h1
         className={`
           font-bold tracking-tight whitespace-nowrap
-          text-gray-900 dark:text-gray-50 drop-shadow-lg
+          drop-shadow-lg transition-colors duration-300
+          ${textColor}
           ${sizeClasses[size]}
           ${className}
         `}
       >
         <span className="inline-block">{displayText}</span>
 
-        {/* Blinking Underscore Cursor */}
         <span
           aria-hidden="true"
-          className="inline-block ml-1 align-bottom font-bold text-gray-900 dark:text-gray-50"
+          className={`inline-block ml-1 align-bottom font-bold ${textColor}`}
           style={{
             fontSize: "1.1em",
             lineHeight: "1",
@@ -82,7 +97,6 @@ export function AnimatedTitle({
         </span>
       </h1>
 
-      {/* For screen readers */}
       <span className="sr-only">{text}</span>
     </div>
   );

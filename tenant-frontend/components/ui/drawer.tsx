@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   Sheet,
   SheetTrigger,
@@ -10,48 +10,53 @@ import {
   SheetTitle,
   SheetDescription,
   SheetClose,
-} from "@/components/ui/sheet"
+} from "@/components/ui/sheet";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 // Drawer is a thin alias around Sheet but ensures a solid card background
 function Drawer({ ...props }: React.ComponentProps<typeof Sheet>) {
-  return <Sheet {...props} />
+  return <Sheet {...props} />;
 }
 
-function DrawerTrigger({ ...props }: React.ComponentProps<typeof SheetTrigger>) {
-  return <SheetTrigger {...props} />
+function DrawerTrigger({
+  ...props
+}: React.ComponentProps<typeof SheetTrigger>) {
+  return <SheetTrigger {...props} />;
 }
 
-function DrawerContent({ className, children, ...props }: React.ComponentProps<typeof SheetContentComp>) {
+function DrawerContent({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<typeof SheetContentComp>) {
   // Force an opaque card background so drawers are not transparent over backgrounds
   return (
     <SheetContentComp
-      className={cn(
-        "bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm",
-        className
-      )}
+      className={cn("bg-card backdrop-blur-sm", className)}
       {...props}
     >
       {children}
     </SheetContentComp>
-  )
+  );
 }
 
 function DrawerHeader({ ...props }: React.ComponentProps<typeof SheetHeader>) {
-  return <SheetHeader {...props} />
+  return <SheetHeader {...props} />;
 }
 
 function DrawerFooter({ ...props }: React.ComponentProps<typeof SheetFooter>) {
-  return <SheetFooter {...props} />
+  return <SheetFooter {...props} />;
 }
 
 function DrawerTitle({ ...props }: React.ComponentProps<typeof SheetTitle>) {
-  return <SheetTitle {...props} />
+  return <SheetTitle {...props} />;
 }
 
-function DrawerDescription({ ...props }: React.ComponentProps<typeof SheetDescription>) {
-  return <SheetDescription {...props} />
+function DrawerDescription({
+  ...props
+}: React.ComponentProps<typeof SheetDescription>) {
+  return <SheetDescription {...props} />;
 }
 
 export {
@@ -63,6 +68,6 @@ export {
   DrawerTitle,
   DrawerDescription,
   SheetClose as DrawerClose,
-}
+};
 
-export default Drawer
+export default Drawer;

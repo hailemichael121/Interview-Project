@@ -3,10 +3,11 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-interface Organization {
+export interface Organization {
   id: string;
   name: string;
   role: "owner" | "member";
+  plan: string;
 }
 
 interface OrgContextType {

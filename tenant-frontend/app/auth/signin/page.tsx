@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { AnimatedTitle } from "@/components/animated-title";
 import { useAuthTransition } from "@/components/auth-transition";
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 
 export default function SignInPage() {
   const { navigate, transitionClass } = useAuthTransition();
@@ -88,11 +89,7 @@ export default function SignInPage() {
         {/* Left: Branding */}
         <div className="hidden lg:flex lg:w-1/2 items-center justify-center px-12">
           <div className="text-center max-w-lg">
-            <Link href="/" className="inline-block mb-12">
-              <div className="w-40 h-40 bg-gradient-to-br from-blue-600 to-blue-800 dark:from-blue-500 dark:to-blue-700 rounded-2xl flex items-center justify-center shadow-2xl hover:scale-105 transition-transform duration-300">
-                <span className="text-white font-bold text-5xl">T</span>
-              </div>
-            </Link>
+            <Logo className="w-32 h-32 mx-auto mb-8" />
             <AnimatedTitle text="Welcome Back" size="md" />
             <h2 className="mt-8 text-5xl font-bold text-white drop-shadow-lg">
               Your Workspace Awaits
@@ -114,12 +111,12 @@ export default function SignInPage() {
         {/* Right: Form */}
         <div className="flex-1 flex items-center justify-center py-12 px-6">
           <div className="w-full max-w-md animate-in slide-in-from-left-32 duration-700">
-            <Card className="border-0 shadow-2xl backdrop-blur-xl bg-white/95 dark:bg-gray-900/95">
+            <Card className="border-0 shadow-2xl backdrop-blur-xl">
               <CardHeader className="text-center pb-10">
-                <CardTitle className="text-4xl font-bold text-gray-900 dark:text-gray-50">
+                <CardTitle className="text-4xl font-bold text-black-gray dark:text-milky-white">
                   Sign In
                 </CardTitle>
-                <CardDescription className="text-lg text-gray-700 dark:text-gray-200">
+                <CardDescription className="text-lg text-muted-foreground">
                   Access your workspace instantly
                 </CardDescription>
               </CardHeader>
@@ -130,12 +127,12 @@ export default function SignInPage() {
                       Email
                     </Label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-3.5 h-5 w-5 text-gray-600 dark:text-gray-300" />
+                      <Mail className="absolute left-4 top-3.5 h-5 w-5 icon-muted" />
                       <Input
                         required
                         type="email"
                         placeholder="you@company.com"
-                        className="pl-12 h-14 text-base bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                        className="pl-12 h-14 text-base input-default border-light-300 text-black-gray dark:text-milky-white placeholder:text-muted-foreground"
                         value={formData.email}
                         onChange={(e) =>
                           setFormData({ ...formData, email: e.target.value })
@@ -149,12 +146,12 @@ export default function SignInPage() {
                       Password
                     </Label>
                     <div className="relative">
-                      <Lock className="absolute left-4 top-3.5 h-5 w-5 text-gray-600 dark:text-gray-300" />
+                      <Lock className="absolute left-4 top-3.5 h-5 w-5 icon-muted" />
                       <Input
                         required
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="pl-12 pr-14 h-14 text-base bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                        className="pl-12 pr-14 h-14 text-base input-default border-light-300 text-black-gray dark:text-milky-white placeholder:text-muted-foreground"
                         value={formData.password}
                         onChange={(e) =>
                           setFormData({ ...formData, password: e.target.value })
@@ -164,7 +161,7 @@ export default function SignInPage() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute right-2 top-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+                        className="absolute right-2 top-2 icon-muted hover-light-100"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (

@@ -1,71 +1,82 @@
 @import "tailwindcss";
 
-
-/* --- Light Mode Brand Palette --- */
+/* --- Light Mode: Milky White Background with Black/Dark Gray Text --- */
 :root {
-  /* Light mode: white backgrounds with dark text */
-  --background: 0 0% 100%; /* pure white */
-  --foreground: 210 10% 10%; /* near black / dark gray */
+  /* Light mode: milky white backgrounds with black/dark gray text */
+  --background: 0 0% 98%; /* milky white */
+  --foreground: 0 0% 10%; /* near black */
 
-  --card: 0 0% 100%; /* white */
-  --card-foreground: 210 10% 10%; /* dark text for cards */
+  --card: 0 0% 100%; /* pure white cards */
+  --card-foreground: 0 0% 10%; /* black text for cards */
 
   --popover: 0 0% 100%;
-  --popover-foreground: 210 10% 10%;
+  --popover-foreground: 0 0% 10%;
 
-  --primary: 220 14% 18%; /* deep slate for accents */
-  --primary-foreground: 0 0% 100%; /* white text on primary */
+  --primary: 0 0% 15%; /* dark gray for primary elements */
+  --primary-foreground: 0 0% 98%; /* milky white text on primary */
 
-  --secondary: 210 21% 45%; /* complementary slate */
-  --secondary-foreground: 0 0% 100%;
+  --secondary: 0 0% 90%; /* light gray for secondary */
+  --secondary-foreground: 0 0% 15%; /* dark gray text */
 
-  --muted: 210 16% 74%; /* light muted gray */
-  --muted-foreground: 210 10% 30%;
+  --muted: 0 0% 85%; /* muted light gray */
+  --muted-foreground: 0 0% 40%; /* medium gray text */
 
-  --accent: 210 16% 74%;
-  --accent-foreground: 210 10% 10%;
+  --accent: 0 0% 90%; /* light gray accent */
+  --accent-foreground: 0 0% 15%; /* dark gray text */
 
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
 
-  --border: 210 16% 90%; /* very light border */
-  --input: 210 16% 96%;
-  --ring: 220 14% 18%;
+  --border: 0 0% 80%; /* light gray borders */
+  --input: 0 0% 95%; /* very light gray inputs */
+  --ring: 0 0% 15%; /* dark gray focus ring */
 
   --radius: 0.5rem;
 
-  --brand-deep-steel: #0f1724;
-  --brand-white: #ffffff;
+  /* Light mode hover/active colors */
+  --hover-100: 0 0% 96%; /* near white light hover */
+  --hover-200: 0 0% 93%; /* light gray hover */
+  --active-200: 0 0% 93%; /* active light */
+  --border-gray-300: 0 0% 82%; /* border light shade (maps to #d1d1d1) */
+  --text-black-gray: 0 0% 10%; /* #1a1a1a mapped as CSS var */
 }
 
-/* --- Dark Mode Brand Palette --- */
+/* --- Dark Mode: Gray Base with White/Milky White Text --- */
 .dark {
-  /* Dark mode: gray base with white foreground */
-  --background: 220 11% 12%; /* deep gray */
-  --foreground: 210 40% 98%; /* white */
+  /* Dark mode: gray base with white/milky white text */
+  --background: 0 0% 15%; /* dark gray background */
+  --foreground: 0 0% 98%; /* milky white text */
 
-  --card: 220 11% 16%; /* slightly lighter than background */
-  --card-foreground: 210 40% 98%;
+  --card: 0 0% 20%; /* slightly lighter gray cards */
+  --card-foreground: 0 0% 98%; /* milky white text */
 
-  --popover: 220 11% 16%;
-  --popover-foreground: 210 40% 98%;
+  --popover: 0 0% 20%;
+  --popover-foreground: 0 0% 98%;
 
-  --primary: 210 40% 98%;
-  --primary-foreground: 220 11% 12%;
+  --primary: 0 0% 98%; /* milky white primary */
+  --primary-foreground: 0 0% 15%; /* dark gray background */
 
-  --secondary: 217 20% 30%;
-  --secondary-foreground: 210 40% 98%;
+  --secondary: 0 0% 30%; /* medium gray secondary */
+  --secondary-foreground: 0 0% 98%; /* milky white text */
 
-  --muted: 217 20% 30%;
-  --muted-foreground: 210 40% 98%;
+  --muted: 0 0% 25%; /* dark muted gray */
+  --muted-foreground: 0 0% 70%; /* light gray text */
 
-  --accent: 217 20% 30%;
-  --accent-foreground: 210 40% 98%;
+  --accent: 0 0% 30%; /* medium gray accent */
+  --accent-foreground: 0 0% 98%; /* milky white text */
 
-  --border: 217 20% 22%;
-  --input: 217 20% 22%;
-  --ring: 210 40% 98%;
+  --border: 0 0% 35%; /* medium-dark gray borders */
+  --input: 0 0% 25%; /* dark gray inputs */
+  --ring: 0 0% 98%; /* milky white focus ring */
+
+  /* Dark mode hover/active colors */
+  --hover-700: 0 0% 30%; /* dark hover */
+  --hover-800: 0 0% 25%; /* darker hover */
+  --active-700: 0 0% 30%; /* active dark */
+  --border-gray-600: 0 0% 35%; /* border dark shade (maps to #6b6b6b) */
+  --text-milky-white: 0 0% 98%; /* #fafafa mapping */
 }
+
 /* Global styles */
 * {
   border-color: hsl(var(--border));
@@ -74,11 +85,95 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  /* Ensure font-sans is properly defined, typically through Tailwind */
-  /* font-family: var(--font-sans); */
 }
 
 @keyframes blink {
   from, to { border-right-color: transparent }
   50% { border-right-color: currentColor; }
 }
+
+/* Additional utility classes for the new palette */
+.bg-milky-white {
+  background-color: hsl(0 0% 98%);
+}
+
+.text-black-gray {
+  color: hsl(0 0% 10%);
+}
+
+.bg-dark-gray {
+  background-color: hsl(0 0% 15%);
+}
+
+.text-milky-white {
+  color: hsl(0 0% 98%);
+}
+
+/* New theme-aware utilities to expose hover/active & border colors */
+.border-default {
+  border-color: hsl(var(--border));
+}
+
+.border-light-300 {
+  border-color: hsl(var(--border-gray-300, 0 0% 82%));
+}
+.dark .border-light-300 {
+  border-color: hsl(var(--border-gray-600, 0 0% 35%));
+}
+
+/* Hover and active utilities (use on interactive areas like rows / buttons) */
+.hover-light-100:hover {
+  background-color: hsl(var(--hover-100));
+}
+.hover-light-200:hover {
+  background-color: hsl(var(--hover-200));
+}
+.active-light-200:active {
+  background-color: hsl(var(--active-200));
+}
+
+.dark .hover-light-100:hover {
+  background-color: hsl(var(--hover-700));
+}
+.dark .hover-light-200:hover {
+  background-color: hsl(var(--hover-800));
+}
+.dark .active-light-200:active {
+  background-color: hsl(var(--active-700));
+}
+
+/* Utility classes to ensure text color respects theme and active states */
+.text-default {
+  color: hsl(var(--foreground));
+}
+.dark .text-default {
+  color: hsl(var(--foreground));
+}
+
+/* Search/input focused states that map to ring/input variables already defined */
+.focus-ring-visible:focus-visible {
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.04);
+}
+
+/* Small helpers for search input icons color to follow variable mapping */
+.icon-muted { color: hsl(var(--muted-foreground)); }
+.dark .icon-muted { color: hsl(var(--muted-foreground)); }
+
+/* Make sure base input and interactive controls are theme aware */
+.input-default {
+  background-color: hsl(var(--input));
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+.dark .input-default {
+  background-color: hsl(var(--input));
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+.bg-light-100 { background-color: hsl(var(--hover-100)); }
+.bg-light-200 { background-color: hsl(var(--hover-200)); }
+.active-bg-light-200:active { background-color: hsl(var(--active-200)); }
+.dark .bg-light-100 { background-color: hsl(var(--hover-700)); }
+.dark .bg-light-200 { background-color: hsl(var(--hover-800)); }
+.dark .active-bg-light-200:active { background-color: hsl(var(--active-700)); }
