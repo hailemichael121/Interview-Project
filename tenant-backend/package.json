@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "npm run prisma:generate && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -15,7 +15,9 @@
     "vercel-build": "prisma generate && nest build",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "vercel-dev": "npx vercel dev",
+    "vercel-deploy": "npx vercel --prod"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
@@ -38,9 +40,11 @@
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.7",
+    "express": "^5.1.0",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
     "reflect-metadata": "^0.2.2",
+    "rimraf": "^6.0.1",
     "rxjs": "^7.8.1",
     "tsx": "^4.20.6"
   },
