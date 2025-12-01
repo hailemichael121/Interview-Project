@@ -1,19 +1,22 @@
-@baseUrl = https://tenanncy-backend.vercel.app/
-@frontendUrl = https://tenanncy.vercel.app/
+@baseUrl = https://tenant-backend-cz23.onrender.com
+@frontendUrl = https://tenanncy.vercel.app
 @contentType = application/json
 
 ###
-# DYNAMIC VARIABLES (captured from test responses)
+# DYNAMIC VARIABLES (will be set from responses)
 ###
 
-@authToken =v9WrePxssrSHIFXSuOMMvG4hPYRQs8CQ.Z1o7LCr41hpsIantC9YveKYK2qbFZNP0PofCBBWlcBA%3D
-@userId = SaSO5KXwJhcIdS193zP8cvEUDJp7SkZ5
-@organizationId = cmimwxehq0002lc6x8o2rjsw0
-@outlineId = cmimwoqvq0002s06xrfu42da1
-@inviteToken = bjmajlxltamim9pycw
-@invitedEmail = yihunaashe@gmail.com
-@memberUserId = cmima4wn400094x6666xwhz3g
-@memberId = <capture-from-user-profile>
+# These will be captured from responses
+@authToken = 
+@userId = 
+@organizationId = 
+@outlineId = 
+@inviteToken = 
+@memberId = 
+
+# Default test user credentials
+@testEmail = yihunashe@gmail.com
+@testPassword = password123
 
 ###
 # 0. HEALTH CHECKS
@@ -27,7 +30,7 @@ GET {{baseUrl}}/
 
 GET {{baseUrl}}/api/auth/session
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
+Accept: {{contentType}}
 
 ###
 # 1. AUTH — SIGN UP (new user)
@@ -39,8 +42,8 @@ Content-Type: {{contentType}}
 
 {
   "name": "Yihun Shekuri",
-  "email": "yihunashe@gmail.com",
-  "password": "password123"
+  "email": "{{testEmail}}",
+  "password": "{{testPassword}}"
 }
 
 ###
@@ -52,9 +55,19 @@ Origin: {{frontendUrl}}
 Content-Type: {{contentType}}
 
 {
-  "email": "yihunashe@gmail.com",
-  "password": "password123"
+  "email": "{{testEmail}}",
+  "password": "{{testPassword}}"
 }
+###
+> {%
+    // Capture the session token from Set-Cookie header
+    client.global.set("authToken", response.headers.valueOf("Set-Cookie").split(";")[0].split("=")[1]);
+    
+    // Parse user ID from response if available
+    if (response.body.success && response.body.data) {
+        client.global.set("userId", response.body.data.user?.id || "");
+    }
+%}
 
 ###
 # 2. USER — GET CURRENT USER PROFILE (with memberships)
@@ -62,7 +75,15 @@ Content-Type: {{contentType}}
 
 GET {{baseUrl}}/users/me
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
+
+> {%
+    // Capture organization ID if available
+    if (response.body.success && response.body.data?.context?.currentOrganizationId) {
+        client.global.set("organizationId", response.body.data.context.currentOrganizationId);
+    }
+%}
 
 ###
 # 2.1 USER — GET DETAILED PROFILE
@@ -70,6 +91,7 @@ Cookie: better-auth.session_token={{authToken}}
 
 GET {{baseUrl}}/users/profile
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
 
 ###
@@ -78,8 +100,8 @@ Cookie: better-auth.session_token={{authToken}}
 
 PUT {{baseUrl}}/users/profile
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
 Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
 
 {
   "name": "Yihun Shekuri Updated",
@@ -87,27 +109,30 @@ Content-Type: {{contentType}}
 }
 
 ###
-# 2.3 USER — GET USER BY ID
+# 2.3 USER — GET USER BY ID (ADMIN ONLY)
 ###
 
 GET {{baseUrl}}/users/{{userId}}
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
 
 ###
-# 2.4 USER — LIST ALL USERS
+# 2.4 USER — LIST ALL USERS (ADMIN ONLY)
 ###
 
 GET {{baseUrl}}/users
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
 
 ###
-# 2.5 USER — SEARCH USERS
+# 2.5 USER — SEARCH USERS (ADMIN ONLY)
 ###
 
 GET {{baseUrl}}/users/search/yihun
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
 
 ###
@@ -116,13 +141,19 @@ Cookie: better-auth.session_token={{authToken}}
 # @name createOrganization
 POST {{baseUrl}}/api/organization/create
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
 Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
 
 {
   "name": "Sharuk Khan PLC",
   "slug": "sharuk-khan-plc"
 }
+
+> {%
+    if (response.body.success && response.body.data) {
+        client.global.set("organizationId", response.body.data.id);
+    }
+%}
 
 ###
 # 3.1 ORGANIZATION — LIST USER ORGANIZATIONS
@@ -130,6 +161,7 @@ Content-Type: {{contentType}}
 
 GET {{baseUrl}}/api/organization
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
 
 ###
@@ -138,6 +170,7 @@ Cookie: better-auth.session_token={{authToken}}
 
 GET {{baseUrl}}/api/organization/{{organizationId}}
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
 
 ###
@@ -146,8 +179,9 @@ Cookie: better-auth.session_token={{authToken}}
 
 PUT {{baseUrl}}/api/organization/{{organizationId}}
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
 Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
 
 {
   "name": "Sharuk Khan PLC Updated",
@@ -160,8 +194,8 @@ Content-Type: {{contentType}}
 
 POST {{baseUrl}}/api/organization/{{organizationId}}/switch
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
 Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
 
 ###
 # 4. ORGANIZATION MEMBERS — LIST
@@ -169,7 +203,9 @@ Content-Type: {{contentType}}
 
 GET {{baseUrl}}/api/organization/{{organizationId}}/members
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
 
 ###
 # 4.1 ORGANIZATION — INVITE MEMBER
@@ -177,13 +213,20 @@ Cookie: better-auth.session_token={{authToken}}
 # @name inviteMember
 POST {{baseUrl}}/api/organization/{{organizationId}}/invite
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
 Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
 
 {
   "email": "testuser@example.com",
   "role": "MEMBER"
 }
+
+> {%
+    if (response.body.success && response.body.data) {
+        client.global.set("inviteToken", response.body.data.token);
+    }
+%}
 
 ###
 # 4.2 ORGANIZATION — ACCEPT INVITE
@@ -192,9 +235,10 @@ Content-Type: {{contentType}}
 POST {{baseUrl}}/api/organization/accept-invite/{{inviteToken}}
 Origin: {{frontendUrl}}
 Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
 
 {
-  "email": "yihunashe@gmail.com"
+  "email": "{{testEmail}}"
 }
 
 ###
@@ -203,11 +247,12 @@ Content-Type: {{contentType}}
 
 POST {{baseUrl}}/api/organization/{{organizationId}}/revoke
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
 Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
 
 {
-  "targetMemberId": "{{memberUserId}}"
+  "targetMemberId": "{{memberId}}"
 }
 
 ###
@@ -216,6 +261,7 @@ Content-Type: {{contentType}}
 
 GET {{baseUrl}}/users/invitations
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
 
 ###
@@ -224,11 +270,11 @@ Cookie: better-auth.session_token={{authToken}}
 
 POST {{baseUrl}}/users/invitations/{{inviteToken}}/accept
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
 Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
 
 {
-  "email": "yihunashe@gmail.com"
+  "email": "{{testEmail}}"
 }
 
 ###
@@ -237,21 +283,22 @@ Content-Type: {{contentType}}
 
 POST {{baseUrl}}/users/invitations/{{inviteToken}}/decline
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
 Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
 
 {
-  "email": "yihunashe@gmail.com"
+  "email": "{{testEmail}}"
 }
 
 ###
-# 6. OUTLINES — CREATE
+# 6. OUTLINES — CREATE (requires organization context)
 ###
 # @name createOutline
 POST {{baseUrl}}/api/outlines
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
 Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
 
 {
   "header": "Project Proposal Document",
@@ -259,11 +306,16 @@ Content-Type: {{contentType}}
   "status": "IN_PROGRESS",
   "target": 5000,
   "limit": 6000,
-  "reviewerId": null,
-  "organizationId": "{{organizationId}}"
+  "reviewerId": null
 }
 
-### Valid Section Types:
+> {%
+    if (response.body.success && response.body.data) {
+        client.global.set("outlineId", response.body.data.id);
+    }
+%}
+
+# Valid Section Types:
 # TABLE_OF_CONTENTS, EXECUTIVE_SUMMARY, TECHNICAL_APPROACH, 
 # DESIGN, CAPABILITIES, FOCUS_DOCUMENT, NARRATIVE
 
@@ -273,7 +325,9 @@ Content-Type: {{contentType}}
 
 GET {{baseUrl}}/api/outlines
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
 
 ###
 # 6.2 OUTLINES — GET SINGLE
@@ -281,7 +335,9 @@ Cookie: better-auth.session_token={{authToken}}
 
 GET {{baseUrl}}/api/outlines/{{outlineId}}
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
 
 ###
 # 6.3 OUTLINES — UPDATE
@@ -289,8 +345,9 @@ Cookie: better-auth.session_token={{authToken}}
 
 PUT {{baseUrl}}/api/outlines/{{outlineId}}
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
 Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
 
 {
   "header": "Updated Project Proposal",
@@ -305,7 +362,9 @@ Content-Type: {{contentType}}
 
 DELETE {{baseUrl}}/api/outlines/{{outlineId}}
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
 
 ###
 # 6.5 OUTLINES — GET ORGANIZATION STATS
@@ -313,7 +372,9 @@ Cookie: better-auth.session_token={{authToken}}
 
 GET {{baseUrl}}/api/outlines/organization/stats
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
 
 ###
 # 6.6 OUTLINES — GET ASSIGNED AS REVIEWER
@@ -321,7 +382,9 @@ Cookie: better-auth.session_token={{authToken}}
 
 GET {{baseUrl}}/api/outlines/reviewer/assigned
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
 
 ###
 # 6.7 OUTLINES — GET MY CREATED OUTLINES
@@ -329,7 +392,9 @@ Cookie: better-auth.session_token={{authToken}}
 
 GET {{baseUrl}}/api/outlines/creator/my-outlines
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
 
 ###
 # 7. USER — GET USER ORGANIZATIONS (with pagination)
@@ -337,29 +402,29 @@ Cookie: better-auth.session_token={{authToken}}
 
 GET {{baseUrl}}/users/{{userId}}/organizations?page=1&perPage=10
 Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
 
 ###
-# 8. USER — SOFT DELETE USER
+# 8. USER — SOFT DELETE USER (ADMIN ONLY)
 ###
 
 DELETE {{baseUrl}}/users/{{userId}}
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
-
-###
-# 9. TEST HEADERS FOR ORGANIZATION CONTEXT
-###
-
-# This requires X-Organization-Id header
-POST {{baseUrl}}/api/outlines
-Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
-X-Organization-Id: {{organizationId}}
 Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+
+###
+# 9. TEST WITH QUERY PARAM FOR ORGANIZATION CONTEXT
+###
+
+POST {{baseUrl}}/api/outlines?organizationId={{organizationId}}
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
 
 {
-  "header": "Test with Header Organization",
+  "header": "Test with Query Organization",
   "sectionType": "EXECUTIVE_SUMMARY",
   "target": 1000,
   "limit": 1200
@@ -371,8 +436,8 @@ Content-Type: {{contentType}}
 
 POST {{baseUrl}}/api/outlines
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
 Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
 
 {
   "header": "Test without Organization",
@@ -380,3 +445,23 @@ Content-Type: {{contentType}}
   "target": 1000,
   "limit": 1200
 }
+
+###
+# 11. GET USER MEMBERSHIPS FROM PROFILE
+###
+
+GET {{baseUrl}}/users/profile
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+
+> {%
+    // Capture memberId from profile if needed
+    if (response.body.success && response.body.data?.memberships && response.body.data.memberships.length > 0) {
+        // Get the first membership ID for the current organization
+        const membership = response.body.data.memberships.find(m => m.organization.id === client.global.get("organizationId"));
+        if (membership) {
+            client.global.set("memberId", membership.memberId);
+        }
+    }
+%}
