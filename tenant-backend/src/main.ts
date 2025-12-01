@@ -1,12 +1,12 @@
-// Load environment variables FIRST
+// src/main.ts
 import 'dotenv/config';
-
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import * as express from 'express';
+import cookieParser from 'cookie-parser'; // ✅ ESM-compatible import
 
 async function bootstrap() {
-  // Verify environment variables are loaded
   console.log('🔧 Environment check:');
   console.log(
     '   DATABASE_URL:',
@@ -25,26 +25,44 @@ async function bootstrap() {
     process.env.FRONTEND_URL ? '✅ Loaded' : '❌ Missing',
   );
 
-  const app = await NestFactory.create(AppModule);
+  // Create Nest app
+  const app = await NestFactory.create(AppModule, {
+    bodyParser: false, // we handle body parsing manually
+  });
 
-  // Use JSON parser for ALL routes
+  // Global validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // strip unknown properties
+      transform: true, // auto-transform payloads
+    }),
+  );
+
+  // JSON parser
   app.use(express.json({ limit: '10mb' }));
 
-  // Enable CORS
+  // Cookie parser (required for Better Auth session)
+  app.use(cookieParser());
+
+  // CORS configuration
   app.enableCors({
     origin: [
       process.env.FRONTEND_URL || 'http://localhost:3001',
       'http://localhost:3000',
-      'http://localhost:3001',
     ],
-    credentials: true,
+    credentials: true, // ✅ allow cookies
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   });
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(
-    `🚀 Server running on http://localhost:${process.env.PORT ?? 3000}`,
-  );
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+
+  console.log(`🚀 Server running on http://localhost:${port}`);
+  console.log(`🔐 Auth: http://localhost:${port}/api/auth`);
+  console.log(`👤 Users: http://localhost:${port}/users`);
+  console.log(`📝 Outlines: http://localhost:${port}/api/outlines`);
+  console.log(`👥 Team: http://localhost:${port}/api/team`);
 }
-bootstrap();
+
+void bootstrap();

@@ -1,12 +1,12 @@
+// src/outlines/outlines.module.ts
 import { Module } from '@nestjs/common';
-import { OutlinesService } from './outlines.service';
 import { OutlinesController } from './outlines.controller';
-import { AuthModule } from '../auth/auth.module';
+import { OutlinesService } from './outlines.service';
+import { PrismaService } from '../lib/prisma.service';
 
 @Module({
-  imports: [AuthModule],
-  providers: [OutlinesService],
   controllers: [OutlinesController],
+  providers: [OutlinesService, PrismaService],
   exports: [OutlinesService],
 })
 export class OutlinesModule {}

@@ -2,112 +2,179 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
-// Create connection pool and adapter for seed
+// Create Prisma client with adapter (same as your PrismaService)
 const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL environment variable is required');
+}
+
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
-
-const prisma = new PrismaClient({
-  adapter: adapter, // Add the adapter here
-});
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log('Starting seed...');
 
   // Clear existing data (in reverse order of dependencies)
   try {
+    console.log('Clearing existing data...');
     await prisma.outline.deleteMany();
+    await prisma.invitationLog.deleteMany();
+    await prisma.organizationInvite.deleteMany();
     await prisma.organizationMember.deleteMany();
     await prisma.organization.deleteMany();
+    await prisma.reviewer.deleteMany();
     await prisma.account.deleteMany();
     await prisma.session.deleteMany();
+    await prisma.verificationToken.deleteMany();
     await prisma.user.deleteMany();
-  } catch {
-    console.log('Note: Some tables may not exist yet, continuing...');
+  } catch (error) {
+    console.log('Note: Some tables may be empty, continuing...');
   }
 
-  console.log('Creating users...');
+  console.log('Creating test users...');
 
-  const john = await prisma.user.create({
+  // Create Test User (Owner) - now includes role and tenantId
+  const testUserOwner = await prisma.user.create({
     data: {
-      email: 'john@acme.com',
-      name: 'John Doe',
+      email: 'testy@example.com',
+      name: 'Test User',
+      role: 'OWNER',
+      tenantId: 'tenant-owner',
+      banned: false,
+      emailVerified: true,
     },
   });
 
-  const jane = await prisma.user.create({
+  // Create Test User (Member) - now includes role and tenantId
+  const testUserMember = await prisma.user.create({
     data: {
-      email: 'jane@acme.com',
-      name: 'Jane Smith',
-    },
-  });
-
-  const alex = await prisma.user.create({
-    data: {
-      email: 'alex@techflow.com',
-      name: 'Alex Rivera',
+      email: 'test@example.com',
+      name: 'Testy User',
+      role: 'MEMBER',
+      tenantId: 'tenant-member',
+      banned: false,
+      emailVerified: true,
     },
   });
 
   console.log('Creating organizations...');
 
-  const acme = await prisma.organization.create({
-    data: { name: 'Acme Corp', slug: 'acme-corp' },
-  });
-
-  const techflow = await prisma.organization.create({
-    data: { name: 'TechFlow', slug: 'techflow' },
+  // Create organization for Test User (Owner)
+  const testOrg = await prisma.organization.create({
+    data: {
+      name: 'Test Organization',
+      slug: 'test-org',
+    },
   });
 
   console.log('Creating organization members...');
 
-  await prisma.organizationMember.createMany({
-    data: [
-      { userId: john.id, organizationId: acme.id, role: 'owner' },
-      { userId: jane.id, organizationId: acme.id, role: 'member' },
-      { userId: alex.id, organizationId: techflow.id, role: 'owner' },
-      { userId: john.id, organizationId: techflow.id, role: 'member' },
-    ],
+  // Add Test User as OWNER of the organization
+  const ownerMember = await prisma.organizationMember.create({
+    data: {
+      userId: testUserOwner.id,
+      organizationId: testOrg.id,
+      role: 'OWNER',
+    },
   });
 
-  console.log('Creating outlines...');
+  // Add Test User as MEMBER of the organization
+  const memberMember = await prisma.organizationMember.create({
+    data: {
+      userId: testUserMember.id,
+      organizationId: testOrg.id,
+      role: 'MEMBER',
+    },
+  });
 
+  console.log('Creating invitation for member...');
+
+  // Create an invitation for the member user (for demonstration)
+  const invitationToken = 'invite-' + Date.now();
+  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+  await prisma.organizationInvite.create({
+    data: {
+      organizationId: testOrg.id,
+      email: 'another-user@example.com', // Different email for demo
+      role: 'MEMBER',
+      token: invitationToken,
+      expires: expires,
+      invitedById: ownerMember.id,
+    },
+  });
+
+  // Create invitation log
+  await prisma.invitationLog.create({
+    data: {
+      inviteToken: invitationToken,
+      invitedEmail: 'another-user@example.com',
+      organizationId: testOrg.id,
+      inviterMemberId: ownerMember.id,
+      status: 'PENDING',
+    },
+  });
+
+  console.log('Creating sample outlines...');
+
+  // Create some sample outlines for the organization
   await prisma.outline.createMany({
     data: [
       {
-        header: 'Executive Summary',
+        header: 'Project Executive Summary',
         sectionType: 'EXECUTIVE_SUMMARY',
         status: 'COMPLETED',
         target: 120,
         limit: 100,
-        reviewer: 'ASSIM',
-        organizationId: acme.id,
-        userId: john.id,
+        organizationId: testOrg.id,
+        createdByMemberId: ownerMember.id,
       },
       {
-        header: 'Technical Approach',
+        header: 'Technical Implementation Plan',
         sectionType: 'TECHNICAL_APPROACH',
         status: 'IN_PROGRESS',
         target: 200,
         limit: 180,
-        reviewer: 'BINI',
-        organizationId: acme.id,
-        userId: jane.id,
+        organizationId: testOrg.id,
+        createdByMemberId: ownerMember.id,
       },
       {
-        header: 'System Design',
+        header: 'System Architecture Design',
         sectionType: 'DESIGN',
         status: 'PENDING',
         target: 150,
         limit: 0,
-        reviewer: 'MAMI',
-        organizationId: techflow.id,
-        userId: alex.id,
+        organizationId: testOrg.id,
+        createdByMemberId: ownerMember.id,
       },
     ],
   });
 
   console.log('Seed completed successfully!');
+  console.log('==============================');
+  console.log('Test Users Created:');
+  console.log(`- Owner: ${testUserOwner.email} (${testUserOwner.name})`);
+  console.log(`  User ID: ${testUserOwner.id}`);
+  console.log(`  Role: ${testUserOwner.role || 'user'}`);
+  console.log(`  Tenant ID: ${testUserOwner.tenantId || 'none'}`);
+  console.log(`- Member: ${testUserMember.email} (${testUserMember.name})`);
+  console.log(`  User ID: ${testUserMember.id}`);
+  console.log(`  Role: ${testUserMember.role || 'user'}`);
+  console.log(`  Tenant ID: ${testUserMember.tenantId || 'none'}`);
+  console.log(`Organization: ${testOrg.name} (${testOrg.slug})`);
+  console.log(`Organization ID: ${testOrg.id}`);
+  console.log(`Invitation Token: ${invitationToken}`);
+  console.log('==============================');
+  console.log(
+    'IMPORTANT: These users can sign up but cannot sign in with email/password',
+  );
+  console.log(
+    'because they were created directly in the database without authentication setup.',
+  );
+  console.log(
+    'Use the sign-up endpoint to create users that can actually log in.',
+  );
 }
 
 main()

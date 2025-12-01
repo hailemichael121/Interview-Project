@@ -1,148 +1,238 @@
-###
-# Root - Health check
-GET http://localhost:3000/
-### Test session endpoint (should work without auth)
-GET http://localhost:3000/api/auth/session
-Content-Type: application/json
+@baseUrl = http://localhost:3000
+@frontendUrl = http://localhost:3001
+@contentType = application/json
 
-### Test if Better Auth is responding
-GET http://localhost:3000/api/auth
 ###
-# Better Auth: Sign up (Email + Password)
-POST http://localhost:3000/api/auth/sign-up/email
-Content-Type: application/json
-Origin: http://localhost:3001
+# DYNAMIC VARIABLES (captured from test responses)
+###
+
+@authToken =9dgzPySwIaZSZg19Q6T9H8KlcKT4Ip1g
+@userId =9dgzPySwIaZSZg19Q6T9H8KlcKT4Ip1g
+@organizationId =cmim923560000tu66aytr29ej
+@outlineId =cmim95avd0002tu66w54n514q
+@inviteToken =bjmajlxltamim9pycw
+@invitedEmail =yihunaashe@gmail.com
+@memberUserId =cmima4wn400094x6666xwhz3g
+
+###
+# 0. HEALTH CHECKS
+###
+
+GET {{baseUrl}}/
+ 
+###
+GET {{baseUrl}}/api/auth/session
+Origin: {{frontendUrl}}
+Cookie: better-auth.session_token={{authToken}}
+Content-Type: {{contentType}}
+
+###
+# 1. AUTH — SIGN IN (fixed test account)
+###
+
+# @name signIn
+POST {{baseUrl}}/api/auth/sign-in/email
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 
 {
-  "name": "Test User",
-  "email": "testy@example.com",
+  "email": "testuser_1764535688@example.com",
   "password": "password123"
 }
 
 ###
-# Better Auth: Sign in (Email + Password)
-POST http://localhost:3000/api/auth/sign-in/email
-Content-Type: application/json
-Origin: http://localhost:3001
-
+# 1.1 AUTH — SIGN UP (new test account)
+###
+# @name signUp
+POST {{baseUrl}}/api/auth/sign-up/email
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 
 {
-  "email": "test@example.com",
+  "name": "yihun Shekuri",
+  "email": "yihunaashe@gmail.com",
   "password": "password123"
 }
 
 ###
-# Better Auth: Get session (requires Cookie from sign-in)
-GET http://localhost:3000/api/auth/session
-Accept: application/json
-# Copy cookie from the Set-Cookie response of sign-in and paste here to test session retrieval
-# Cookie: better-auth-session=...; path=/; HttpOnly
-
+# 1.2 AUTH — SIGN IN (new test account)
 ###
-# Better Auth: Create Organization (requires authenticated session)
-POST http://localhost:3000/api/auth/organization/create
-Content-Type: application/json
-# Use cookie from sign-in OR the fallback headers below
-# Cookie: better-auth-session=...
+# @name signIn
+POST {{baseUrl}}/api/auth/sign-in/email
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
 
 {
-  "name": "Test Organization",
-  "slug": "test-organization"
+  "email": "yihunaashe@gmail.com",
+  "password": "password123"
 }
 
 ###
-# Create Outline (Authenticated via fallback headers)
-POST http://localhost:3000/api/outlines
-Content-Type: application/json
-# HEADER AUTH Fallback (if you don't have a Better Auth cookie):
-# x-user-id: REPLACE_WITH_USER_ID
-# x-organization-id: REPLACE_WITH_ORGANIZATION_ID
+# 2. AUTH — GET SESSION (authenticated)
+###
+
+GET {{baseUrl}}/api/auth/session
+Origin: {{frontendUrl}}
+Cookie: better-auth.session_token={{authToken}}
+
+###
+# 3. ORGANIZATION — CREATE
+###
+
+# @name createOrganization
+POST {{baseUrl}}/api/organization/create
+Origin: {{frontendUrl}}
+Cookie: better-auth.session_token={{authToken}}
+Content-Type: {{contentType}}
 
 {
-  "header": "Example Outline",
-  "sectionType": "NARRATIVE",
-  "status": "PENDING",
-  "target": 3,
-  "limit": 5,
-  "reviewer": "ASSIM"
+  "name": "Sharuk Khan Organization",        
+  "slug": "sharuk-khan-organization"         
+}
+ 
+###
+# 4. ORGANIZATION — LIST USER ORGANIZATIONS
+###
+
+GET {{baseUrl}}/api/organization
+Origin: {{frontendUrl}}
+Cookie: better-auth.session_token={{authToken}}
+
+###
+# 5. OUTLINES — CREATE
+###
+
+# @name createOutline
+POST {{baseUrl}}/api/outlines
+Origin: {{frontendUrl}}
+Cookie: better-auth.session_token={{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "header": "Sharuk Khan 2",       
+  "sectionType": "TECHNICAL_APPROACH",   
+  "status": "IN_PROGRESS",        
+  "target": 100,         
+  "limit": 230,        
+  "reviewerId": null    
+}
+###TABLE_OF_CONTENTS, EXECUTIVE_SUMMARY, TECHNICAL_APPROACH, DESIGN, CAPABILITIES, FOCUS_DOCUMENT, NARRATIVE
+
+###
+# 6. OUTLINES — LIST
+###
+
+GET {{baseUrl}}/api/outlines
+Origin: {{frontendUrl}}
+Cookie: better-auth.session_token={{authToken}}
+
+###
+# 7. OUTLINES — GET ONE
+###
+
+GET {{baseUrl}}/api/outlines/{{outlineId}}
+Origin: {{frontendUrl}}
+Cookie: better-auth.session_token={{authToken}}
+
+###
+# 8. OUTLINES — UPDATE
+###
+
+PUT {{baseUrl}}/api/outlines/{{outlineId}}
+Origin: {{frontendUrl}}
+Cookie: better-auth.session_token={{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "header": "Upgrade: Sharuk Khan 2",        
+  "status": "COMPLETED",        
+  "target": 100,         
+  "limit": 230           
 }
 
 ###
-# List Outlines (Authenticated via Cookie or fallback headers)
-GET http://localhost:3000/api/outlines
-Accept: application/json
-# x-user-id: REPLACE_WITH_USER_ID
-# x-organization-id: REPLACE_WITH_ORGANIZATION_ID
-
+# 9. TEAM — LIST MEMBERS
 ###
-# Update an Outline (Authenticated)
-PUT http://localhost:3000/api/outlines/{{outlineId}}
+
+GET {{baseUrl}}/api/organization/{{organizationId}}/members
+Cookie: better-auth.session_token={{authToken}}
+Origin: {{frontendUrl}}
+###
+# 10. TEAM — INVITE MEMBER
+###
+
+# @name inviteMember
+POST {{baseUrl}}/api/organization/{{organizationId}}/invite
+Cookie: better-auth.session_token={{authToken}}
 Content-Type: application/json
-# x-user-id: REPLACE_WITH_USER_ID
-# x-organization-id: REPLACE_WITH_ORGANIZATION_ID
+Origin: {{frontendUrl}}
 
 {
-  "header": "Updated Outline Title"
+  "email": "yihunaashe@gmail.com",
+  "role": "MEMBER"
+}
+
+ 
+###
+# 11. ORGANIZATION — ACCEPT INVITE (simulated)
+###
+
+# @name acceptInvite
+POST {{baseUrl}}/api/organization/accept-invite/{{inviteToken}}
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+
+{
+  "email": "yihunaashe@gmail.com"
 }
 
 ###
-# Delete an Outline (Authenticated)
-DELETE http://localhost:3000/api/outlines/{{outlineId}}
-# x-user-id: REPLACE_WITH_USER_ID
-# x-organization-id: REPLACE_WITH_ORGANIZATION_ID
-
+# 12. ORGANIZATION — REVOKE MEMBER
 ###
-# Team: List Members (Authenticated)
-GET http://localhost:3000/api/team/members
-# x-user-id: REPLACE_WITH_USER_ID
-# x-organization-id: REPLACE_WITH_ORGANIZATION_ID
 
-###
-# Team: Invite member (Authenticated, owner only)
-POST http://localhost:3000/api/team/invite
-Content-Type: application/json
-# Use cookie from sign-in OR fallback headers
-# x-user-id: REPLACE_WITH_OWNER_USER_ID
-# x-organization-id: REPLACE_WITH_ORGANIZATION_ID
+POST {{baseUrl}}/api/organization/{{organizationId}}/revoke
+Origin: {{frontendUrl}}
+Cookie: better-auth.session_token={{authToken}}
+Content-Type: {{contentType}}
 
 {
-  "email": "invitee+test@example.com",
-  "role": "member"
+  "memberId": "{{memberUserId}}" 
 }
 
 ###
-# Team: Revoke member (Authenticated, owner only)
-POST http://localhost:3000/api/team/revoke
-Content-Type: application/json
-# Use cookie from sign-in OR fallback headers
-# x-user-id: REPLACE_WITH_OWNER_USER_ID
-# x-organization-id: REPLACE_WITH_ORGANIZATION_ID
+# 13. USER — GET PROFILE
+###
+
+GET {{baseUrl}}/users/me
+Origin: {{frontendUrl}}
+Cookie: better-auth.session_token={{authToken}}
+
+###
+# 14. USER — UPDATE PROFILE
+###
+
+PUT {{baseUrl}}/users/profile
+Origin: {{frontendUrl}}
+Cookie: better-auth.session_token={{authToken}}
+Content-Type: {{contentType}}
 
 {
-  "userId": "REPLACE_WITH_MEMBER_USER_ID"
+  "name": "",                
+  "image": ""              
 }
 
 ###
-# Additional sample: Get account details (external example preserved from your file)
-GET http://10.101.14.84:8080/TCMB-container-22.0.0/api/v1.0.0/party/other/accDetail?account=24132978
-Accept: application/json
-Accept-Encoding: gzip, deflate
-Accept-Language: en-US,en;q=0.9,es;q=0.8
-Authorization: Bearer REPLACE_LONG_TOKEN
-Connection: keep-alive
-Content-Type: application/json
-Host: 10.101.14.84:8080
-Origin: http://localhost:5173
-Referer: http://localhost:5173/
-User-Agent: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N)
-```}Explanation={
+# 15. USER — LIST ALL USERS
+###
 
+GET {{baseUrl}}/users
+Origin: {{frontendUrl}}
+Cookie: better-auth.session_token={{authToken}}
 
+###
+# 16. OUTLINES — DELETE
+###
 
-#     # .env — FINAL WORKING VERSION FOR PRISMA 7 + WINDOWS
-# DATABASE_URL=postgresql://postgres:1234567890@localhost:5432/tenantdb
-
-# BETTER_AUTH_SECRET=VVGVcSQGGb8BU6MaWHqgIek4cLF4bEBR
-# BETTER_AUTH_URL=http://localhost:3000
-# BETTER_AUTH_BASE_URL=http://localhost:3000
-# FRONTEND_URL=http://localhost:3001
+DELETE {{baseUrl}}/api/outlines/{{outlineId}}
+Origin: {{frontendUrl}}
+Cookie: better-auth.session_token={{authToken}}

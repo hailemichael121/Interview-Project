@@ -1,130 +1,14 @@
-// Better Auth Exact Schema - DO NOT MODIFY
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  // REMOVE THIS LINE: url      = env("DATABASE_URL")
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified Boolean?
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  accounts Account[]
-  sessions Session[]
-  organizationMembers OrganizationMember[]
-  outlines Outline[]
-
-  @@map("users")
-}
-
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String?
-  provider          String    @default("credential")
-  providerAccountId String
-  refresh_token     String?   @db.Text
-  access_token      String?   @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?   @db.Text
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-  @@map("verification_tokens")
-}
-
-// Your custom models
-model Organization {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  members   OrganizationMember[]
-  invites   OrganizationInvite[]
-  outlines  Outline[]
-
-  @@map("organizations")
-}
-
-model OrganizationMember {
-  id             String   @id @default(cuid())
-  organizationId String
-  userId         String
-  role           String   @default("member")
-  joinedAt       DateTime @default(now())
-
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([organizationId, userId])
-  @@map("organization_members")
-}
-
-model OrganizationInvite {
-  id             String   @id @default(cuid())
-  organizationId String
-  email          String
-  role           String   @default("member")
-  token          String   @unique
-  expires        DateTime
-  invitedById    String?
-
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@map("organization_invites")
-}
-
-model Outline {
-  id             String      @id @default(cuid())
-  header         String
-  sectionType    SectionType
-  status         Status      @default(PENDING)
-  target         Int
-  limit          Int
-  reviewer       Reviewer
-  organizationId String
-  userId         String
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-
-  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@map("outlines")
-}
+// ========================================================
+// ENUMS
+// ========================================================
 
 enum SectionType {
   TABLE_OF_CONTENTS
@@ -142,8 +26,196 @@ enum Status {
   COMPLETED
 }
 
-enum Reviewer {
-  ASSIM
-  BINI
-  MAMI
+enum Role {
+  OWNER
+  REVIEWER
+  MEMBER
+  USER
+  user
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+// ========================================================
+// AUTH MODELS
+// ========================================================
+
+model User {
+  id            String   @id @default(cuid())
+  name          String?
+  email         String   @unique
+  emailVerified Boolean?
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  banned        Boolean? @default(false)
+
+  role      Role?     @default(USER) // global default role
+  tenantId  String?
+  deletedAt DateTime?
+
+  accounts        Account[]
+  sessions        Session[]
+  members         OrganizationMember[]
+  reviewerProfile Reviewer?
+
+  @@map("users")
+}
+
+model Account {
+  id           String   @id @default(cuid())
+  providerId   String
+  accountId    String
+  userId       String
+  accessToken  String?
+  refreshToken String?
+  idToken      String?
+  password     String?
+  scopes       String[]
+  tokenType    String?
+  expiresAt    Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@map("accounts")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  ipAddress String?
+  userAgent String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ========================================================
+// APPLICATION MODELS
+// ========================================================
+
+model Organization {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  members  OrganizationMember[]
+  invites  OrganizationInvite[]
+  outlines Outline[]
+  logs     InvitationLog[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String    @id @default(cuid())
+  organizationId String
+  userId         String
+  role           Role      @default(MEMBER) // role per organization
+  joinedAt       DateTime  @default(now())
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdOutlines Outline[]       @relation("CreatedOutlines")
+  invitationsSent InvitationLog[] @relation("Inviter")
+
+  @@unique([organizationId, userId])
+  @@map("organization_members")
+}
+
+model OrganizationInvite {
+  id             String    @id @default(cuid())
+  organizationId String
+  email          String
+  role           Role      @default(MEMBER)
+  token          String    @unique
+  expires        DateTime
+  invitedById    String?
+  deletedAt      DateTime?
+
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  logs         InvitationLog[]
+
+  @@map("organization_invites")
+}
+
+model InvitationLog {
+  id                 String           @id @default(cuid())
+  inviteToken        String
+  invitedEmail       String
+  inviterMemberId    String
+  organizationId     String
+  status             InvitationStatus @default(PENDING)
+  invitedAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  acceptedByUserId   String?
+  acceptedByMemberId String?
+
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inviterMember  OrganizationMember @relation("Inviter", fields: [inviterMemberId], references: [id])
+  originalInvite OrganizationInvite @relation(fields: [inviteToken], references: [token], onDelete: Cascade)
+
+  @@index([invitedEmail])
+  @@map("invitation_logs")
+}
+
+model Reviewer {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  deletedAt DateTime?
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  outlines Outline[]
+
+  @@map("reviewers")
+}
+
+model Outline {
+  id                String      @id @default(cuid())
+  header            String
+  sectionType       SectionType
+  status            Status      @default(PENDING)
+  target            Int
+  limit             Int
+  reviewerId        String?
+  organizationId    String
+  createdByMemberId String
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  deletedAt         DateTime?
+
+  createdBy    OrganizationMember @relation("CreatedOutlines", fields: [createdByMemberId], references: [id])
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reviewer     Reviewer?          @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@map("outlines")
 }

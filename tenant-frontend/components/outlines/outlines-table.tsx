@@ -662,6 +662,11 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
             data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]
           "
         >
+                {/* <DialogContent
+                            // Increased width for desktop screens: sm:max-w-[425px] -> sm:max-w-lg (512px)
+                            className="sm:max-w-lg p-0 border-none rounded-xl shadow-2xl overflow-hidden 
+                                       bg-[hsl(var(--background))]"
+                          ></DialogContent> */}
           {/* Header */}
           <DialogHeader className="p-6 border-b border-[hsl(var(--border))] bg-[hsl(var(--card))] shrink-0">
             <DialogTitle className="text-2xl font-bold text-[hsl(var(--foreground))]">
