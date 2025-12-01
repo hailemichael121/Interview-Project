@@ -1,9 +1,10 @@
+// src/main.ts
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import * as express from 'express';
-import cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser'; // Use default import
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,14 +24,15 @@ async function bootstrap() {
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // Cookies (required for Better Auth)
-  app.use(cookieParser());
+  app.use(cookieParser()); // Now it should work
 
-  // CORS
+  // Rest of your CORS and server setup...
   const allowedOrigins = [
     process.env.FRONTEND_URL,
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:5173',
+    'https://tenanncy.vercel.app',
   ].filter(Boolean);
 
   app.enableCors({
@@ -49,7 +51,6 @@ async function bootstrap() {
     exposedHeaders: ['Authorization', 'Set-Cookie', 'X-Organization-Id'],
   });
 
-  // Listen normally (Render sets PORT automatically)
   const port = process.env.PORT || 3001;
   await app.listen(port);
 

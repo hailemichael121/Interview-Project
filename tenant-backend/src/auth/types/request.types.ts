@@ -1,5 +1,5 @@
+// src/auth/types/request.types.ts
 import { Request } from 'express';
-import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { Role } from '@prisma/client';
 
 export interface OrganizationMembership {
@@ -24,7 +24,7 @@ export interface ExtendedUser {
   id: string;
   email: string;
   name?: string;
-  role?: string; // string only, not string[]
+  role?: string;
   tenantId?: string;
   banned?: boolean;
   emailVerified?: boolean;
@@ -36,15 +36,24 @@ export interface ExtendedUser {
 }
 
 export interface RequestWithAuth extends Request {
-  session?: UserSession;
+  session?: {
+    user: {
+      id: string;
+      email: string;
+      name?: string;
+      role?: string;
+      tenantId?: string;
+      banned?: boolean;
+      emailVerified?: boolean;
+      image?: string;
+      createdAt: Date;
+      updatedAt: Date;
+    };
+  };
   user?: ExtendedUser;
   organizationContext?: OrganizationContext | null;
+  // Remove the cookies property - it's already part of Request
+  // cookies?: {
+  //   [key: string]: string;
+  // };
 }
-
-// REMOVE THIS DUPLICATE EXPORT SECTION:
-// export type {
-//   RequestWithAuth,
-//   ExtendedUser,
-//   OrganizationContext,
-//   OrganizationMembership,
-// };

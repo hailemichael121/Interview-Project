@@ -1,0 +1,26 @@
+@baseUrl = https://tenant-backend-cz23.onrender.com
+@frontendUrl = https://tenanncy.vercel.app
+@contentType = application/json
+
+# Sign in first to get a fresh token
+POST {{baseUrl}}/api/auth/sign-in/email
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+
+{
+  "email": "yihunashe@gmail.com",
+  "password": "password123"
+}
+
+###
+# Then immediately use the token from response:
+GET {{baseUrl}}/api/auth/u
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+# Use the token from the sign-in response above
+Cookie: better-auth.session_token=Q1bUR7cL3ie83QAwoeyIjOuyDmToObjM.JSSKGdPzw6aEdU0cE6F7vUWJJ7snEj40wPoiBn0qJlA%3D
+###
+GET {{baseUrl}}/api/auth/user
+Origin: {{frontendUrl}}
+Accept: {{contentType}}
+Cookie: better-auth.session_token=r9pBZTiRJqSKCRgTo2nbwScUbp9p8Hf5.3Ow206ppciZtjYgWy3DEsTaTzT83IEebOJs42YX%2B%2FZk%3D
