@@ -5,20 +5,15 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
-  "scripts": {
-    "build": "npm run prisma:generate && nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
-    "vercel-build": "prisma generate && nest build",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "vercel-dev": "npx vercel dev",
-    "vercel-deploy": "npx vercel --prod"
-  },
+"scripts": {
+  "build": "npm run prisma:generate && nest build",
+  "start": "node dist/main.js",
+  "start:prod": "node dist/src/main.js",
+  "start:dev": "nest start --watch",
+  "prisma:generate": "prisma generate",
+  "prisma:migrate": "prisma migrate dev"
+}
+,
   "prisma": {
     "seed": "node prisma/seed.js"
   },
