@@ -31,7 +31,6 @@ enum Role {
   REVIEWER
   MEMBER
   USER
-  user
 }
 
 enum InvitationStatus {
@@ -55,7 +54,7 @@ model User {
   updatedAt     DateTime @updatedAt
   banned        Boolean? @default(false)
 
-  role      Role?     @default(USER) // global default role
+  role      String?     @default("USER") // global default role
   tenantId  String?
   deletedAt DateTime?
 

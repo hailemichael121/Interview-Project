@@ -27,7 +27,7 @@ export class UsersController {
 
   // Admin-only: list all users with pagination
   @Get()
-  @Roles('OWNER')
+  @Roles('user')
   findAll(@Query('page') page?: number, @Query('perPage') perPage?: number) {
     return this.usersService.findAll(page || 1, perPage || 10);
   }

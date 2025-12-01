@@ -6,8 +6,8 @@
 # DYNAMIC VARIABLES (captured from test responses)
 ###
 
-@authToken =9dgzPySwIaZSZg19Q6T9H8KlcKT4Ip1g
-@userId =9dgzPySwIaZSZg19Q6T9H8KlcKT4Ip1g
+@authToken =3DuNqCC5IcpXDtI8RXxnnerzkAcqzEke
+@userId =TykPC9WfHsfzpqpNwFuCdtLoR0U2lvLy
 @organizationId =cmim923560000tu66aytr29ej
 @outlineId =cmim95avd0002tu66w54n514q
 @inviteToken =bjmajlxltamim9pycw
@@ -217,7 +217,7 @@ Cookie: better-auth.session_token={{authToken}}
 Content-Type: {{contentType}}
 
 {
-  "name": "",                
+  "name": "Yihun adds",                
   "image": ""              
 }
 
