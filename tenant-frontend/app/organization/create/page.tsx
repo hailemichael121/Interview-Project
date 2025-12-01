@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Building2, ArrowRight } from "lucide-react";
+import { Building, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { useOrg } from "@/lib/org-context";
 import authClient from "@/lib/auth-client";
@@ -73,7 +73,7 @@ export default function CreateOrganizationPage() {
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
             <div className="w-12 h-12 bg-gradient-to-br from-gray-900 to-gray-700 rounded-lg flex items-center justify-center">
-              <Building2 className="h-6 w-6 text-white" />
+              <Building className="h-6 w-6 text-white" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold text-center">

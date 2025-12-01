@@ -1,5 +1,5 @@
 // lib/api-service.ts
-import { authClient } from "./auth-client";
+import authClient  from "./auth-client";
 
 // API Base URL
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";

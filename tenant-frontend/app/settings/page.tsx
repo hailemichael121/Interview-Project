@@ -26,7 +26,7 @@ import {
   Trash2,
   Download,
   User,
-  Building2,
+  Building,
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -48,7 +48,7 @@ export default function SettingsPage() {
           <Card className="border-light-300 bg-[hsl(var(--card))]">
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
-                <Building2 className="h-5 w-5" />
+                <Building className="h-5 w-5" />
                 Workspace
               </CardTitle>
               <CardDescription>Acme Inc • Enterprise Plan</CardDescription>

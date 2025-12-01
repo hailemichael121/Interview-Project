@@ -12,13 +12,13 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { authClient } from "@/lib/auth-client";
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { AnimatedTitle } from "@/components/animated-title";
 import { useAuthTransition } from "@/components/auth-transition";
 import { Logo } from "@/components/logo";
 import { useRouter } from "next/navigation";
+import authClient from "@/lib/auth-client";
 
 export default function SignInPage() {
   const router = useRouter();

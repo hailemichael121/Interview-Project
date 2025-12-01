@@ -10,7 +10,7 @@ import {
   FileText,
   Users,
   Settings,
-  Building2,
+  Building,
   Plus,
   LogOut,
   User,
@@ -123,7 +123,7 @@ export function AppSidebar({
                     )}
                   >
                     <div className="flex h-8 w-8 items-center justify-center rounded border border-light-300 bg-light-100 dark:bg-[hsl(0_0%_20%)]">
-                      <Building2 className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
+                      <Building className="h-4 w-4 text-[hsl(var(--muted-foreground))]" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium truncate">{org.name}</p>

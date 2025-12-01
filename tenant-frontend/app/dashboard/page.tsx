@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Building2, Plus, Users, FileText, ArrowRight } from "lucide-react";
+import { Building, Plus, Users, FileText, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default function DashboardPage() {
@@ -20,7 +20,7 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6 px-4 lg:px-6">
         <div className="text-center py-12">
-          <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <Building className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             No Organization Selected
           </h2>
@@ -113,7 +113,7 @@ export default function DashboardPage() {
             </Link>
             <Link href="/organization/create">
               <Button variant="outline" className="w-full justify-start">
-                <Building2 className="h-4 w-4 mr-2" />
+                <Building className="h-4 w-4 mr-2" />
                 Create New Organization
               </Button>
             </Link>

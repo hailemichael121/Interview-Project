@@ -7,7 +7,7 @@ import { organizationClient } from "better-auth/client/plugins";
 const backendUrl =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 
-export const authClient = createAuthClient({
+ const authClient = createAuthClient({
   baseURL: `${backendUrl}`, // Should be JUST the base URL, NOT /api/auth
   basePath: "/api/auth", // Better Auth will add this prefix
   fetchOptions: {
@@ -15,3 +15,4 @@ export const authClient = createAuthClient({
   },
   plugins: [organizationClient()],
 });
+export default authClient;

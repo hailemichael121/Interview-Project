@@ -34,7 +34,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSession, useOrganizationContext } from "@/hooks/use-session";
-import { authClient } from "@/lib/auth-client";
+import authClient  from "@/lib/auth-client";
 
 interface OrganizationMembership {
   organizationId: string;
@@ -47,8 +47,16 @@ interface OrganizationMembership {
   memberId: string;
   joinedAt: string;
 }
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+  organization?: {
+    id: string;
+    name: string;
+    role: "owner" | "member";
+  };
+}
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+export function DashboardLayout({ children, organization }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const { currentOrg, setCurrentOrg } = useOrg();

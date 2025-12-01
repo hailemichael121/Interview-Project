@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
+import authClient  from "@/lib/auth-client";
 import { apiService } from "@/lib/api-service";
 
 interface ProtectedRouteProps {

@@ -29,7 +29,11 @@ export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
   basePath: '/api/auth',
   secret: process.env.BETTER_AUTH_SECRET,
-  trustedOrigins: ['http://localhost:3000', 'http://localhost:3001'],
+  trustedOrigins: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://tenanncy.vercel.app',
+  ],
   user: {
     additionalFields: {
       role: {

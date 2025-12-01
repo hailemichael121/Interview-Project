@@ -12,7 +12,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { authClient } from "@/lib/auth-client";
+import authClient from "@/lib/auth-client";
 import { Eye, EyeOff, Mail, Lock, Users, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { AnimatedTitle } from "@/components/animated-title";

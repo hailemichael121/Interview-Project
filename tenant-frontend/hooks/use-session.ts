@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { authClient } from "@/lib/auth-client";
+import authClient  from "@/lib/auth-client";
 import { apiService } from "@/lib/api-service";
 
 // Define proper Better Auth session types based on error messages
