@@ -1,3 +1,4 @@
+// app/auth/signin/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -11,15 +12,16 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import authClient from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client";
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { AnimatedTitle } from "@/components/animated-title";
 import { useAuthTransition } from "@/components/auth-transition";
-import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { useRouter } from "next/navigation";
 
 export default function SignInPage() {
+  const router = useRouter();
   const { navigate, transitionClass } = useAuthTransition();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -29,21 +31,52 @@ export default function SignInPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await authClient.signIn.email(
-      { ...formData },
-      {
-        onSuccess: () => {
-          toast.success("Welcome back!");
-          navigate("/dashboard");
-        },
-        onError: (ctx) => {
-          toast.error(ctx.error.message || "Invalid credentials");
-        },
-      }
-    );
+    try {
+      const result = await authClient.signIn.email({
+        email: formData.email,
+        password: formData.password,
+      });
 
-    if (error) toast.error(error.message || "Failed to sign in");
-    setIsLoading(false);
+      if (result.error) {
+        toast.error(result.error.message || "Invalid credentials");
+        return;
+      }
+
+      // Successful sign in
+      toast.success("Welcome back!");
+
+      // Get the session to verify
+      const session = await authClient.getSession();
+
+      if (session.data) {
+        // Wait a moment for cookies to be set
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Fetch user context to check for organizations
+        try {
+          const api = (await import("@/lib/api-service")).apiService;
+          const userData = await api.user.getCurrentUser();
+
+          if (
+            userData.success &&
+            userData.data.context.organizationMemberships.length > 0
+          ) {
+            router.push("/dashboard");
+          } else {
+            router.push("/organization/create");
+          }
+        } catch (error) {
+          console.error("Error fetching user context:", error);
+          router.push("/dashboard");
+        }
+      } else {
+        toast.error("Failed to create session");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to sign in");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -113,7 +146,7 @@ export default function SignInPage() {
           <div className="w-full max-w-md animate-in slide-in-from-left-32 duration-700">
             <Card className="border-0 shadow-2xl backdrop-blur-xl">
               <CardHeader className="text-center pb-10">
-                <CardTitle className="text-4xl font-bold text-black-gray dark:text-milky-white">
+                <CardTitle className="text-4xl font-bold text-muted-foreground">
                   Sign In
                 </CardTitle>
                 <CardDescription className="text-lg text-muted-foreground">

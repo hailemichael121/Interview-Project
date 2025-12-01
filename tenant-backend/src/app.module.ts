@@ -1,17 +1,21 @@
 // src/app.module.ts
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { auth } from './auth/auth.config';
-import { UsersModule } from './users/users.module';
-import { OutlinesModule } from './outlines/outlines.module';
-import { RolesGuard } from './auth/guards/roles.guard';
+import { EnhancedAuthGuard } from './auth/guards/enhanced-auth.guard';
+import { OrganizationContextMiddleware } from './auth/middleware/organization-context.middleware';
+import { PermissionService } from './auth/services/permission.service';
+import { PrismaModule } from './lib/prisma.module';
 import { OrganizationModule } from './organization/organization.module';
+import { OutlinesModule } from './outlines/outlines.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
+    PrismaModule,
     AuthModule.forRoot({ auth }),
     UsersModule,
     OutlinesModule,
@@ -20,10 +24,17 @@ import { OrganizationModule } from './organization/organization.module';
   controllers: [AppController],
   providers: [
     AppService,
+    PermissionService,
+    EnhancedAuthGuard,
     {
       provide: APP_GUARD,
-      useClass: RolesGuard,
+      useClass: EnhancedAuthGuard, // Use enhanced guard globally
     },
   ],
+  exports: [PermissionService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(OrganizationContextMiddleware).forRoutes('*'); // Apply to all routes
+  }
+}

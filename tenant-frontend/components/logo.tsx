@@ -6,23 +6,39 @@ import Link from "next/link";
 
 export function Logo({ className = "w-40 h-40" }: { className?: string }) {
   const { resolvedTheme } = useTheme();
-  // Determine the correct image source based on the theme
-  const src =
-    resolvedTheme === "dark" ? "/tenant-dark.png" : "/tenant-light.png";
-  const altText =
-    resolvedTheme === "dark" ? "Tenant Logo Dark" : "Tenant Logo Light";
+
+  const isDark = resolvedTheme === "dark";
 
   return (
-    <div className={`${className} flex items-center justify-center`}>
-      <Link href="/" className="inline-block mb-12">
+    <div className={`${className} relative flex items-center justify-center`}>
+      <Link href="/" className="block relative">
+        {/* Outlined Border Ring (curved, elegant) */}
+        <div
+          className={`
+            absolute inset-0 rounded-3xl 
+            border-2
+            ${
+              isDark
+                ? "border-white/40 shadow-white/20"
+                : "border-gray-900/30 shadow-gray-900/10"
+            }
+            shadow-2xl 
+            scale-110 
+            -z-10
+            transition-all duration-500
+            group-hover:scale-125
+          `}
+        />
+
+        {/* Actual Logo Image (must be transparent PNG!) */}
         <Image
-          // Use a single Image tag and dynamically set the src
-          src={src}
-          alt={altText}
+          src={isDark ? "/tenant-dark.png" : "/tenant-light.png"}
+          alt="Tenant Logo"
           width={160}
           height={160}
-          // The styling remains, but the source is explicitly controlled by React state
-          className="rounded-2xl shadow-2xl hover:scale-105 transition-transform duration-300"
+          className="relative z-10 object-contain rounded-3xl bg-transparent"
+          priority
+          unoptimized
         />
       </Link>
     </div>

@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { FileText, Users, ArrowRight } from "lucide-react";
+import { FileText, Users, ArrowRight, LayoutGrid } from "lucide-react";
 import { useTheme } from "next-themes";
 import { AnimatedTitle } from "@/components/animated-title";
 import { useEffect, useState, useRef } from "react";
@@ -23,27 +23,20 @@ export default function HomePage() {
   const waveRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
   useEffect(() => {
     const handleScroll = () => {
       if (!textRef.current || !waveRef.current) return;
-
       const textRect = textRef.current.getBoundingClientRect();
       const waveRect = waveRef.current.getBoundingClientRect();
-
-      // Calculate if text is overlapping with the wave's lighter sections
       const isOverlapping = textRect.bottom > waveRect.top + 100;
-
       setIsOverWave(isOverlapping);
     };
 
     window.addEventListener("scroll", handleScroll);
     window.addEventListener("resize", handleScroll);
-
-    // Initial check
     handleScroll();
 
     return () => {
@@ -52,34 +45,26 @@ export default function HomePage() {
     };
   }, []);
 
-  // Get text colors based on theme and wave position
   const getTextColors = () => {
     const isDark = resolvedTheme === "dark";
-
     if (isDark) {
-      // In dark mode, always use white text for best visibility
       return {
         title: "text-white",
         subtitle: "text-white",
         description: "text-white",
       };
     }
-
-    // In light mode, change color based on wave position
-    if (isOverWave) {
-      return {
-        title: "text-gray-900",
-        subtitle: "text-gray-950",
-        description: "text-gray-800",
-      };
-    }
-
-    // Default for light mode when not over wave
-    return {
-      title: "text-white",
-      subtitle: "text-white",
-      description: "text-white",
-    };
+    return isOverWave
+      ? {
+          title: "text-gray-900",
+          subtitle: "text-gray-950",
+          description: "text-gray-800",
+        }
+      : {
+          title: "text-white",
+          subtitle: "text-white",
+          description: "text-white",
+        };
   };
 
   const textColors = getTextColors();
@@ -106,7 +91,7 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Full-Screen Fixed Wave Background */}
+      {/* Wave Background */}
       <div className="fixed inset-0 -z-10 pointer-events-none">
         <svg
           ref={waveRef}
@@ -127,7 +112,6 @@ export default function HomePage() {
               <stop offset="100%" stopColor="#475569" />
             </linearGradient>
           </defs>
-
           <path
             fill="url(#wave-light)"
             className="dark:hidden"
@@ -143,8 +127,7 @@ export default function HomePage() {
         </svg>
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 min-h-screen isolation">
+      <div className="relative z-10 min-h-screen">
         <div className="container mx-auto px-4 py-16">
           <div ref={textRef} className="text-center mb-20 pt-8">
             <div className="flex justify-center">
@@ -156,7 +139,6 @@ export default function HomePage() {
               resolvedTheme={resolvedTheme}
             />
 
-            {/* Dynamic text color based on theme and wave overlap */}
             <h2
               className={`text-2xl md:text-4xl font-medium mt-8 max-w-5xl mx-auto transition-colors duration-300 ${textColors.title}`}
             >
@@ -175,95 +157,85 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Rest of your content remains the same */}
+          {/* STATIC CARDS — NO HOVER EFFECTS */}
           <div className="grid md:grid-cols-3 gap-8 mb-24 mt-12">
-            <Card className="border-gray-200 dark:border-gray-700 shadow-xl bg-white dark:bg-gray-800">
-              <CardHeader>
-                <div className="w-14 h-14 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center mb-4">
-                  <FileText className="h-8 w-8 text-gray-700 dark:text-gray-200" />
-                </div>
-                <CardTitle className="text-gray-800 dark:text-white text-xl">
-                  Outline Management
-                </CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-300">
-                  Create and manage project outlines with progress tracking and
-                  team collaboration
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                  <li>• Real-time progress tracking</li>
-                  <li>• Team collaboration features</li>
-                  <li>• Status and review management</li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="border-gray-200 dark:border-gray-700 shadow-xl bg-white dark:bg-gray-800">
-              <CardHeader>
-                <div className="w-14 h-14 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center mb-4">
-                  <Users className="h-8 w-8 text-gray-700 dark:text-gray-200" />
-                </div>
-                <CardTitle className="text-gray-800 dark:text-white text-xl">
-                  Team Collaboration
-                </CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-300">
-                  Invite team members, manage roles, and collaborate efficiently
-                  across organizations
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                  <li>• Role-based access control</li>
-                  <li>• Team member management</li>
-                  <li>• Organization switching</li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="border-gray-200 dark:border-gray-700 shadow-xl bg-white dark:bg-gray-800">
-              <CardHeader>
-                <div className="w-14 h-14 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center mb-4">
-                  <svg
-                    className="h-8 w-8 text-gray-700 dark:text-gray-200"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
+            {[
+              {
+                icon: <FileText className="h-8 w-8" />,
+                title: "Outline Management",
+                desc: "Create and manage project outlines with progress tracking and team collaboration",
+                features: [
+                  "Real-time progress tracking",
+                  "Team collaboration features",
+                  "Status and review management",
+                ],
+              },
+              {
+                icon: <Users className="h-8 w-8" />,
+                title: "Team Collaboration",
+                desc: "Invite team members, manage roles, and collaborate efficiently across organizations",
+                features: [
+                  "Role-based access control",
+                  "Team member management",
+                  "Organization switching",
+                ],
+              },
+              {
+                icon: <LayoutGrid className="h-8 w-8" />,
+                title: "Multi-Tenant",
+                desc: "Work across multiple organizations with isolated data and secure access controls",
+                features: [
+                  "Multiple organization support",
+                  "Data isolation and security",
+                  "Seamless organization switching",
+                ],
+              },
+            ].map((item, i) => (
+              <Card
+                key={i}
+                className="border border-gray-200/70 dark:border-gray-700/70 
+                           bg-white/40 dark:bg-gray-800/30 
+                           backdrop-blur-xl rounded-2xl overflow-hidden"
+              >
+                <CardHeader className="pb-6">
+                  <div
+                    className="w-14 h-14 rounded-xl flex items-center justify-center mb-5
+                                  bg-gradient-to-br from-gray-100 to-gray-200 
+                                  dark:from-gray-700 dark:to-gray-800 
+                                  ring-4 ring-white/60 dark:ring-gray-900/40"
                   >
-                    <path d="M6 10H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h2v8Z" />
-                    <path d="M10 10H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h2v8Z" />
-                    <path d="M10 18H8a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h2v8Z" />
-                    <path d="M10 22H8a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h2v8Z" />
-                    <path d="M14 10h-2V2h2a2 2 0 0 1 2 2v6Z" />
-                    <path d="M14 18h-2v-8h2a2 2 0 0 1 2 2v6Z" />
-                    <path d="M14 22h-2v-4h2a2 2 0 0 1 2 2v2Z" />
-                    <path d="M18 10h-2V2h2a2 2 0 0 1 2 2v6Z" />
-                    <path d="M18 18h-2v-8h2a2 2 0 0 1 2 2v6Z" />
-                    <path d="M18 22h-2v-4h2a2 2 0 0 1 2 2v2Z" />
-                  </svg>
-                </div>
-                <CardTitle className="text-gray-800 dark:text-white text-xl">
-                  Multi-Tenant
-                </CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-300">
-                  Work across multiple organizations with isolated data and
-                  secure access controls
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                  <li>• Multiple organization support</li>
-                  <li>• Data isolation and security</li>
-                  <li>• Seamless organization switching</li>
-                </ul>
-              </CardContent>
-            </Card>
+                    <div className="text-gray-900 dark:text-gray-100">
+                      {item.icon}
+                    </div>
+                  </div>
+
+                  <CardTitle className="text-2xl font-bold text-muted-foreground mt-4">
+                    {item.title}
+                  </CardTitle>
+                  <CardDescription className="text-base text-muted-foreground mt-2 leading-relaxed">
+                    {item.desc}
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent>
+                  <ul className="space-y-3 text-muted-foreground">
+                    {item.features.map((feat, idx) => (
+                      <li key={idx} className="flex items-center gap-3">
+                        <span className="text-blue-600 dark:text-blue-400 font-bold">
+                          •
+                        </span>
+                        <span className="text-sm md:text-base">{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
-          {/* CTA */}
+          {/* CTA — Also NO hover effects */}
           <div className="text-center py-16">
-            <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-3xl p-12 border-2 border-gray-300 dark:border-gray-600 max-w-3xl mx-auto shadow-2xl">
+            <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-3xl p-12 border-2 border-gray-300 dark:border-gray-600 max-w-3xl mx-auto">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-50 mb-6">
                 Ready to get started?
               </h2>
@@ -275,7 +247,7 @@ export default function HomePage() {
                 <Link href="/auth/signin">
                   <Button
                     size="lg"
-                    className="text-lg px-10 h-14 rounded-2xl bg-blue-950 hover:bg-blue-900 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="text-lg px-10 h-14 rounded-2xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-semibold"
                   >
                     Sign In to Workspace
                     <ArrowRight className="ml-3 h-5 w-5" />
@@ -285,7 +257,8 @@ export default function HomePage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="text-lg px-10 h-14 border-2 border-gray-400 dark:border-gray-500 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-500 dark:hover:border-gray-400 transition-all duration-300 font-semibold"
+                    className="text-lg px-10 h-14 rounded-2xl border-2 border-gray-400 dark:border-gray-600 
+                               text-gray-900 dark:text-gray-100 font-semibold"
                   >
                     Create Account
                   </Button>

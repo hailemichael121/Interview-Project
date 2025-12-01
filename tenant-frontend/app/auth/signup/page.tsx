@@ -1,3 +1,4 @@
+// app/auth/signup/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -11,15 +12,16 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import authClient from "@/lib/auth-client";
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { Eye, EyeOff, Mail, Lock, Users, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { AnimatedTitle } from "@/components/animated-title";
 import { useAuthTransition } from "@/components/auth-transition";
-import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { useRouter } from "next/navigation";
 
 export default function AuthPage() {
+  const router = useRouter();
   const { navigate, transitionClass } = useAuthTransition();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -33,21 +35,38 @@ export default function AuthPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await authClient.signUp.email(
-      { ...formData },
-      {
-        onSuccess: () => {
-          toast.success("Welcome!");
-          navigate("/dashboard");
-        },
-        onError: (ctx) => {
-          toast.error(ctx.error.message || "Something went wrong");
-        },
-      }
-    );
+    try {
+      const result = await authClient.signUp.email({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
 
-    if (error) toast.error(error.message || "Failed to sign up");
-    setIsLoading(false);
+      if (result.error) {
+        toast.error(result.error.message || "Something went wrong");
+        return;
+      }
+
+      // Successful sign up
+      toast.success("Account created successfully!");
+
+      // Get the session to verify
+      const session = await authClient.getSession();
+
+      if (session.data) {
+        // Wait a moment for cookies to be set
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Redirect to organization creation for new users
+        router.push("/organization/create");
+      } else {
+        toast.error("Failed to create session");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to sign up");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -117,7 +136,7 @@ export default function AuthPage() {
           <div className="w-full max-w-md animate-in slide-in-from-right-32 duration-700">
             <Card className="border-0 shadow-2xl backdrop-blur-xl">
               <CardHeader className="text-center pb-10">
-                <CardTitle className="text-4xl font-bold text-black-gray dark:text-milky-white">
+                <CardTitle className="text-4xl font-bold text-muted-foreground">
                   Create Account
                 </CardTitle>
                 <CardDescription className="text-lg text-muted-foreground">
@@ -127,11 +146,11 @@ export default function AuthPage() {
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label className="text-base font-semibold text-black-gray dark:text-milky-white">
+                    <Label className="text-base font-semibold text-muted-foreground">
                       Full Name
                     </Label>
                     <div className="relative">
-                      <User className="absolute left-4 top-3.5 h-5 w-5 icon-muted" />
+                      <Users className="absolute left-4 top-3.5 h-5 w-5 icon-muted" />
                       <Input
                         required
                         placeholder="John Doe"
@@ -145,7 +164,7 @@ export default function AuthPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-semibold text-black-gray dark:text-milky-white">
+                    <Label className="text-base font-semibold text-muted-foreground">
                       Email
                     </Label>
                     <div className="relative">
@@ -164,7 +183,7 @@ export default function AuthPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-semibold text-black-gray dark:text-milky-white">
+                    <Label className="text-base font-semibold text-muted-foreground">
                       Password
                     </Label>
                     <div className="relative">
@@ -205,7 +224,7 @@ export default function AuthPage() {
                     <span className="relative z-10">
                       {isLoading ? "Creating Account..." : "Create Account"}
                     </span>
-                    <span className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/30 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000" />
+                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000" />
                   </Button>
                 </form>
 

@@ -1,4 +1,3 @@
-// src/users/enums/role.enum.ts
 export enum Role {
   // Make this an enum, not a type
   OWNER = 'OWNER',
@@ -6,5 +5,3 @@ export enum Role {
   MEMBER = 'MEMBER',
   USER = 'USER',
 }
-
-// Remove this line: export type Role = AppRole;

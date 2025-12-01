@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+// src/outlines/outlines.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -10,29 +8,86 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../lib/prisma.service';
+import { PermissionService } from '../auth/services/permission.service';
 import { CreateOutlineDto } from './dto/create-outline.dto';
 import { UpdateOutlineDto } from './dto/update-outline.dto';
 import { Status, SectionType } from '@prisma/client';
+import { Role } from '../users/enums/role.enum';
 
 @Injectable()
 export class OutlinesService {
   private readonly logger = new Logger(OutlinesService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private permissionService: PermissionService,
+  ) {}
 
-  async create(userId: string, createOutlineDto: CreateOutlineDto) {
+  async create(
+    userId: string,
+    organizationId: string,
+    memberId: string,
+    memberRole: Role,
+    createOutlineDto: CreateOutlineDto,
+  ) {
     try {
-      const organization = await this.getOrCreateUserOrganization(userId);
-      const member = await this.getOrCreateOrganizationMember(
-        userId,
-        organization.id,
-      );
+      // Validate organization membership
+      const membership = await this.prisma.organizationMember.findFirst({
+        where: {
+          userId,
+          organizationId,
+          deletedAt: null,
+        },
+      });
 
-      // Check for duplicate outline header in the same organization
+      if (!membership) {
+        throw new ForbiddenException(
+          'You are not a member of this organization',
+        );
+      }
+
+      // Ensure the memberId from context matches the membership
+      if (membership.id !== memberId) {
+        throw new ForbiddenException('Invalid organization context');
+      }
+
+      // Check permissions using PermissionService
+      const canCreate = this.permissionService.canCreateOutline({
+        organizationId,
+        memberId,
+        memberRole,
+      });
+
+      if (!canCreate) {
+        throw new ForbiddenException(
+          'You do not have permission to create outlines in this organization',
+        );
+      }
+
+      // Validate required fields
+      if (!createOutlineDto.header?.trim()) {
+        throw new BadRequestException('Header is required');
+      }
+
+      if (!createOutlineDto.sectionType) {
+        throw new BadRequestException('Section type is required');
+      }
+
+      // Validate section type
+      const validSectionTypes = Object.values(SectionType);
+      if (
+        !validSectionTypes.includes(createOutlineDto.sectionType as SectionType)
+      ) {
+        throw new BadRequestException(
+          `Invalid section type. Must be one of: ${validSectionTypes.join(', ')}`,
+        );
+      }
+
+      // Check duplicate header in current organization
       const existingOutline = await this.prisma.outline.findFirst({
         where: {
-          header: createOutlineDto.header,
-          organizationId: organization.id,
+          header: createOutlineDto.header.trim(),
+          organizationId,
           deletedAt: null,
         },
       });
@@ -43,7 +98,7 @@ export class OutlinesService {
         );
       }
 
-      // Validate reviewer exists if provided
+      // Validate reviewer if provided
       if (createOutlineDto.reviewerId) {
         const reviewer = await this.prisma.reviewer.findUnique({
           where: { id: createOutlineDto.reviewerId },
@@ -51,17 +106,35 @@ export class OutlinesService {
         if (!reviewer) {
           throw new NotFoundException('Reviewer not found');
         }
+
+        // Verify reviewer is in the same organization
+        const reviewerUserId = reviewer.userId ?? undefined; // Nullish coalescing
+        const reviewerMembership =
+          await this.prisma.organizationMember.findFirst({
+            where: {
+              userId: reviewerUserId, // Now it's either string or undefined
+              organizationId,
+              deletedAt: null,
+            },
+          });
+
+        if (!reviewerMembership) {
+          throw new BadRequestException(
+            'Reviewer is not a member of this organization',
+          );
+        }
       }
 
+      // Create outline
       const outline = await this.prisma.outline.create({
         data: {
-          header: createOutlineDto.header,
-          sectionType: createOutlineDto.sectionType,
+          header: createOutlineDto.header.trim(),
+          sectionType: createOutlineDto.sectionType as SectionType,
           status: createOutlineDto.status || Status.PENDING,
           target: createOutlineDto.target || 0,
           limit: createOutlineDto.limit || 0,
-          organizationId: organization.id,
-          createdByMemberId: member.id,
+          organizationId,
+          createdByMemberId: memberId,
           reviewerId: createOutlineDto.reviewerId || null,
         },
         include: {
@@ -71,12 +144,16 @@ export class OutlinesService {
               user: { select: { id: true, name: true, email: true } },
             },
           },
-          reviewer: true,
+          reviewer: {
+            include: {
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
         },
       });
 
       this.logger.log(
-        `Outline created with ID: ${outline.id} by user ${userId}`,
+        `Outline created for user ${userId} in organization ${organizationId}`,
       );
 
       return {
@@ -85,44 +162,28 @@ export class OutlinesService {
         message: 'Outline created successfully',
       };
     } catch (error) {
-      this.logger.error(`Error creating outline for user ${userId}`, error);
-
       if (
         error instanceof ConflictException ||
-        error instanceof NotFoundException
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException
       ) {
         throw error;
       }
-
+      this.logger.error(`Error creating outline for user ${userId}`, error);
       throw new BadRequestException(
         error.message || 'Failed to create outline',
       );
     }
   }
 
-  async findAll(userId: string, page = 1, perPage = 10) {
+  async findAll(organizationId: string, page = 1, perPage = 10) {
     try {
-      const member = await this.prisma.organizationMember.findFirst({
-        where: { userId, deletedAt: null },
-        include: { organization: true },
-      });
-
-      if (!member) {
-        return {
-          success: true,
-          data: [],
-          page,
-          perPage,
-          total: 0,
-          message: 'No outlines found',
-        };
-      }
-
       const skip = (page - 1) * perPage;
 
       const [outlines, total] = await Promise.all([
         this.prisma.outline.findMany({
-          where: { organizationId: member.organizationId, deletedAt: null },
+          where: { organizationId, deletedAt: null },
           skip,
           take: perPage,
           include: {
@@ -132,12 +193,16 @@ export class OutlinesService {
                 user: { select: { id: true, name: true, email: true } },
               },
             },
-            reviewer: true,
+            reviewer: {
+              include: {
+                user: { select: { id: true, name: true, email: true } },
+              },
+            },
           },
           orderBy: { createdAt: 'desc' },
         }),
         this.prisma.outline.count({
-          where: { organizationId: member.organizationId, deletedAt: null },
+          where: { organizationId, deletedAt: null },
         }),
       ]);
 
@@ -150,28 +215,23 @@ export class OutlinesService {
         message:
           outlines.length > 0
             ? 'Outlines fetched successfully'
-            : 'No outlines found',
+            : 'No outlines found in your organization',
       };
     } catch (error) {
-      this.logger.error(`Error fetching outlines for user ${userId}`, error);
+      this.logger.error(
+        `Error fetching outlines for organization ${organizationId}`,
+        error,
+      );
       throw new BadRequestException(
         error.message || 'Failed to fetch outlines',
       );
     }
   }
 
-  async findOne(userId: string, id: string) {
+  async findOne(organizationId: string, id: string) {
     try {
-      const member = await this.prisma.organizationMember.findFirst({
-        where: { userId, deletedAt: null },
-      });
-
-      if (!member) {
-        throw new NotFoundException('Organization membership not found');
-      }
-
       const outline = await this.prisma.outline.findFirst({
-        where: { id, organizationId: member.organizationId, deletedAt: null },
+        where: { id, organizationId, deletedAt: null },
         include: {
           organization: true,
           createdBy: {
@@ -179,13 +239,17 @@ export class OutlinesService {
               user: { select: { id: true, name: true, email: true } },
             },
           },
-          reviewer: true,
+          reviewer: {
+            include: {
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
         },
       });
 
       if (!outline) {
         throw new NotFoundException(
-          `Outline with ID "${id}" not found or you don't have access to it`,
+          `Outline with ID "${id}" not found in your organization`,
         );
       }
 
@@ -196,7 +260,7 @@ export class OutlinesService {
       };
     } catch (error) {
       this.logger.error(
-        `Error fetching outline ${id} for user ${userId}`,
+        `Error fetching outline ${id} from organization ${organizationId}`,
         error,
       );
 
@@ -208,38 +272,52 @@ export class OutlinesService {
     }
   }
 
-  async update(userId: string, id: string, updateOutlineDto: UpdateOutlineDto) {
+  async update(
+    userId: string,
+    organizationId: string,
+    memberId: string,
+    memberRole: Role,
+    id: string,
+    updateOutlineDto: UpdateOutlineDto,
+  ) {
     try {
-      const member = await this.prisma.organizationMember.findFirst({
-        where: { userId, deletedAt: null },
-      });
-
-      if (!member) {
-        throw new NotFoundException('Organization membership not found');
-      }
-
+      // Find outline in current organization
       const outline = await this.prisma.outline.findFirst({
-        where: { id, organizationId: member.organizationId, deletedAt: null },
-        include: { createdBy: true },
+        where: { id, organizationId, deletedAt: null },
+        include: {
+          createdBy: true,
+          reviewer: true,
+        },
       });
 
       if (!outline) {
         throw new NotFoundException(
-          `Outline with ID "${id}" not found or you don't have access to it`,
+          `Outline with ID "${id}" not found in your organization`,
         );
+      }
+
+      // Check permissions using PermissionService
+      const permission = this.permissionService.canUpdateOutline(
+        { organizationId, memberId, memberRole },
+        outline,
+        updateOutlineDto,
+      );
+
+      if (!permission.allowed) {
+        throw new ForbiddenException(permission.reason);
       }
 
       // Check for duplicate header if header is being updated
       if (
         updateOutlineDto.header &&
-        updateOutlineDto.header !== outline.header
+        updateOutlineDto.header.trim() !== outline.header
       ) {
         const existingOutline = await this.prisma.outline.findFirst({
           where: {
-            header: updateOutlineDto.header,
-            organizationId: member.organizationId,
+            header: updateOutlineDto.header.trim(),
+            organizationId,
             deletedAt: null,
-            id: { not: id }, // Exclude current outline
+            id: { not: id },
           },
         });
 
@@ -258,43 +336,71 @@ export class OutlinesService {
         if (!reviewer) {
           throw new NotFoundException('Reviewer not found');
         }
-      }
 
-      // RBAC rules
-      const isOwner = member.role === 'OWNER';
-      const isReviewer = member.id === outline.reviewerId;
-      const isCreator = member.id === outline.createdByMemberId;
+        // FIX: Handle null userId properly
+        const reviewerMembership =
+          await this.prisma.organizationMember.findFirst({
+            where: {
+              userId: reviewer.userId || undefined, // Convert null to undefined
+              organizationId,
+              deletedAt: null,
+            },
+          });
 
-      const updateData: any = { updatedAt: new Date() };
-
-      if (isOwner) {
-        Object.assign(updateData, updateOutlineDto); // Owner can update all fields
-      } else if (isReviewer) {
-        // Reviewer can only update status
-        if (updateOutlineDto.status !== undefined) {
-          updateData.status = updateOutlineDto.status;
-        } else {
-          throw new ForbiddenException(
-            'Reviewers can only update the status field',
+        if (!reviewerMembership) {
+          throw new BadRequestException(
+            'Reviewer is not a member of this organization',
           );
         }
-      } else if (isCreator) {
-        // Creator can update all fields except status (unless they're also a reviewer)
-        const { status, ...rest } = updateOutlineDto;
-        Object.assign(updateData, rest);
+      }
 
-        // Creator who is also assigned as reviewer can update status
+      // Validate section type if provided
+      if (updateOutlineDto.sectionType) {
+        const validSectionTypes = Object.values(SectionType);
         if (
-          isCreator &&
-          outline.reviewerId === member.id &&
-          status !== undefined
+          !validSectionTypes.includes(
+            updateOutlineDto.sectionType as SectionType,
+          )
         ) {
-          updateData.status = status;
+          throw new BadRequestException(
+            `Invalid section type. Must be one of: ${validSectionTypes.join(', ')}`,
+          );
         }
+      }
+
+      // Apply updates based on role (simplified with permission service)
+      const updateData: any = { updatedAt: new Date() };
+
+      // Add allowed fields based on permission service result
+      if (permission.allowedFields) {
+        Object.assign(updateData, permission.allowedFields);
       } else {
-        throw new ForbiddenException(
-          'You do not have permission to update this outline',
-        );
+        // Fallback logic
+        switch (memberRole) {
+          case 'OWNER':
+            Object.assign(updateData, updateOutlineDto);
+            break;
+
+          case 'REVIEWER':
+            if (updateOutlineDto.status !== undefined) {
+              updateData.status = updateOutlineDto.status;
+            }
+            break;
+
+          case 'MEMBER':
+            const { status, ...memberUpdates } = updateOutlineDto;
+            Object.assign(updateData, memberUpdates);
+            // Creator who is also assigned as reviewer can update status
+            if (memberId === outline.reviewerId && status !== undefined) {
+              updateData.status = status;
+            }
+            break;
+        }
+      }
+
+      // Trim header if provided
+      if (updateOutlineDto.header) {
+        updateData.header = updateOutlineDto.header.trim();
       }
 
       const updatedOutline = await this.prisma.outline.update({
@@ -307,7 +413,11 @@ export class OutlinesService {
               user: { select: { id: true, name: true, email: true } },
             },
           },
-          reviewer: true,
+          reviewer: {
+            include: {
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
         },
       });
 
@@ -327,7 +437,8 @@ export class OutlinesService {
       if (
         error instanceof ConflictException ||
         error instanceof NotFoundException ||
-        error instanceof ForbiddenException
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException
       ) {
         throw error;
       }
@@ -338,28 +449,30 @@ export class OutlinesService {
     }
   }
 
-  async remove(userId: string, id: string) {
+  async remove(
+    organizationId: string,
+    memberId: string,
+    memberRole: Role,
+    id: string,
+  ) {
     try {
-      const member = await this.prisma.organizationMember.findFirst({
-        where: { userId, deletedAt: null },
-      });
-
-      if (!member) {
-        throw new NotFoundException('Organization membership not found');
-      }
-
       const outline = await this.prisma.outline.findFirst({
-        where: { id, organizationId: member.organizationId, deletedAt: null },
+        where: { id, organizationId, deletedAt: null },
       });
 
       if (!outline) {
         throw new NotFoundException(
-          `Outline with ID "${id}" not found or you don't have access to it`,
+          `Outline with ID "${id}" not found in your organization`,
         );
       }
 
-      // Only owner or creator can soft-delete
-      if (member.role !== 'OWNER' && member.id !== outline.createdByMemberId) {
+      // Check delete permissions using PermissionService
+      const canDelete = this.permissionService.canDeleteOutline(
+        { organizationId, memberId, memberRole },
+        outline,
+      );
+
+      if (!canDelete) {
         throw new ForbiddenException(
           'You do not have permission to delete this outline. Only owners and the outline creator can delete outlines.',
         );
@@ -368,9 +481,17 @@ export class OutlinesService {
       const deletedOutline = await this.prisma.outline.update({
         where: { id },
         data: { deletedAt: new Date() },
+        include: {
+          organization: true,
+          createdBy: {
+            include: {
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
+        },
       });
 
-      this.logger.log(`Outline ${id} deleted by user ${userId}`);
+      this.logger.log(`Outline ${id} deleted by member ${memberId}`);
 
       return {
         success: true,
@@ -378,10 +499,7 @@ export class OutlinesService {
         message: 'Outline deleted successfully',
       };
     } catch (error) {
-      this.logger.error(
-        `Error deleting outline ${id} for user ${userId}`,
-        error,
-      );
+      this.logger.error(`Error deleting outline ${id}`, error);
 
       if (
         error instanceof NotFoundException ||
@@ -396,63 +514,200 @@ export class OutlinesService {
     }
   }
 
-  private async getOrCreateUserOrganization(userId: string) {
+  /**
+   * Get organization statistics for the current user's organization
+   */
+  async getOrganizationStats(organizationId: string) {
     try {
-      const existingMember = await this.prisma.organizationMember.findFirst({
-        where: { userId, deletedAt: null },
-        include: { organization: true },
+      const organization = await this.prisma.organization.findUnique({
+        where: { id: organizationId },
       });
 
-      if (existingMember) return existingMember.organization;
-
-      const user = await this.prisma.user.findUnique({ where: { id: userId } });
-
-      // Generate unique slug
-      const baseSlug = `org-${user?.name?.toLowerCase().replace(/\s+/g, '-') || 'user'}-${userId.slice(-6)}`;
-      let slug = baseSlug;
-      let counter = 1;
-
-      // Ensure slug is unique
-      while (await this.prisma.organization.findUnique({ where: { slug } })) {
-        slug = `${baseSlug}-${counter}`;
-        counter++;
+      if (!organization) {
+        throw new NotFoundException('Organization not found');
       }
 
-      return await this.prisma.organization.create({
+      const [
+        totalOutlines,
+        completedOutlines,
+        inProgressOutlines,
+        pendingOutlines,
+      ] = await Promise.all([
+        this.prisma.outline.count({
+          where: { organizationId, deletedAt: null },
+        }),
+        this.prisma.outline.count({
+          where: { organizationId, status: Status.COMPLETED, deletedAt: null },
+        }),
+        this.prisma.outline.count({
+          where: {
+            organizationId,
+            status: Status.IN_PROGRESS,
+            deletedAt: null,
+          },
+        }),
+        this.prisma.outline.count({
+          where: { organizationId, status: Status.PENDING, deletedAt: null },
+        }),
+      ]);
+
+      return {
+        success: true,
         data: {
-          name: `${user?.name || 'User'}'s Organization`,
-          slug: slug,
+          organizationId,
+          organizationName: organization.name,
+          organizationSlug: organization.slug,
+          totalOutlines,
+          completedOutlines,
+          inProgressOutlines,
+          pendingOutlines,
+          completionRate:
+            totalOutlines > 0 ? (completedOutlines / totalOutlines) * 100 : 0,
         },
-      });
+        message: 'Organization statistics fetched successfully',
+      };
     } catch (error) {
       this.logger.error(
-        `Error getting/creating organization for user ${userId}`,
+        `Error fetching stats for organization ${organizationId}`,
         error,
       );
-      throw new BadRequestException('Failed to create organization for user');
+      throw new BadRequestException(
+        error.message || 'Failed to fetch organization statistics',
+      );
     }
   }
 
-  private async getOrCreateOrganizationMember(
-    userId: string,
+  /**
+   * Get outlines assigned to current user as reviewer
+   */
+  async getAssignedOutlines(
     organizationId: string,
+    memberId: string,
+    page = 1,
+    perPage = 10,
   ) {
     try {
-      const existingMember = await this.prisma.organizationMember.findFirst({
-        where: { userId, organizationId, deletedAt: null },
-      });
+      const skip = (page - 1) * perPage;
 
-      if (existingMember) return existingMember;
+      const [outlines, total] = await Promise.all([
+        this.prisma.outline.findMany({
+          where: {
+            organizationId,
+            reviewerId: memberId,
+            deletedAt: null,
+          },
+          skip,
+          take: perPage,
+          include: {
+            organization: true,
+            createdBy: {
+              include: {
+                user: { select: { id: true, name: true, email: true } },
+              },
+            },
+            reviewer: {
+              include: {
+                user: { select: { id: true, name: true, email: true } },
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.outline.count({
+          where: {
+            organizationId,
+            reviewerId: memberId,
+            deletedAt: null,
+          },
+        }),
+      ]);
 
-      return await this.prisma.organizationMember.create({
-        data: { userId, organizationId, role: 'OWNER' },
-      });
+      return {
+        success: true,
+        data: outlines,
+        page,
+        perPage,
+        total,
+        message:
+          outlines.length > 0
+            ? 'Assigned outlines fetched successfully'
+            : 'No outlines assigned to you',
+      };
     } catch (error) {
       this.logger.error(
-        `Error getting/creating member for user ${userId} in org ${organizationId}`,
+        `Error fetching assigned outlines for member ${memberId} in organization ${organizationId}`,
         error,
       );
-      throw new BadRequestException('Failed to create organization member');
+      throw new BadRequestException(
+        error.message || 'Failed to fetch assigned outlines',
+      );
+    }
+  }
+
+  /**
+   * Get outlines created by current user
+   */
+  async getMyOutlines(
+    organizationId: string,
+    memberId: string,
+    page = 1,
+    perPage = 10,
+  ) {
+    try {
+      const skip = (page - 1) * perPage;
+
+      const [outlines, total] = await Promise.all([
+        this.prisma.outline.findMany({
+          where: {
+            organizationId,
+            createdByMemberId: memberId,
+            deletedAt: null,
+          },
+          skip,
+          take: perPage,
+          include: {
+            organization: true,
+            createdBy: {
+              include: {
+                user: { select: { id: true, name: true, email: true } },
+              },
+            },
+            reviewer: {
+              include: {
+                user: { select: { id: true, name: true, email: true } },
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.outline.count({
+          where: {
+            organizationId,
+            createdByMemberId: memberId,
+            deletedAt: null,
+          },
+        }),
+      ]);
+
+      return {
+        success: true,
+        data: outlines,
+        page,
+        perPage,
+        total,
+        message:
+          outlines.length > 0
+            ? 'Your outlines fetched successfully'
+            : 'You have not created any outlines yet',
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error fetching user outlines for member ${memberId} in organization ${organizationId}`,
+        error,
+      );
+      throw new BadRequestException(
+        error.message || 'Failed to fetch your outlines',
+      );
     }
   }
 }

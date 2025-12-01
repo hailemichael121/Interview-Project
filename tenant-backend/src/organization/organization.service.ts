@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+// src/organization/organization.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -12,12 +10,17 @@ import {
 import { PrismaService } from '../lib/prisma.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
+import { PermissionService } from '../auth/services/permission.service';
+import { Role } from '../users/enums/role.enum';
 
 @Injectable()
 export class OrganizationService {
   private readonly logger = new Logger(OrganizationService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private permissionService: PermissionService,
+  ) {}
 
   // --------------------------
   // Create organization
@@ -26,7 +29,7 @@ export class OrganizationService {
     try {
       this.logger.log(`Creating organization "${dto.name}" by user ${ownerId}`);
 
-      // Generate a unique slug if not provided or if it might be duplicate
+      // Generate a unique slug if not provided
       let finalSlug = dto.slug;
       if (!finalSlug) {
         finalSlug = this.generateSlug(dto.name);
@@ -54,30 +57,51 @@ export class OrganizationService {
             },
           },
         },
-        include: { members: true },
+        include: {
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       this.logger.log(`Organization created with id ${org.id}`);
-      return { success: true, message: 'Organization created', data: org };
+
+      return {
+        success: true,
+        message: 'Organization created successfully',
+        data: {
+          id: org.id,
+          name: org.name,
+          slug: org.slug,
+          createdAt: org.createdAt,
+          members: org.members.map((m) => ({
+            id: m.id,
+            userId: m.userId,
+            role: m.role,
+            user: m.user,
+          })),
+        },
+      };
     } catch (error) {
       this.logger.error('Error creating organization', error);
 
-      // Handle specific error cases
       if (error instanceof ConflictException) {
         throw error;
       }
 
       if (error.code === 'P2002') {
-        // Prisma unique constraint error
         const constraint = error.meta?.target || error.meta?.constraint?.fields;
         if (constraint && constraint.includes('slug')) {
           throw new ConflictException(
             'Organization with this slug already exists. Please choose a different slug.',
-          );
-        }
-        if (constraint && constraint.includes('name')) {
-          throw new ConflictException(
-            'Organization with this name already exists. Please choose a different name.',
           );
         }
       }
@@ -89,31 +113,59 @@ export class OrganizationService {
   }
 
   // --------------------------
-  // List organizations for a user (paginated)
+  // List organizations for a user (using pre-fetched memberships)
   // --------------------------
-  async listUserOrganizations(userId: string, page = 1, perPage = 10) {
+  async listUserOrganizations(
+    userId: string,
+    memberships: any[],
+    page = 1,
+    perPage = 10,
+  ) {
     try {
+      // Use pagination on the pre-fetched memberships
       const skip = (page - 1) * perPage;
+      const paginatedMemberships = memberships.slice(skip, skip + perPage);
 
-      const [orgs, total] = await Promise.all([
-        this.prisma.organizationMember.findMany({
-          where: { userId, deletedAt: null },
-          include: { organization: true },
-          skip,
-          take: perPage,
+      // Fetch complete organization details for paginated memberships
+      const organizations = await Promise.all(
+        paginatedMemberships.map(async (membership) => {
+          const org = await this.prisma.organization.findUnique({
+            where: { id: membership.organizationId },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              createdAt: true,
+              updatedAt: true,
+              _count: {
+                select: {
+                  members: {
+                    where: { deletedAt: null },
+                  },
+                  outlines: {
+                    where: { deletedAt: null },
+                  },
+                },
+              },
+            },
+          });
+
+          return {
+            ...org,
+            role: membership.role,
+            joinedAt: membership.joinedAt,
+            memberId: membership.id,
+          };
         }),
-        this.prisma.organizationMember.count({
-          where: { userId, deletedAt: null },
-        }),
-      ]);
+      );
 
       return {
         success: true,
         message: 'Organizations fetched successfully',
-        data: orgs,
+        data: organizations,
         page,
         perPage,
-        total,
+        total: memberships.length,
       };
     } catch (error) {
       this.logger.error(
@@ -127,28 +179,82 @@ export class OrganizationService {
   }
 
   // --------------------------
+  // Get organization details
+  // --------------------------
+  async getOrganizationDetails(organizationId: string) {
+    try {
+      const organization = await this.prisma.organization.findUnique({
+        where: { id: organizationId },
+        include: {
+          members: {
+            where: { deletedAt: null },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  name: true,
+                  image: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              outlines: {
+                where: { deletedAt: null },
+              },
+              members: {
+                where: { deletedAt: null },
+              },
+            },
+          },
+        },
+      });
+
+      if (!organization) {
+        throw new NotFoundException('Organization not found');
+      }
+
+      return {
+        success: true,
+        message: 'Organization details fetched successfully',
+        data: organization,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error fetching organization details ${organizationId}`,
+        error,
+      );
+      throw new BadRequestException(
+        'Failed to fetch organization details. Please try again.',
+      );
+    }
+  }
+
+  // --------------------------
   // Update organization
   // --------------------------
   async updateOrganization(
     orgId: string,
     dto: UpdateOrganizationDto,
     userId: string,
+    userRole: string,
   ) {
     try {
-      const member = await this.prisma.organizationMember.findFirst({
-        where: { organizationId: orgId, userId, deletedAt: null },
-      });
-      if (!member || member.role !== 'OWNER')
+      // Verify user is OWNER of this organization
+      if (userRole !== 'OWNER') {
         throw new ForbiddenException(
           'Only organization owners can update organization details',
         );
+      }
 
       // Check for duplicate slug if slug is being updated
       if (dto.slug) {
         const existingOrg = await this.prisma.organization.findFirst({
           where: {
             slug: dto.slug,
-            id: { not: orgId }, // Exclude current organization
+            id: { not: orgId },
           },
         });
 
@@ -163,6 +269,7 @@ export class OrganizationService {
         where: { id: orgId },
         data: dto,
       });
+
       return {
         success: true,
         message: 'Organization updated successfully',
@@ -201,20 +308,17 @@ export class OrganizationService {
     email: string,
     role: 'MEMBER' | 'OWNER',
     inviterUserId: string,
+    inviterMemberId: string,
   ) {
     try {
-      const inviter = await this.prisma.organizationMember.findFirst({
-        where: {
-          organizationId: orgId,
-          userId: inviterUserId,
-          role: 'OWNER',
-          deletedAt: null,
-        },
+      // Get organization for invitation details
+      const organization = await this.prisma.organization.findUnique({
+        where: { id: orgId },
       });
-      if (!inviter)
-        throw new ForbiddenException(
-          'Only organization owners can invite members',
-        );
+
+      if (!organization) {
+        throw new NotFoundException('Organization not found');
+      }
 
       // Check if user is already a member
       const existingUser = await this.prisma.user.findUnique({
@@ -262,7 +366,7 @@ export class OrganizationService {
           role,
           token,
           expires,
-          invitedById: inviter.id,
+          invitedById: inviterMemberId,
         },
       });
 
@@ -271,14 +375,20 @@ export class OrganizationService {
           inviteToken: token,
           invitedEmail: email,
           organizationId: orgId,
-          inviterMemberId: inviter.id,
+          organizationSlug: organization.slug,
+          organizationName: organization.name,
+          inviterMemberId: inviterMemberId,
         },
       });
 
       return {
         success: true,
         message: `Invitation sent to ${email}`,
-        data: invite,
+        data: {
+          ...invite,
+          organizationSlug: organization.slug,
+          organizationName: organization.name,
+        },
       };
     } catch (error) {
       this.logger.error(
@@ -288,7 +398,8 @@ export class OrganizationService {
 
       if (
         error instanceof ConflictException ||
-        error instanceof ForbiddenException
+        error instanceof ForbiddenException ||
+        error instanceof NotFoundException
       ) {
         throw error;
       }
@@ -302,19 +413,29 @@ export class OrganizationService {
   // --------------------------
   // Accept invitation
   // --------------------------
-  async acceptInvitation(token: string, userId: string) {
+  async acceptInvitation(token: string, userId: string, userEmail: string) {
     try {
       const invite = await this.prisma.organizationInvite.findFirst({
         where: { token, deletedAt: null, expires: { gt: new Date() } },
-        include: { organization: true },
+        include: {
+          organization: true,
+          logs: {
+            where: { status: 'PENDING' },
+            take: 1,
+          },
+        },
       });
-      if (!invite) throw new NotFoundException('Invalid or expired invitation');
 
-      const user = await this.prisma.user.findUnique({ where: { id: userId } });
-      if (!user || user.email !== invite.email)
+      if (!invite) {
+        throw new NotFoundException('Invalid or expired invitation');
+      }
+
+      // Verify invitation email matches user email
+      if (userEmail !== invite.email) {
         throw new ForbiddenException(
           'This invitation was sent to a different email address',
         );
+      }
 
       // Check if user is already a member
       const existingMember = await this.prisma.organizationMember.findFirst({
@@ -324,29 +445,44 @@ export class OrganizationService {
           deletedAt: null,
         },
       });
+
       if (existingMember) {
         throw new ConflictException(
           'You are already a member of this organization',
         );
       }
 
+      // Create membership
       const member = await this.prisma.organizationMember.create({
         data: {
           organizationId: invite.organizationId,
           userId,
-          role: invite.role,
+          role: invite.role as Role,
+        },
+        include: {
+          organization: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
         },
       });
 
-      await this.prisma.invitationLog.updateMany({
-        where: { inviteToken: token, status: 'PENDING' },
-        data: {
-          status: 'ACCEPTED',
-          acceptedByUserId: userId,
-          acceptedByMemberId: member.id,
-        },
-      });
+      // Update invitation log
+      if (invite.logs.length > 0) {
+        await this.prisma.invitationLog.update({
+          where: { id: invite.logs[0].id },
+          data: {
+            status: 'ACCEPTED',
+            acceptedByUserId: userId,
+            acceptedByMemberId: member.id,
+          },
+        });
+      }
 
+      // Mark invitation as used
       await this.prisma.organizationInvite.update({
         where: { id: invite.id },
         data: { deletedAt: new Date() },
@@ -355,7 +491,18 @@ export class OrganizationService {
       return {
         success: true,
         message: 'Invitation accepted successfully',
-        data: member,
+        data: {
+          organization: {
+            id: member.organization.id,
+            name: member.organization.name,
+            slug: member.organization.slug,
+          },
+          member: {
+            id: member.id,
+            role: member.role,
+            joinedAt: member.joinedAt,
+          },
+        },
       };
     } catch (error) {
       this.logger.error(
@@ -385,10 +532,24 @@ export class OrganizationService {
       const skip = (page - 1) * perPage;
       const [members, total] = await Promise.all([
         this.prisma.organizationMember.findMany({
-          where: { organizationId: orgId, deletedAt: null },
-          include: { user: true },
+          where: {
+            organizationId: orgId,
+            deletedAt: null,
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                image: true,
+                createdAt: true,
+              },
+            },
+          },
           skip,
           take: perPage,
+          orderBy: { joinedAt: 'asc' },
         }),
         this.prisma.organizationMember.count({
           where: { organizationId: orgId, deletedAt: null },
@@ -398,7 +559,12 @@ export class OrganizationService {
       return {
         success: true,
         message: 'Members fetched successfully',
-        data: members,
+        data: members.map((member) => ({
+          id: member.id,
+          role: member.role,
+          joinedAt: member.joinedAt,
+          user: member.user,
+        })),
         page,
         perPage,
         total,
@@ -414,46 +580,68 @@ export class OrganizationService {
   // --------------------------
   // Revoke member
   // --------------------------
-  async revokeMember(orgId: string, memberId: string, ownerId: string) {
+  async revokeMember(
+    orgId: string,
+    targetMemberId: string,
+    ownerId: string,
+    ownerRole: string,
+  ) {
     try {
-      const owner = await this.prisma.organizationMember.findFirst({
-        where: {
-          organizationId: orgId,
-          userId: ownerId,
-          role: 'OWNER',
-          deletedAt: null,
-        },
-      });
-      if (!owner)
+      // Verify owner role
+      if (ownerRole !== 'OWNER') {
         throw new ForbiddenException(
           'Only organization owners can revoke member access',
         );
+      }
 
-      const member = await this.prisma.organizationMember.findUnique({
-        where: { id: memberId },
+      const targetMember = await this.prisma.organizationMember.findUnique({
+        where: { id: targetMemberId },
+        include: {
+          organization: true,
+          user: true,
+        },
       });
-      if (!member) throw new NotFoundException('Member not found');
+
+      if (!targetMember) {
+        throw new NotFoundException('Member not found');
+      }
+
+      // Verify target member belongs to the same organization
+      if (targetMember.organizationId !== orgId) {
+        throw new BadRequestException(
+          'Member does not belong to this organization',
+        );
+      }
 
       // Prevent owners from revoking themselves
-      if (member.userId === ownerId) {
+      if (targetMember.userId === ownerId) {
         throw new ForbiddenException('Cannot revoke your own access as owner');
       }
 
+      // Prevent revoking other owners
+      if (targetMember.role === 'OWNER') {
+        throw new ForbiddenException('Cannot revoke another owner');
+      }
+
       await this.prisma.organizationMember.update({
-        where: { id: memberId },
+        where: { id: targetMemberId },
         data: { deletedAt: new Date() },
       });
 
-      return { success: true, message: 'Member access revoked successfully' };
+      return {
+        success: true,
+        message: `Member ${targetMember.user.email} access revoked successfully`,
+      };
     } catch (error) {
       this.logger.error(
-        `Error revoking member ${memberId} from org ${orgId}`,
+        `Error revoking member ${targetMemberId} from org ${orgId}`,
         error,
       );
 
       if (
         error instanceof ForbiddenException ||
-        error instanceof NotFoundException
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
       ) {
         throw error;
       }
@@ -464,12 +652,112 @@ export class OrganizationService {
     }
   }
 
+  // --------------------------
+  // Validate and switch organization
+  // --------------------------
+  async validateAndSwitchOrganization(userId: string, organizationId: string) {
+    try {
+      const membership = await this.prisma.organizationMember.findFirst({
+        where: {
+          userId,
+          organizationId,
+          deletedAt: null,
+        },
+        include: {
+          organization: true,
+        },
+      });
+
+      if (!membership) {
+        throw new ForbiddenException(
+          'You are not a member of this organization',
+        );
+      }
+
+      return {
+        success: true,
+        message: 'Organization context switched successfully',
+        data: {
+          organization: {
+            id: membership.organization.id,
+            name: membership.organization.name,
+            slug: membership.organization.slug,
+          },
+          membership: {
+            id: membership.id,
+            role: membership.role,
+            joinedAt: membership.joinedAt,
+          },
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error switching organization for user ${userId}`,
+        error,
+      );
+      throw new BadRequestException(
+        'Failed to switch organization. Please try again.',
+      );
+    }
+  }
+
+  // --------------------------
+  // Create default organization for user (used when none exists)
+  // --------------------------
+  async createDefaultOrganization(userId: string, userEmail: string) {
+    try {
+      const userName = userEmail.split('@')[0];
+      const orgName = `${userName}'s Workspace`;
+      const baseSlug = this.generateSlug(orgName);
+
+      let slug = baseSlug;
+      let counter = 1;
+
+      // Ensure unique slug
+      while (await this.prisma.organization.findUnique({ where: { slug } })) {
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+
+      const org = await this.prisma.organization.create({
+        data: {
+          name: orgName,
+          slug,
+          members: {
+            create: {
+              userId,
+              role: 'OWNER',
+            },
+          },
+        },
+        include: {
+          members: true,
+        },
+      });
+
+      this.logger.log(`Default organization created for user ${userId}`);
+
+      return {
+        organization: org,
+        membership: org.members[0],
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error creating default organization for user ${userId}`,
+        error,
+      );
+      throw new BadRequestException(
+        'Failed to create default organization. Please try again.',
+      );
+    }
+  }
+
   // Helper method to generate slug from name
   private generateSlug(name: string): string {
     return name
       .toLowerCase()
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9-]/g, '')
-      .substring(0, 50); // Limit slug length
+      .substring(0, 50);
   }
 }

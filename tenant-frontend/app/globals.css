@@ -3,7 +3,7 @@
 /* --- Light Mode: Milky White Background with Black/Dark Gray Text --- */
 :root {
   /* Light mode: milky white backgrounds with black/dark gray text */
-  --background: 0 0% 98%; /* milky white */
+  --background: 0 0% 90%; /* milky white */
   --foreground: 0 0% 10%; /* near black */
 
   --card: 0 0% 100%; /* pure white cards */
@@ -34,7 +34,7 @@
   --radius: 0.5rem;
 
   /* Light mode hover/active colors */
-  --hover-100: 0 0% 96%; /* near white light hover */
+  --hover-100: 0 0% 93%;/* near white light hover */
   --hover-200: 0 0% 93%; /* light gray hover */
   --active-200: 0 0% 93%; /* active light */
   --border-gray-300: 0 0% 82%; /* border light shade (maps to #d1d1d1) */

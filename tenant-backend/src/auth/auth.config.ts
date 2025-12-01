@@ -1,3 +1,4 @@
+// src/auth/auth.config.ts
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { admin } from 'better-auth/plugins/admin';
@@ -37,7 +38,16 @@ export const auth = betterAuth({
         defaultValue: 'USER',
         transformInput: (value?: string) => {
           if (!value) return 'USER';
-          return value.toUpperCase();
+          const upperValue = value.toUpperCase();
+          // Only allow specific roles
+          if (
+            ['ADMIN', 'OWNER', 'REVIEWER', 'MEMBER', 'USER'].includes(
+              upperValue,
+            )
+          ) {
+            return upperValue;
+          }
+          return 'USER';
         },
       },
       tenantId: {

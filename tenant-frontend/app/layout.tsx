@@ -6,7 +6,6 @@ import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { OrgProvider } from "@/lib/org-context";
 import { ThemeToggler } from "@/components/theme-toggler";
-import MockAuthToggle from "@/components/dev/mock-auth-toggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,7 +21,7 @@ export const metadata: Metadata = {
   title: "Workspace - Multi-Tenant App",
   description: "A modern multi-tenant workspace application",
   icons: {
-    icon: "/images/tenant-light.svg",
+    icon: "/images/tenant-light.png",
   },
 };
 
@@ -40,12 +39,9 @@ export default function RootLayout({
         <ThemeProvider>
           <OrgProvider>
             {children}
-            {/* Compact theme toggle visible across all pages */}
             <div className="fixed bottom-4 right-4 z-50">
               <ThemeToggler compact />
             </div>
-            {/* Dev-only mock auth toggle (renders nothing in production) */}
-            <MockAuthToggle />
             <Toaster />
           </OrgProvider>
         </ThemeProvider>

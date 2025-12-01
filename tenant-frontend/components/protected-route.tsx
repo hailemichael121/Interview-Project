@@ -1,28 +1,164 @@
+// components/protected-route.tsx
 "use client";
 
-import React from "react";
-import { useRouter } from "next/navigation";
-import { useSession } from "@/hooks/use-session";
-// lightweight protected wrapper
+import React, { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
+import { apiService } from "@/lib/api-service";
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { data: session, isLoading } = useSession() as any;
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requireAuth?: boolean;
+  requireOrganization?: boolean;
+  redirectTo?: string;
+  organizationId?: string;
+}
+
+export function ProtectedRoute({
+  children,
+  requireAuth = true,
+  requireOrganization = false,
+  redirectTo = "/auth/signin",
+  organizationId,
+}: ProtectedRouteProps) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasOrganization, setHasOrganization] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
-  React.useEffect(() => {
-    if (!isLoading && !session?.user) {
-      // Not authenticated - redirect to sign in
-      router.replace("/auth/signin");
-    }
-  }, [isLoading, session, router]);
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        setIsLoading(true);
 
-  if (isLoading || !session) {
+        // Check authentication
+        const session = await authClient.getSession();
+
+        // Check if session exists and has data
+        const hasValidSession = session && session.data && session.data.user;
+
+        if (!hasValidSession && requireAuth) {
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          router.replace(redirectTo);
+          return;
+        }
+
+        setIsAuthenticated(!!hasValidSession);
+
+        // If organization is required, check if user has one
+        if (requireOrganization && session?.data?.user) {
+          try {
+            // Get user's current organization context
+            const userData = await apiService.user.getCurrentUser();
+
+            if (userData.success) {
+              const hasOrg =
+                userData.data.context.organizationMemberships.length > 0;
+              const currentOrgId = userData.data.context.currentOrganizationId;
+
+              setHasOrganization(hasOrg);
+
+              // If specific organization is required
+              if (organizationId) {
+                const isMember =
+                  userData.data.context.organizationMemberships.some(
+                    (m: any) => m.organizationId === organizationId
+                  );
+
+                if (!isMember) {
+                  router.replace("/dashboard");
+                  return;
+                }
+              }
+
+              // If no organization but required, redirect to create one
+              if (
+                requireOrganization &&
+                !hasOrg &&
+                !pathname.includes("/organization/create")
+              ) {
+                router.replace("/organization/create");
+                return;
+              }
+            }
+          } catch (error) {
+            console.error("Error checking organization:", error);
+          }
+        }
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setIsLoading(false);
+
+        if (requireAuth) {
+          router.replace(redirectTo);
+        }
+      }
+    };
+
+    checkAuth();
+  }, [
+    requireAuth,
+    requireOrganization,
+    organizationId,
+    router,
+    redirectTo,
+    pathname,
+  ]);
+
+  // Show loading state
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full w-full">
-        <div className="animate-pulse">Checking session...</div>
+      <div className="flex items-center justify-center h-full w-full min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="text-sm text-muted-foreground">
+            Checking session...
+          </div>
+        </div>
       </div>
     );
   }
 
+  // Check conditions
+  if (requireAuth && !isAuthenticated) {
+    return null; // Will redirect in useEffect
+  }
+
+  if (
+    requireOrganization &&
+    !hasOrganization &&
+    !pathname.includes("/organization/create")
+  ) {
+    return null; // Will redirect in useEffect
+  }
+
   return <>{children}</>;
+}
+
+// Helper component for routes that require organization context
+export function OrganizationProtectedRoute({
+  children,
+  organizationId,
+}: {
+  children: React.ReactNode;
+  organizationId?: string;
+}) {
+  return (
+    <ProtectedRoute
+      requireAuth={true}
+      requireOrganization={true}
+      organizationId={organizationId}
+    >
+      {children}
+    </ProtectedRoute>
+  );
+}
+
+// Helper component for public routes (no auth required)
+export function PublicRoute({ children }: { children: React.ReactNode }) {
+  return <ProtectedRoute requireAuth={false}>{children}</ProtectedRoute>;
 }

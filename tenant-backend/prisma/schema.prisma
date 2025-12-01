@@ -1,9 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "binary"   // 👈 Correct location
 }
 
 datasource db {
   provider = "postgresql"
+  
 }
 
 // ========================================================
@@ -54,7 +56,7 @@ model User {
   updatedAt     DateTime @updatedAt
   banned        Boolean? @default(false)
 
-  role      String?     @default("USER") // global default role
+  role      String?   @default("USER")
   tenantId  String?
   deletedAt DateTime?
 
@@ -135,7 +137,7 @@ model OrganizationMember {
   id             String    @id @default(cuid())
   organizationId String
   userId         String
-  role           Role      @default(MEMBER) // role per organization
+  role           Role
   joinedAt       DateTime  @default(now())
   deletedAt      DateTime?
 
@@ -153,7 +155,7 @@ model OrganizationInvite {
   id             String    @id @default(cuid())
   organizationId String
   email          String
-  role           Role      @default(MEMBER)
+  role           String    @default("MEMBER")
   token          String    @unique
   expires        DateTime
   invitedById    String?
@@ -169,8 +171,10 @@ model InvitationLog {
   id                 String           @id @default(cuid())
   inviteToken        String
   invitedEmail       String
-  inviterMemberId    String
   organizationId     String
+  organizationSlug   String
+  organizationName   String
+  inviterMemberId    String
   status             InvitationStatus @default(PENDING)
   invitedAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
