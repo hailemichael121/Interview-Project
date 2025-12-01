@@ -38,7 +38,6 @@ export class OrganizationController {
     @Query('page') page = '1',
     @Query('perPage') perPage = '10',
   ) {
-    // Use memberships from auth context instead of querying again
     return this.service.listUserOrganizations(
       userId,
       memberships,
@@ -47,39 +46,40 @@ export class OrganizationController {
     );
   }
 
+  // FIXED: Removed OrganizationGuard since we're checking params manually
   @Put(':id')
-  @UseGuards(OrganizationGuard)
   async updateOrg(
     @CurrentUser('id') userId: string,
-    @CurrentUser('organizationId') organizationId: string,
-    @CurrentUser('memberRole') memberRole: Role,
+    @CurrentUser('memberships') memberships: any[],
     @Param('id') id: string,
     @Body() dto: UpdateOrganizationDto,
   ) {
-    // Verify the organization ID in params matches context
-    if (id !== organizationId) {
-      throw new BadRequestException('Organization ID mismatch');
+    // Find membership for this organization
+    const membership = memberships.find(m => m.organizationId === id);
+    if (!membership) {
+      throw new BadRequestException('You are not a member of this organization');
     }
 
-    return this.service.updateOrganization(id, dto, userId, memberRole);
+    return this.service.updateOrganization(id, dto, userId, membership.role);
   }
 
+  // FIXED: Simplified - no OrganizationGuard
   @Get(':id/members')
-  @UseGuards(OrganizationGuard)
   async listMembers(
-    @CurrentUser('organizationId') organizationId: string,
-    @CurrentUser('memberRole') memberRole: Role,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('memberships') memberships: any[],
     @Param('id') id: string,
     @Query('page') page = '1',
     @Query('perPage') perPage = '10',
   ) {
-    // Verify the organization ID in params matches context
-    if (id !== organizationId) {
-      throw new BadRequestException('Organization ID mismatch');
+    // Find membership for this organization
+    const membership = memberships.find(m => m.organizationId === id);
+    if (!membership) {
+      throw new BadRequestException('You are not a member of this organization');
     }
 
     // Check if user has permission to view members
-    if (!['OWNER', 'REVIEWER'].includes(memberRole)) {
+    if (!['OWNER', 'REVIEWER'].includes(membership.role)) {
       throw new BadRequestException(
         'You do not have permission to view organization members',
       );
@@ -88,23 +88,22 @@ export class OrganizationController {
     return this.service.listMembers(id, Number(page), Number(perPage));
   }
 
+  // FIXED: Simplified - no OrganizationGuard
   @Post(':id/invite')
-  @UseGuards(OrganizationGuard)
   async inviteMember(
     @CurrentUser('id') userId: string,
-    @CurrentUser('organizationId') organizationId: string,
-    @CurrentUser('memberRole') memberRole: Role,
-    @CurrentUser('memberId') memberId: string,
+    @CurrentUser('memberships') memberships: any[],
     @Param('id') id: string,
     @Body() body: { email: string; role: 'MEMBER' | 'OWNER' },
   ) {
-    // Verify the organization ID in params matches context
-    if (id !== organizationId) {
-      throw new BadRequestException('Organization ID mismatch');
+    // Find membership for this organization
+    const membership = memberships.find(m => m.organizationId === id);
+    if (!membership) {
+      throw new BadRequestException('You are not a member of this organization');
     }
 
     // Check if user has permission to invite members
-    if (memberRole !== 'OWNER') {
+    if (membership.role !== 'OWNER') {
       throw new BadRequestException(
         'Only organization owners can invite members',
       );
@@ -115,7 +114,7 @@ export class OrganizationController {
       body.email,
       body.role,
       userId,
-      memberId,
+      membership.id,
     );
   }
 
@@ -128,36 +127,35 @@ export class OrganizationController {
     return this.service.acceptInvitation(token, userId, userEmail);
   }
 
+  // FIXED: Simplified - no OrganizationGuard
   @Post(':id/revoke')
-  @UseGuards(OrganizationGuard)
   async revokeMember(
     @CurrentUser('id') userId: string,
-    @CurrentUser('organizationId') organizationId: string,
-    @CurrentUser('memberRole') memberRole: Role,
+    @CurrentUser('memberships') memberships: any[],
     @Param('id') id: string,
     @Body('memberId') targetMemberId: string,
   ) {
-    // Verify the organization ID in params matches context
-    if (id !== organizationId) {
-      throw new BadRequestException('Organization ID mismatch');
+    // Find membership for this organization
+    const membership = memberships.find(m => m.organizationId === id);
+    if (!membership) {
+      throw new BadRequestException('You are not a member of this organization');
     }
 
     // Check if user has permission to revoke members
-    if (memberRole !== 'OWNER') {
+    if (membership.role !== 'OWNER') {
       throw new BadRequestException(
         'Only organization owners can revoke members',
       );
     }
 
     return this.service.revokeMember(
-      organizationId,
+      id,
       targetMemberId,
       userId,
-      memberRole,
+      membership.role,
     );
   }
 
-  // New endpoint to switch organization context
   @Post(':id/switch')
   async switchOrganization(
     @CurrentUser('id') userId: string,
@@ -166,16 +164,18 @@ export class OrganizationController {
     return this.service.validateAndSwitchOrganization(userId, organizationId);
   }
 
-  // Get organization details
+  // FIXED: Simplified - no OrganizationGuard
   @Get(':id')
-  @UseGuards(OrganizationGuard)
   async getOrganization(
-    @CurrentUser('organizationId') organizationId: string,
+    @CurrentUser('memberships') memberships: any[],
     @Param('id') id: string,
   ) {
-    if (id !== organizationId) {
-      throw new BadRequestException('Organization ID mismatch');
+    // Check if user is a member of this organization
+    const isMember = memberships.some(m => m.organizationId === id);
+    if (!isMember) {
+      throw new BadRequestException('You are not a member of this organization');
     }
-    return this.service.getOrganizationDetails(organizationId);
+    
+    return this.service.getOrganizationDetails(id);
   }
 }

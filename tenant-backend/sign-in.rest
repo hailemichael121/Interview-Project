@@ -2,21 +2,116 @@
 @frontendUrl = https://tenanncy.vercel.app
 @contentType = application/json
 
-###
-# 1. SIGN IN
-POST {{baseUrl}}/api/auth/sign-in/email
-Origin: {{frontendUrl}}
-Content-Type: {{contentType}}
+# Current session token
+@authToken = XqbBeuZMApfApoA48laC1tcmEwpaFsAe.M0HnCGeqbIg7rkv5gOkAoUqWQ3S0sLXaTs02PNesz6s%3D
+@userId = 0vB4HtESESnoz1YnPyl52q2KepJWYdzE
 
-{
-  "email": "yihunashe@gmail.com",
-  "password": "password123"
-}
+# NEW organization ID from create response
+@organizationId = cminmtswt00021zay8qmet0gh
 
 ###
-# 2. USE THE TOKEN FROM ABOVE RESPONSE
+# 1. HEALTH CHECK
+GET {{baseUrl}}/
+
+###
+# 2. GET CURRENT USER
 GET {{baseUrl}}/users/me
 Origin: {{frontendUrl}}
 Content-Type: {{contentType}}
-# Copy the token from Set-Cookie header in the sign-in response
-Cookie: better-auth.session_token=YOUR_TOKEN_HERE
+Cookie: better-auth.session_token={{authToken}}
+
+###
+# 3. GET DETAILED USER PROFILE
+GET {{baseUrl}}/users/profile
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+
+###
+# 4. CREATE ORGANIZATION (already done - response shows success)
+POST {{baseUrl}}/api/organization/create
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+
+{
+  "name": "Kan First Organization",
+  "slug": "kan-first-org"
+}
+
+> {%
+    // Capture the NEW organization ID
+    if (response.body.success && response.body.data) {
+        client.global.set("organizationId", response.body.data.id);
+        console.log("New Organization ID:", response.body.data.id);
+    }
+%}
+
+###
+# 5. LIST USER ORGANIZATIONS
+GET {{baseUrl}}/api/organization
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+
+###
+# 5.5 SWITCH TO THE CORRECT ORGANIZATION (important!)
+POST {{baseUrl}}/api/organization/{{organizationId}}/switch
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+
+
+###
+# 6. GET ORGANIZATION DETAILS (with query parameter)
+GET {{baseUrl}}/api/organization/{{organizationId}}?organizationId={{organizationId}}
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
+
+###
+# 7. LIST ORGANIZATION MEMBERS (with query parameter)
+GET {{baseUrl}}/api/organization/cminmtswt00021zay8qmet0gh?organizationId=cminmtswt00021zay8qmet0gh
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
+
+###
+# 8. INVITE MEMBER TO ORGANIZATION (organizationId in both header AND body)
+POST {{baseUrl}}/api/organization/{{organizationId}}/invite
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
+
+{
+  "email": "test@example.com",
+  "role": "MEMBER",
+  "organizationId": "{{organizationId}}"
+}
+
+###
+# 9. CREATE OUTLINE (organizationId in both header AND body)
+POST {{baseUrl}}/api/outlines
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
+
+{
+  "header": "My First Outline",
+  "sectionType": "EXECUTIVE_SUMMARY",
+  "target": 1000,
+  "limit": 1200,
+  "organizationId": "{{organizationId}}"
+}
+
+###
+# 10. LIST ALL OUTLINES (with query parameter)
+GET {{baseUrl}}/api/outlines?organizationId={{organizationId}}
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+X-Organization-Id: {{organizationId}}
