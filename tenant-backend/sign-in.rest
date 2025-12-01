@@ -98,14 +98,14 @@ POST {{baseUrl}}/api/outlines
 Origin: {{frontendUrl}}
 Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
-X-Organization-Id: {{organizationId}}
+X-Organization-Id: cminmtswt00021zay8qmet0gh
 
 {
   "header": "My First Outline",
   "sectionType": "EXECUTIVE_SUMMARY",
   "target": 1000,
   "limit": 1200,
-  "organizationId": "{{organizationId}}"
+  "organizationId": "cminmtswt00021zay8qmet0gh"
 }
 
 ###

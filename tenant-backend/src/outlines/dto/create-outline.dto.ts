@@ -1,13 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 // src/outlines/dto/create-outline.dto.ts
-import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsNumber,
-  Min,
-  IsUUID,
-} from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsNumber, Min } from 'class-validator';
 import { SectionType, Status } from '@prisma/client';
 
 export class CreateOutlineDto {
@@ -36,6 +28,6 @@ export class CreateOutlineDto {
   reviewerId?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString() // Changed from @IsUUID() to @IsString()
   organizationId?: string;
 }
