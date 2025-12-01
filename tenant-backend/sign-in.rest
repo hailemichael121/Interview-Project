@@ -2,7 +2,8 @@
 @frontendUrl = https://tenanncy.vercel.app
 @contentType = application/json
 
-# Sign in first to get a fresh token
+###
+# 1. SIGN IN
 POST {{baseUrl}}/api/auth/sign-in/email
 Origin: {{frontendUrl}}
 Content-Type: {{contentType}}
@@ -13,14 +14,9 @@ Content-Type: {{contentType}}
 }
 
 ###
-# Then immediately use the token from response:
-GET {{baseUrl}}/api/auth/u
+# 2. USE THE TOKEN FROM ABOVE RESPONSE
+GET {{baseUrl}}/users/me
 Origin: {{frontendUrl}}
 Content-Type: {{contentType}}
-# Use the token from the sign-in response above
-Cookie: better-auth.session_token=Q1bUR7cL3ie83QAwoeyIjOuyDmToObjM.JSSKGdPzw6aEdU0cE6F7vUWJJ7snEj40wPoiBn0qJlA%3D
-###
-GET {{baseUrl}}/api/auth/user
-Origin: {{frontendUrl}}
-Accept: {{contentType}}
-Cookie: better-auth.session_token=r9pBZTiRJqSKCRgTo2nbwScUbp9p8Hf5.3Ow206ppciZtjYgWy3DEsTaTzT83IEebOJs42YX%2B%2FZk%3D
+# Copy the token from Set-Cookie header in the sign-in response
+Cookie: better-auth.session_token=YOUR_TOKEN_HERE
