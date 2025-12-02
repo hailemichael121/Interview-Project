@@ -41,46 +41,104 @@ import {
   ApiInvitation,
 } from "../types/types";
 
-/**
- * Generic authenticated fetch wrapper
- * Automatically injects session cookie and organization context header
- */
-// lib/api-service.ts - UPDATED apiFetch function
+ 
 async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {},
   organizationId?: string
 ): Promise<ApiResponse<T>> {
+  // Get current session to check authentication
+  let sessionData;
+  try {
+    const sessionResponse = await authClient.getSession();
+    sessionData = sessionResponse.data;
+  } catch (error) {
+    console.warn("Failed to get session:", error);
+  }
+
+  // Build headers
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "Accept": "application/json",
     ...(options.headers as Record<string, string>),
   };
 
+  // Add organization header
   if (organizationId) {
     headers["X-Organization-Id"] = organizationId;
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-    credentials: "include", // <-- important
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `API error: ${response.status}`);
+  // Add Origin header for CORS
+  if (typeof window !== "undefined") {
+    headers["Origin"] = window.location.origin;
   }
 
-  return response.json();
+  // If we have a session token, we need to manually handle cookies for cross-domain
+  const sessionToken = sessionData?.session?.token;
+  
+  // In production, we need to manually manage cookies since we're cross-domain
+  if (sessionToken && API_BASE !== window.location.origin) {
+    // Decode the token if it's URL encoded
+    const decodedToken = decodeURIComponent(sessionToken);
+    headers["Cookie"] = `__Secure-better-auth.session_token=${decodedToken}`;
+    
+    // Also add as Authorization header as backup
+    headers["Authorization"] = `Bearer ${sessionToken}`;
+  }
+
+  console.log(`API Fetch to: ${API_BASE}${endpoint}`);
+  console.log('Headers sent:', {
+    ...headers,
+    Cookie: headers.Cookie ? '***REDACTED***' : undefined,
+    Authorization: headers.Authorization ? '***REDACTED***' : undefined,
+  });
+
+  try {
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+       credentials: API_BASE.includes(window.location.hostname) ? "include" : "omit",
+    });
+
+     if (response.status === 401) {
+       try {
+        await authClient.signOut();
+      } catch (e) {
+        console.warn("Failed to sign out:", e);
+      }
+      
+       if (typeof window !== "undefined") {
+        window.location.href = "/auth/signin";
+      }
+      
+      throw new Error("Session expired. Please sign in again.");
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.message || 
+                          errorData.error || 
+                          `API error: ${response.status} ${response.statusText}`;
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error("API fetch error:", error);
+    throw error;
+  }
 }
 
 // ==================== AUTH API ====================
 export const authApi = {
-  signUp: async (data: { name: string; email: string; password: string }) =>
-    authClient.signUp.email(data),
+  signUp: async (data: { name: string; email: string; password: string }) => {
+    // For auth calls, use authClient directly
+    return authClient.signUp.email(data);
+  },
 
-  signIn: async (data: { email: string; password: string }) =>
-    authClient.signIn.email(data),
+  signIn: async (data: { email: string; password: string }) => {
+    return authClient.signIn.email(data);
+  },
 
   getSession: async () => authClient.getSession(),
 
@@ -89,6 +147,7 @@ export const authApi = {
   updateUser: async (data: { name?: string; image?: string }) =>
     authClient.updateUser(data),
 };
+
 
 // ==================== USER API ====================
 export const userApi = {

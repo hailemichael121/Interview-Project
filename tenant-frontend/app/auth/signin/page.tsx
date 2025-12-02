@@ -14,6 +14,7 @@ import { FormInput } from "@/components/auth/form-input";
 import { EmailSuggestions } from "@/components/auth/email-suggestions";
 import { AuthCard } from "@/components/auth/auth-card";
 import { SocialButtons } from "@/components/auth/social-buttons";
+import authClient from "@/lib/auth-client";
 
 function SignInContent() {
   const router = useRouter();
@@ -22,34 +23,51 @@ function SignInContent() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.email || !formData.password) {
-      toast.error("Please fill in all fields");
-      return;
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!formData.email || !formData.password) {
+    toast.error("Please fill in all fields");
+    return;
+  }
+
+  setIsSubmitting(true);
+  try {
+    // Direct call - signIn doesn't return error in the response
+    await signIn(formData.email.trim(), formData.password);
+    
+    toast.success("Signed in successfully!");
+    
+    // Wait a moment for cookies to be set
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Verify session is actually set
+    const session = await authClient.getSession();
+    if (!session?.data?.user) {
+      throw new Error("Session not set properly");
     }
 
-    setIsSubmitting(true);
-    try {
-      await signIn(formData.email.trim(), formData.password);
-      toast.success("Signed in successfully!");
-
-      const redirectTo =
-        sessionStorage.getItem("redirectAfterAuth") || "/dashboard";
-      sessionStorage.removeItem("redirectAfterAuth");
-      router.replace(redirectTo);
-    } catch (error: unknown) {
-      console.error("Sign in error:", error);
-      if (error instanceof Error) {
-        toast.error(error.message || "Sign in failed. Please try again.");
-      } else {
-        toast.error("Sign in failed. Please try again.");
-      }
-    } finally {
-      setIsSubmitting(false);
+    const redirectTo = sessionStorage.getItem("redirectAfterAuth") || "/dashboard";
+    sessionStorage.removeItem("redirectAfterAuth");
+    
+    // Use replace instead of push to avoid back button issues
+    router.replace(redirectTo);
+    
+  } catch (error: unknown) {
+    console.error("Sign in error:", error);
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : "Sign in failed. Please try again.";
+    
+    toast.error(errorMessage);
+    
+    // If it's a cookie/session issue, suggest clearing cookies
+    if (errorMessage.includes("cookie") || errorMessage.includes("session")) {
+      toast.error("Please try clearing your browser cookies and try again.");
     }
-  };
-
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   const handleSocialSignIn = () => {
     toast.info("Social sign-in coming soon");
   };
@@ -138,11 +156,13 @@ function SignInContent() {
             type="submit"
             size="lg"
             disabled={isSubmitting || authLoading}
-            className="w-full h-16 text-xl font-semibold rounded-2xl shadow-2xl hover:shadow-blue-600/40 group overflow-hidden"
+            className=" relative w-full h-16 text-xl font-semibold rounded-2xl shadow-2xl hover:shadow-blue-600/40 group overflow-hidden"
           >
             <span className="relative z-10">
               {authLoading || isSubmitting ? "Signing in..." : "Sign In"}
             </span>
+                    <span className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/30 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000" />
+
           </Button>
         </form>
 
