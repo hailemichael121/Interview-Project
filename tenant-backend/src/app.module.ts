@@ -4,7 +4,6 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { auth } from './auth/auth.config';
 import { EnhancedAuthGuard } from './auth/guards/enhanced-auth.guard';
 import { OrganizationContextMiddleware } from './auth/middleware/organization-context.middleware';
 import { PermissionService } from './auth/services/permission.service';
@@ -12,6 +11,7 @@ import { PrismaModule } from './lib/prisma.module';
 import { OrganizationModule } from './organization/organization.module';
 import { OutlinesModule } from './outlines/outlines.module';
 import { UsersModule } from './users/users.module';
+import { auth } from './auth/auth.config';
 
 @Module({
   imports: [
