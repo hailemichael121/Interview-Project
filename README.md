@@ -1,212 +1,265 @@
-# Multi-Tenant Workspace Application
-A full-stack multi-tenant workspace application built with Next.js, NestJS, PostgreSQL, and Better-Auth.
+ 
+# 🚀 Multi-Tenant Workspace Platform
 
-## Tech Stack
-- **Frontend**: ![Next.js](https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Nextjs-logo.svg/48px-Nextjs-logo.svg.png) Next.js 14, TypeScript, Tailwind CSS, shadcn/ui
-- **Backend**: ![NestJS](https://nestjs.com/img/logo_text.svg =48x24) NestJS, TypeScript, Better-Auth
-- **Database**: ![PostgreSQL](https://www.postgresql.org/media/img/about/press/elephant.png =48x48) PostgreSQL with ![Prisma](https://github.com/prisma/presskit/raw/main/Assets/Prisma-DarkLogo.svg =48x24) Prisma ORM
-- **Authentication**: Better-Auth with organizations plugin
+A **production-ready full-stack application** for team collaboration built with a **multi-tenant architecture**.
 
-## Features
-- User authentication (sign up/sign in)
-- Organization management (create/join)
-- Role-based access control (Owner/Member)
-- Team management with invite system
-- Outline/document management
-- Multi-tenant data isolation
+## Project Status
 
-## Prerequisites
-- Node.js 18+
-- PostgreSQL database
-- npm or yarn
-
-## Quick Start
-### 1. Clone and Setup
-```bash
-git clone <your-repo-url>
-cd Interview-Project
-```
-
-### 2. Backend Setup
-```bash
-cd tenant-backend
-# Install dependencies
-npm install
-# Setup environment variables
-# Create .env file with:
-# DATABASE_URL=postgresql://user:password@localhost:5432/tenant_db
-# BETTER_AUTH_SECRET=your-secret-key-here-change-in-production
-# BETTER_AUTH_URL=http://localhost:3000
-# FRONTEND_URL=http://localhost:3001
-# PORT=3000
-
-# Database setup
-npx prisma generate
-npx prisma migrate dev --name init
-# Start development server
-npm run start:dev
-```
-Backend runs on http://localhost:3000
-
-### 3. Frontend Setup
-```bash
-cd ../tenant-frontend
-# Install dependencies
-npm install
-# Setup environment variables
-# Create .env.local file with:
-# NEXT_PUBLIC_BACKEND_URL=http://localhost:3000
-
-# Start development server
-npm run dev
-```
-Frontend runs on http://localhost:3001 (or port 3000 if 3001 is taken)
-
-## Project Structure
-```
-Interview-Project/
-├── tenant-backend/ # NestJS backend
-│ ├── src/ # Source code
-│ ├── prisma/ # Database schema
-│ └── package.json
-├── tenant-frontend/ # Next.js frontend
-│ ├── app/ # App router pages
-│ ├── components/ # React components
-│ └── package.json
-└── README.md
-```
-
-## Authentication Flow
-1. **Sign Up** - Create new user account
-2. **Organization** - Create or join organization
-3. **Role Management** - Owner can invite members
-4. **Workspace** - Access organization-specific data
-
-## Database Schema
-- **Users** - User accounts
-- **Organizations** - Workspace entities
-- **OrganizationMembers** - User-organization relationships
-- **Outlines** - Document management system
-
-## API Endpoints
-
-All authentication endpoints are handled by Better Auth at `/api/auth/*`
-
-### Authentication (Better Auth)
-- `POST /api/auth/sign-up/email` - User registration
-- `POST /api/auth/sign-in/email` - User login
-- `POST /api/auth/sign-out` - User logout
-- `GET /api/auth/session` - Get current session
-
-### Organizations (Better Auth Organization Plugin)
-- `POST /api/auth/organization/create` - Create organization
-- `POST /api/auth/organization/invite-member` - Invite member
-- `POST /api/auth/organization/accept-invitation` - Accept invitation
-- `GET /api/auth/organization/list` - List user's organizations
-
-### Outlines
-- `GET /api/outlines` - List outlines for current organization
-- `POST /api/outlines` - Create outline
-- `PUT /api/outlines/:id` - Update outline
-- `DELETE /api/outlines/:id` - Delete outline
-
-### Team Management
-- `GET /api/team/members` - List organization members
-- `POST /api/team/invite` - Invite member (owner only)
-- `POST /api/team/revoke` - Remove member (owner only)
-
-## Roles & Permissions
-- **Owner**: Full access, can invite/remove members
-- **Member**: Read/write access to organization data
-
-## Development
-### Backend Commands
-```bash
-npm run start:dev # Development mode
-npm run build # Build project
-npm run test # Run tests
-```
-
-### Frontend Commands
-```bash
-npm run dev # Development mode
-npm run build # Build project
-npm run lint # Run ESLint
-```
-
-## Environment Variables
-
-### Backend (.env)
-```env
-# Better Auth Configuration
-BETTER_AUTH_SECRET=your-secret-key-here-change-in-production
-BETTER_AUTH_URL=http://localhost:3000
-BETTER_AUTH_BASE_URL=http://localhost:3000
-
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/tenant_db
-
-# Server Configuration
-PORT=3000
-FRONTEND_URL=http://localhost:3001
-
-# Node Environment
-NODE_ENV=development
-```
-
-### Frontend (.env.local)
-```env
-# Backend API URL (where NestJS is running)
-NEXT_PUBLIC_BACKEND_URL=http://localhost:3000
-
-# Mock Auth (optional - set to "true" to use mock auth)
-NEXT_PUBLIC_USE_MOCK_AUTH=
-```
-
-## Contributing
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
-
-## License
-This project is for interview assessment purposes.
+[![Status](https://img.shields.io/badge/status-active-success)](https://github.com/hailemichael121/Interview-Project)
+[![Frontend Deployment](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://tenanncy.vercel.app)
+[![Backend Deployment](https://img.shields.io/badge/Backend-Render-blue?logo=render)](https://tenant-backend-cz23.onrender.com)
+[![GitHub Repository](https://img.shields.io/badge/Repository-GitHub-000?logo=github)](https://github.com/hailemichael121/Interview-Project)
 
 ---
 
-**To create this manually:**
-1. Open a text editor (e.g., `nano README.md` or `vim README.md` in terminal).
-2. Copy the entire content above (from `# Multi-Tenant...` to the end) and paste it into the file.
-3. Save and exit (Ctrl+O, Enter, Ctrl+X for nano).
+## 📋 Tech Stack
 
-**Note on Logos:** Logos have been made minimal by resizing them to approximately 48px width/height where possible. The Better-Auth logo has been removed due to lack of a readily available official image URL; it's referenced as text only.
+| Component | Stack | Details |
+| :--- | :--- | :--- |
+| **Frontend** (`/tenant-frontend`) | **Next.js 14**, TypeScript, Tailwind CSS | ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript&logoColor=white) |
+| **Backend** (`/tenant-backend`) | **NestJS 10**, TypeScript, Better-Auth | ![NestJS](https://img.shields.io/badge/NestJS-11-red?logo=nestjs&logoColor=white) |
+| **Database** | **PostgreSQL**, Prisma ORM | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white) ![Prisma](https://img.shields.io/badge/Prisma-7-1B222D?logo=prisma&logoColor=white) |
+| **Auth** | **Better-Auth** | Custom organization plugin for multi-tenant cookie-based sessions. |
 
-**For .env.example files:** (unchanged)
-**tenant-backend/.env.example:**
+---
+
+## 🎯 Core Features
+
+### 🔐 Authentication & Security
+* **Email/Password Auth**: Secure sign up/sign in using **session cookies**.
+* **Multi-tenant Sessions**: Session token includes **organization context**.
+* **Role-Based Access Control (RBAC)**: Roles (`Owner`/`Member`) enforced at the API level.
+* **CORS Protection**: Strict origin validation using `FRONTEND_URL`.
+
+### 🏢 Organization & Team Management
+* **Workspace Creation**: Users can create unlimited organizations.
+* **Team Invites**: Invite members via email with role assignment.
+* **Organization Switching**: Seamlessly switch context via the `/switch` endpoint.
+* **Member Management**: Owners can revoke access and manage roles.
+
+### 📝 Collaboration Tools
+* **Outline Management**: Create, edit, and track documents (`Outlines`).
+* **Progress Tracking**: `Status` enum for outlines (`DRAFT`, `COMPLETED`, etc.).
+* **Data Isolation**: Guaranteed data isolation per organization.
+
+---
+
+## 🏗️ Architecture & Data Flow
+
+The application uses a **standard decoupled architecture** with a focus on multi-tenancy. 
+
+[Image of a diagram showing the multi-tenant architecture with Frontend -> Backend -> PostgreSQL Database]
+
+
+### Data Isolation Strategy
+* **Application-Level Security**: All organization-specific endpoints require the **`X-Organization-Id`** header, which the backend guards use to scope database queries via **Prisma**.
+* **Session Context**: The session middleware extracts the active organization ID and current user ID, making them available to controllers and services.
+* **Database Schema**: Core models (`Organization`, `Outline`, `Membership`) are linked via explicit foreign keys to enforce relationships.
+
+---
+
+## 🚀 Getting Started (Quick Start)
+
+### 1. Clone the Project
+```bash
+git clone [https://github.com/hailemichael121/Interview-Project.git](https://github.com/hailemichael121/Interview-Project.git)
+cd Interview-Project
+````
+
+### 2\. Backend Setup (`tenant-backend`)
+
+The backend runs on **http://localhost:3000**.
+
+```bash
+cd tenant-backend
+npm install
+
+# ➡️ Configure environment
+cp .env.example .env
+# Update DATABASE_URL, BETTER_AUTH_SECRET, FRONTEND_URL=http://localhost:3001, and PORT=3000 in the .env file.
+
+# ➡️ Database setup
+npx prisma generate
+npx prisma migrate dev --name init # Apply migrations
+npx prisma db seed # Optional: Seed the database
+
+# ➡️ Start server
+npm run start:dev
 ```
-DATABASE_URL="postgresql://username:password@localhost:5432/workspace_db"
-BETTER_AUTH_SECRET="your-super-secret-key-change-in-production"
-BETTER_AUTH_URL="http://localhost:3001"
-PORT=3001
+
+### 3\. Frontend Setup (`tenant-frontend`)
+
+The frontend runs on **http://localhost:3001**.
+
+```bash
+cd ../tenant-frontend
+npm install
+
+# ➡️ Configure environment
+cp .env.local.example .env.local
+# Ensure NEXT_PUBLIC_BACKEND_URL=http://localhost:3000 in .env.local
+
+# ➡️ Start application
+npm run dev
 ```
 
-**tenant-frontend/.env.example:**
+-----
+
+## 📁 Detailed Project Structure
+
+The project is divided into two main applications, using a **monorepo-like structure**:
+
 ```
-NEXT_PUBLIC_BACKEND_URL="http://localhost:3001"
+Interview-Project/
+├── README.md               # ⬅️ THIS FILE
+├── SETUP.md                # Quick setup guide
+│
+├── tenant-backend/         # ⚙️ NestJS Backend API (Port 3000)
+│   ├── src/
+│   │   ├── auth/           # Better-Auth integration, Guards, Decorators (e.g., @CurrentUser, OrganizationGuard)
+│   │   ├── lib/            # Prisma service and utility wrappers
+│   │   ├── organization/   # Organization CRUD, switching, and member management
+│   │   ├── outlines/       # Document (Outline) CRUD operations
+│   │   └── users/          # User management and profiles
+│   ├── prisma/
+│   │   ├── schema.prisma   # Main database schema
+│   │   └── seed.ts         # Seeding script
+│   └── test.rest           # VS Code REST Client file for API testing
+│
+└── tenant-frontend/        # 🖥️ Next.js 14 Frontend (Port 3001)
+    ├── app/
+    │   ├── api/            # Next.js API route for proxying requests (auth/[...all]/route.ts)
+    │   ├── auth/           # Sign In / Sign Up pages
+    │   ├── dashboard/      # Main application entry point
+    │   ├── organization/   # Create/Join Organization pages
+    │   ├── outlines/       # Outline listing and creation
+    │   └── team/           # Team management pages
+    ├── components/         # Reusable UI components (shadcn/ui, Layouts, ProtectedRoute)
+    ├── hooks/              # Custom hooks (e.g., useSession, useApi)
+    └── lib/                # API client (`api-service.ts`), Auth client, Organization Context
 ```
 
-Copy each block into their respective files using a text editor.
+-----
 
+## 🌐 API Endpoints Reference
 
-# Database
-DATABASE_URL="postgresql://tenant_user:1234567890@localhost:5432/tenant_db"
+All endpoints are hosted at the **Backend URL** (`http://localhost:3000`).
 
-# Better Auth
-BETTER_AUTH_SECRET=dr0oolYI3wmCH61pheVRAhcSY5o6e46m
-BETTER_AUTH_URL="http://localhost:3000"
+### 🔑 Authentication (`/api/auth/*`)
 
- 
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/auth/sign-up/email` | User registration |
+| `POST` | `/api/auth/sign-in/email` | User login and session creation |
+| `GET` | `/api/auth/session` | Get current session data |
+| `POST` | `/api/auth/sign-out` | Destroy session cookie |
 
-# Frontend URL for CORS
-FRONTEND_URL="http://localhost:3001"
+### 🏢 Organization & Team (`/api/organization/*`)
+
+| Method | Endpoint | Description | Requires Org ID |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/organization/create` | Create a new organization | No |
+| `GET` | `/api/organization` | List all user's organizations | No |
+| `POST` | `/api/organization/:id/switch` | Set active organization for session | No |
+| `POST` | `/api/organization/:id/invite` | Invite a member via email (Owner only) | Yes |
+| `GET` | `/api/organization/:id/members` | List members of the current organization | Yes |
+
+### 📝 Outlines (`/api/outlines/*`)
+
+| Method | Endpoint | Description | Requires Org ID |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/outlines` | List outlines for the active organization | Yes |
+| `POST` | `/api/outlines` | Create a new outline | Yes |
+| `PUT` | `/api/outlines/:id` | Update an existing outline | Yes |
+| `DELETE` | `/api/outlines/:id` | Delete an outline | Yes |
+
+-----
+
+## 🗄️ Database Schema (Prisma)
+
+The core data model uses explicit relationships to enforce multi-tenancy.
+
+```prisma
+model User { ... }
+model Organization { ... }
+
+model Membership {
+  // Links a User to an Organization and defines their Role
+  userId         String
+  organizationId String
+  role           Role @default(MEMBER)
+  // ... other fields
+  @@unique([userId, organizationId])
+}
+
+model Outline {
+  // Ensures every outline belongs to exactly one Organization
+  organizationId String
+  // ... other fields
+}
+
+enum Role { OWNER, MEMBER }
+enum Status { DRAFT, IN_PROGRESS, ... }
+```
+
+-----
+
+## ⚙️ Development Commands
+
+### Backend (`/tenant-backend`)
+
+| Command | Description |
+| :--- | :--- |
+| `npm run start:dev` | **Start development** (Watch mode) |
+| `npx prisma studio` | Open **Prisma Studio** (Database GUI) |
+| `npx prisma migrate dev` | Create and apply a new **migration** |
+| `npm run test` | Run **unit and integration tests** |
+| `npm run build` | Compile to production JavaScript |
+
+### Frontend (`/tenant-frontend`)
+
+| Command | Description |
+| :--- | :--- |
+| `npm run dev` | **Start development** (Next.js) |
+| `npm run build` | **Production build** |
+| `npm run lint` | Run **ESLint** for code quality |
+| `npm run type-check` | Run **TypeScript type checking** |
+
+-----
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1.  **Session/Cookie Errors**:
+      * Ensure **cookies are enabled** in your browser.
+      * Verify the **`FRONTEND_URL`** in your backend `.env` matches the frontend's origin (`http://localhost:3001`).
+      * The frontend uses an **API proxy** at `/api/auth/*` to handle cookie forwarding; check the proxy route (`/tenant-frontend/app/api/auth/[...all]/route.ts`) if direct backend calls fail.
+2.  **CORS Issues**:
+      * Ensure the `CORS_ORIGIN` variable in the backend `.env` is correctly set (e.g., `http://localhost:3001`).
+3.  **Database Errors**:
+      * Confirm your **`DATABASE_URL`** is correct and PostgreSQL is running.
+      * Run `npx prisma migrate dev` to ensure the schema is up-to-date.
+
+### Debug Mode
+
+```bash
+# Backend Debug
+npm run start:debug
+
+# Frontend Debug (with Node inspect)
+NODE_OPTIONS='--inspect' npm run dev
+```
+
+-----
+
+## 🤝 Contributing
+
+1.  Fork the repository.
+2.  Create your feature branch (`git checkout -b feature/my-new-feature`).
+3.  Commit your changes following the **Conventional Commits** style (e.g., `feat: Add outline assignment`).
+4.  Open a Pull Request.
+
+-----
+
+**License**: This project is for interview assessment and demonstration purposes.

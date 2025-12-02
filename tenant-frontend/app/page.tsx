@@ -14,6 +14,7 @@ import { useTheme } from "next-themes";
 import { AnimatedTitle } from "@/components/animated-title";
 import { useEffect, useState, useRef } from "react";
 import { Logo } from "@/components/logo";
+import { GradientBackground } from "@/components/auth/gradient-background";
 
 export default function HomePage() {
   const { resolvedTheme } = useTheme();
@@ -22,10 +23,13 @@ export default function HomePage() {
   const textRef = useRef<HTMLDivElement>(null);
   const waveRef = useRef<SVGSVGElement>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+ useEffect(() => {
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 0);
 
+    return () => clearTimeout(timer);
+  }, []);
   useEffect(() => {
     const handleScroll = () => {
       if (!textRef.current || !waveRef.current) return;
@@ -92,40 +96,7 @@ export default function HomePage() {
   return (
     <>
       {/* Wave Background */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <svg
-          ref={waveRef}
-          className="absolute bottom-0 left-0 w-full h-[120vh]"
-          viewBox="0 0 1440 800"
-          preserveAspectRatio="xMidYMax slice"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <linearGradient id="wave-light" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#2C3E50" />
-              <stop offset="30%" stopColor="#5D768B" />
-              <stop offset="70%" stopColor="#94A3B8" />
-            </linearGradient>
-            <linearGradient id="wave-dark" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#1E293B" />
-              <stop offset="50%" stopColor="#334155" />
-              <stop offset="100%" stopColor="#475569" />
-            </linearGradient>
-          </defs>
-          <path
-            fill="url(#wave-light)"
-            className="dark:hidden"
-            fillOpacity="0.9"
-            d="M0,400L48,380C96,360,192,320,288,310C384,300,480,320,576,350C672,380,768,420,864,440C960,460,1056,460,1152,440C1248,420,1344,380,1392,360L1440,340L1440,800L0,800Z"
-          />
-          <path
-            fill="url(#wave-dark)"
-            className="hidden dark:block"
-            fillOpacity="0.9"
-            d="M0,400L48,380C96,360,192,320,288,310C384,300,480,320,576,350C672,380,768,420,864,440C960,460,1056,460,1152,440C1248,420,1344,380,1392,360L1440,340L1440,800L0,800Z"
-          />
-        </svg>
-      </div>
+      <GradientBackground />
 
       <div className="relative z-10 min-h-screen">
         <div className="container mx-auto px-4 py-16">
