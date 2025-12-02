@@ -1,6 +1,7 @@
 // app/dashboard/page.tsx
 "use client";
 
+import { ProtectedRoute } from "@/components/protected-route";
 import { useCallback, useEffect, useState } from "react";
 import { useOrganizationContext } from "@/hooks/use-session";
 import { Button } from "@/components/ui/button";
@@ -46,12 +47,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-// In app/dashboard/page.tsx, update the imports:
-import {
-  DashboardStats,
-  Member,
-  Invitation, // Changed from Invitation
-} from "@/types/types";
+import { Invitation } from "@/types/types";
 
 type ActivityOutline = {
   id: string;
@@ -63,7 +59,8 @@ type ActivityOutline = {
   };
   createdAt: string;
 };
-export default function DashboardPage() {
+
+function DashboardContent() {
   const {
     currentOrganizationId,
     currentMemberRole,
@@ -72,20 +69,19 @@ export default function DashboardPage() {
     isLoading: orgLoading,
   } = useOrganizationContext();
 
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [recentActivity, setRecentActivity] = useState<ActivityOutline[]>([]);
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
+  const [invitations, setInvitations] = useState<any[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [refreshing, setRefreshing] = useState(false);
 
   const currentOrganization = organizationMemberships.find(
-    (membership) => membership.organizationId === currentOrganizationId
+    (membership: any) => membership.organizationId === currentOrganizationId
   );
 
   const isOwner = currentMemberRole === "OWNER";
-  // In app/dashboard/page.tsx, update the fetchDashboardData function:
 
   const fetchDashboardData = useCallback(async () => {
     if (!currentOrganizationId) {
@@ -96,18 +92,10 @@ export default function DashboardPage() {
     try {
       setRefreshing(true);
 
-      const [
-        statsResponse,
-        outlinesResponse,
-        membersResponse,
-        invitationsResponse,
-      ] = await Promise.all([
+      // Fetch data in parallel
+      const [statsResponse, outlinesResponse] = await Promise.all([
         apiService.outline.getOrganizationStats(currentOrganizationId),
         apiService.outline.listOutlines(currentOrganizationId, 1, 5),
-        apiService.organization.listMembers(currentOrganizationId, 1, 100),
-        isOwner
-          ? apiService.invitation.getPendingInvitations()
-          : Promise.resolve(null),
       ]);
 
       if (statsResponse.success) {
@@ -115,7 +103,7 @@ export default function DashboardPage() {
       }
 
       if (outlinesResponse.success) {
-        const activityOutlines = outlinesResponse.data.map((outline) => ({
+        const activityOutlines = outlinesResponse.data.map((outline: any) => ({
           id: outline.id,
           header: outline.header || "",
           status: outline.status || "DRAFT",
@@ -126,34 +114,31 @@ export default function DashboardPage() {
         setRecentActivity(activityOutlines);
       }
 
-      if (membersResponse.success) {
-        const transformedMembers = membersResponse.data.map((member) => ({
-          id: member.id,
-          user: member.user || {
-            id: member.id,
-            name: null,
-            email: "",
-            image: null,
-          },
-          role: member.role,
-          joinedAt: member.joinedAt,
-        }));
-        setMembers(transformedMembers);
+      // Try to fetch members if organization exists
+      try {
+        const membersResponse = await apiService.organization.listMembers(
+          currentOrganizationId,
+          1,
+          100
+        );
+        if (membersResponse.success) {
+          setMembers(membersResponse.data);
+        }
+      } catch (membersError) {
+        console.log("Could not fetch members:", membersError);
       }
 
-      if (isOwner && invitationsResponse?.success) {
-        // FIXED: Properly handle ApiInvitation type
-        const transformedInvitations = invitationsResponse.data.map((inv) => ({
-          id: inv.id,
-          email: inv.email || "", // Now email is optional in type
-          organization: inv.organization,
-          role: inv.role,
-          status: "PENDING" as const,
-          expires: inv.expires,
-          token: inv.token || "",
-          invitedAt: inv.expires,
-        }));
-        setInvitations(transformedInvitations);
+      // Try to fetch invitations if owner
+      if (isOwner) {
+        try {
+          const invitationsResponse =
+            await apiService.invitation.getPendingInvitations();
+          if (invitationsResponse.success) {
+            setInvitations(invitationsResponse.data || []);
+          }
+        } catch (invitationsError) {
+          console.log("Could not fetch invitations:", invitationsError);
+        }
       }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -167,16 +152,6 @@ export default function DashboardPage() {
       setRefreshing(false);
     }
   }, [currentOrganizationId, isOwner]);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
-
-  const handleRefresh = () => {
-    fetchDashboardData();
-    toast.success("Dashboard refreshed");
-  };
-
   const handleResendInvitation = async (
     invitationId: string,
     email: string
@@ -208,12 +183,21 @@ export default function DashboardPage() {
       toast.error("Failed to revoke invitation");
     }
   };
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  const handleRefresh = () => {
+    fetchDashboardData();
+    toast.success("Dashboard refreshed");
+  };
+
   // No organization selected
   if (!hasOrganization && !orgLoading) {
     return (
       <div className="space-y-6 px-4 lg:px-6">
         <div className="text-center py-12">
-          <div className="w-24 h-24 mx-auto mb-6 bg-linear-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
+          <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
             <Building className="h-12 w-12 text-primary" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
@@ -264,7 +248,7 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <div className="flex items-center gap-3 mt-2">
             <p className="text-muted-foreground">
-              Welcome to {currentOrganization?.organization.name || "your"}{" "}
+              Welcome to {currentOrganization?.organization?.name || "your"}{" "}
               workspace
             </p>
             {currentMemberRole && (
@@ -836,5 +820,12 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
+  );
+}
+export default function DashboardPage() {
+  return (
+    <ProtectedRoute requireAuth requireOrganization>
+      <DashboardContent />
+    </ProtectedRoute>
   );
 }

@@ -146,19 +146,21 @@ export default function OutlinesPage() {
   // No organization selected
   if (!hasOrganization && !orgLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[hsl(var(--background))]">
-        <div className="text-center">
-          <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-lg text-[hsl(var(--muted-foreground))]">
-            Please select an organization to view outlines
-          </p>
-          <Link href="/dashboard">
-            <Button variant="outline" className="mt-4">
-              Go to Dashboard
-            </Button>
-          </Link>
+      <DashboardLayout>
+        <div className="flex h-screen items-center justify-center bg-[hsl(var(--background))]">
+          <div className="text-center">
+            <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-lg text-[hsl(var(--muted-foreground))]">
+              Please select an organization to view outlines
+            </p>
+            <Link href="/dashboard">
+              <Button variant="outline" className="mt-4">
+                Go to Dashboard
+              </Button>
+            </Link>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 

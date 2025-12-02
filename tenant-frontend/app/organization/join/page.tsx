@@ -13,24 +13,26 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Users, Mail, Key, Loader2, ArrowRight,  Shield } from "lucide-react";
+import { Users, Mail, Key, Loader2, ArrowRight, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { apiService } from "@/lib/api-service";
-import { useAuth } from "@/hooks/use-session";
+import authClient from "@/lib/auth-client";
 
 function JoinOrganizationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
-  
+  const { data: session } = authClient.useSession();
+
   const [isLoading, setIsLoading] = useState(false);
-  const [inviteToken, setInviteToken] = useState(searchParams.get("token") || "");
-  const [email, setEmail] = useState(user?.email || "");
+  const [inviteToken, setInviteToken] = useState(
+    searchParams.get("token") || ""
+  );
+  const [email, setEmail] = useState(session?.user?.email || "");
 
   const handleJoinOrganization = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user) {
+
+    if (!session?.user) {
       toast.error("Please sign in to join an organization");
       router.push("/auth/signin");
       return;
@@ -45,32 +47,42 @@ function JoinOrganizationContent() {
 
     try {
       // Accept invitation using your backend API
-      const result = await apiService.organization.acceptInvite(inviteToken.trim());
-      
+      const result = await apiService.organization.acceptInvite(
+        inviteToken.trim()
+      );
+
       if (!result.success) {
         throw new Error(result.message || "Failed to join organization");
       }
 
       toast.success("Successfully joined the organization!");
-      
+
       // Refresh the page to update organization context
       setTimeout(() => {
         window.location.href = "/dashboard";
       }, 1500);
-      
-  } catch (error: unknown) {
-  console.error("Organization creation error:", error);
-  const errorMessage = error instanceof Error ? error.message : "Failed to create organization";
-  
-  // Handle specific error cases
-  if (errorMessage?.includes("already exists")) {
-    toast.error("An organization with this name or slug already exists. Please choose a different name.");
-  } else if (errorMessage?.includes("slug")) {
-    toast.error("The URL slug is already taken. Please try a different organization name.");
-  } else {
-    toast.error(errorMessage || "Failed to create organization. Please try again.");
-  }
-}finally {
+    } catch (error: unknown) {
+      console.error("Organization creation error:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to create organization";
+
+      // Handle specific error cases
+      if (errorMessage?.includes("already exists")) {
+        toast.error(
+          "An organization with this name or slug already exists. Please choose a different name."
+        );
+      } else if (errorMessage?.includes("slug")) {
+        toast.error(
+          "The URL slug is already taken. Please try a different organization name."
+        );
+      } else {
+        toast.error(
+          errorMessage || "Failed to create organization. Please try again."
+        );
+      }
+    } finally {
       setIsLoading(false);
     }
   };
@@ -91,12 +103,15 @@ function JoinOrganizationContent() {
             Enter your invite token to join a workspace
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleJoinOrganization} className="space-y-6">
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <Label
+                  htmlFor="email"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2"
+                >
                   <Mail className="h-4 w-4" />
                   Your Email
                 </Label>
@@ -115,7 +130,10 @@ function JoinOrganizationContent() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="inviteToken" className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <Label
+                  htmlFor="inviteToken"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2"
+                >
                   <Key className="h-4 w-4" />
                   Invite Token *
                 </Label>
@@ -143,14 +161,15 @@ function JoinOrganizationContent() {
                     Secure Invitation
                   </p>
                   <p className="text-xs text-green-700 dark:text-green-400 mt-1">
-                    Invitations are encrypted and can only be used by the intended recipient.
+                    Invitations are encrypted and can only be used by the
+                    intended recipient.
                   </p>
                 </div>
               </div>
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full h-12 text-base font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 bg-green-600 hover:bg-green-700"
               disabled={isLoading || !inviteToken.trim()}
             >
@@ -170,9 +189,9 @@ function JoinOrganizationContent() {
             <div className="text-center space-y-4 pt-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Don&apos;t have an invite?{" "}
-                <Button 
-                  type="button" 
-                  variant="link" 
+                <Button
+                  type="button"
+                  variant="link"
                   className="p-0 h-auto font-semibold text-primary"
                   onClick={() => router.push("/organization/create")}
                   disabled={isLoading}
@@ -180,10 +199,11 @@ function JoinOrganizationContent() {
                   Create your own workspace
                 </Button>
               </p>
-              
+
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Need help? Contact the workspace owner or administrator for a new invitation.
+                  Need help? Contact the workspace owner or administrator for a
+                  new invitation.
                 </p>
               </div>
             </div>
@@ -201,7 +221,9 @@ export default function JoinOrganizationPage() {
         <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
           <div className="flex flex-col items-center gap-3">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Loading invitation...</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Loading invitation...
+            </p>
           </div>
         </div>
       }

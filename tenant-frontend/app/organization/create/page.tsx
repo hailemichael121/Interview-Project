@@ -16,11 +16,11 @@ import { Label } from "@/components/ui/label";
 import { Building, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { apiService } from "@/lib/api-service";
-import { useAuth } from "@/hooks/use-session";
+import authClient from "@/lib/auth-client";
 
 export default function CreateOrganizationPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { data: session } = authClient.useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -41,7 +41,7 @@ export default function CreateOrganizationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!user) {
+    if (!session?.user) {
       toast.error("Please sign in to create an organization");
       router.push("/auth/signin");
       return;

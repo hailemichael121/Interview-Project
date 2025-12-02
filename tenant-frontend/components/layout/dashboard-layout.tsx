@@ -1,4 +1,4 @@
-// components/layout/dashboard-layout.tsx
+// components/layout/dashboard-layout.tsx - UPDATED
 "use client";
 
 import { useState } from "react";
@@ -30,16 +30,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSession } from "@/hooks/use-session";
-import { useOrg } from "@/lib/org-context";
+
 import { useRouter, usePathname } from "next/navigation";
 import authClient from "@/lib/auth-client";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const { currentOrg } = useOrg();
-  const { data: session, isLoading: sessionLoading } = useSession();
+  const { data: session, isPending: sessionLoading } = authClient.useSession();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -63,7 +61,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pageTitle = (() => {
     const segments = pathname.split("/").filter(Boolean);
     if (segments.length === 1 && segments[0] === "dashboard")
-      return currentOrg?.name || "Dashboard";
+      return "Dashboard";
     const last = segments[segments.length - 1];
     return last ? last.charAt(0).toUpperCase() + last.slice(1) : "Dashboard";
   })();

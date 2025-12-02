@@ -24,21 +24,20 @@ import {
   Lock,
   Shield,
   Trash,
-  Download,
   User,
   Building,
   Loader2,
   Users,
   FileText,
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-session";
+import authClient from "@/lib/auth-client";
 import { apiService } from "@/lib/api-service";
 import { toast } from "sonner";
 
 import type { UserProfile } from "@/types/types";
 
 export default function SettingsPage() {
-  const { user, isLoading: authLoading, signOut } = useAuth();
+  const { data: user, isPending: authLoading } = authClient.useSession();
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -352,7 +351,11 @@ export default function SettingsPage() {
               <Shield className="mr-2 h-4 w-4" />
               Change Password
             </Button>
-            <Button variant="destructive" className="w-full" onClick={signOut}>
+            <Button
+              variant="destructive"
+              className="w-full"
+              onClick={() => authClient.signOut()}
+            >
               Sign Out
             </Button>
           </CardContent>

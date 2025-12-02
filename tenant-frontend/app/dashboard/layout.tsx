@@ -1,36 +1,45 @@
-// app/dashboard/layout.tsx
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useOrganizationContext } from "@/hooks/use-session";
+import authClient from "@/lib/auth-client";
 
 export default function DashboardRootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { currentOrganizationId, organizationMemberships, isLoading } =
-    useOrganizationContext();
+  const router = useRouter();
 
-  // Get the current organization from memberships
-  const currentOrganization = organizationMemberships.find(
-    (membership) => membership.organizationId === currentOrganizationId
-  );
+  const { data: session, isPending: sessionPending } = authClient.useSession();
+  const user = session?.user || null;
 
-  if (isLoading) {
+  const { isLoading: orgLoading } = useOrganizationContext();
+
+  useEffect(() => {
+    if (!sessionPending && !user) {
+      router.replace("/auth/signin");
+    }
+  }, [user, sessionPending, router]);
+
+  if (sessionPending) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <div className="text-sm text-muted-foreground">
-            Loading workspace...
-          </div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        Checking your session...
       </div>
     );
   }
 
-  if (!currentOrganization && organizationMemberships.length > 0) {
+  if (!user) return null;
+
+  if (orgLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading organization data...
+      </div>
+    );
   }
 
   return <DashboardLayout>{children}</DashboardLayout>;

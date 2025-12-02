@@ -8,15 +8,8 @@ import {
   CreateOutlineDto,
   UpdateOutlineDto,
   UserProfileResponse,
-  CurrentUserResponse,
   OrganizationListResponse,
-  OrganizationDetails,
-  MemberListResponse,
-  OutlineListResponse,
-  OutlineStatsResponse,
   InvitationListResponse,
-  OrganizationSwitchResponse,
-  ApiResponse,
 } from "@/types/types";
 import { useCallback, useState } from "react";
 

@@ -1,4 +1,3 @@
-// components/protected-route.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -19,7 +18,6 @@ export function ProtectedRoute({
   requireAuth = true,
   requireOrganization = false,
   redirectTo = "/auth/signin",
-  organizationId,
 }: ProtectedRouteProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -32,18 +30,30 @@ export function ProtectedRoute({
       try {
         setIsLoading(true);
 
-        // Check session
         const session = await authClient.getSession();
         const user = session?.data?.user;
 
         if (!user && requireAuth) {
+          if (pathname !== redirectTo) {
+            sessionStorage.setItem("redirectAfterAuth", pathname);
+          }
           router.replace(redirectTo);
           return;
         }
 
         setIsAuthenticated(!!user);
 
-        // Check organization if required
+        if (
+          user &&
+          (pathname === "/auth/signin" || pathname === "/auth/signup")
+        ) {
+          const redirectTo =
+            sessionStorage.getItem("redirectAfterAuth") || "/dashboard";
+          sessionStorage.removeItem("redirectAfterAuth");
+          router.replace(redirectTo);
+          return;
+        }
+
         if (requireOrganization && user) {
           try {
             const profileRes = await apiService.user.getProfile();
@@ -54,26 +64,23 @@ export function ProtectedRoute({
 
               setHasOrganization(hasOrg);
 
-              // Specific org required?
-              if (organizationId) {
-                const isMember = memberships.some(
-                  (m) => m.organization.id === organizationId
-                );
-
-                if (!isMember) {
-                  router.replace("/dashboard");
-                  return;
-                }
-              }
-
-              // No org but required → redirect to create
-              if (!hasOrg && !pathname.includes("/organization/create")) {
-                router.replace("/organization/create");
-                return;
-              }
+              // if (!hasOrg && !pathname.includes("/organization/create")) {
+              //   router.replace("/organization/create");
+              //   return;
+              // }
+            } else {
+              setHasOrganization(false);
+              // if (!pathname.includes("/organization/create")) {
+              //   router.replace("/organization/create");
+              //   return;
+              // }
             }
-          } catch (err) {
-            console.error("Failed to load profile:", err);
+          } catch (profileError) {
+            console.error("Error fetching profile:", profileError);
+            // if (!pathname.includes("/organization/create")) {
+            //   router.replace("/organization/create");
+            //   return;
+            // }
           }
         }
 
@@ -88,9 +95,8 @@ export function ProtectedRoute({
     };
 
     checkAuth();
-  }, [requireAuth, requireOrganization, organizationId, router, redirectTo, pathname]);
+  }, [requireAuth, requireOrganization, router, redirectTo, pathname]);
 
-  // Loading spinner
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -102,28 +108,19 @@ export function ProtectedRoute({
     );
   }
 
-  // Redirects are handled in useEffect
-  if (requireAuth && !isAuthenticated) return null;
-  if (requireOrganization && !hasOrganization && !pathname.includes("/organization/create")) {
+  if (requireAuth && !isAuthenticated) {
+    return null;
+  }
+
+  if (
+    requireOrganization &&
+    !hasOrganization &&
+    !pathname.includes("/organization/create")
+  ) {
     return null;
   }
 
   return <>{children}</>;
-}
-
-// Helper wrappers
-export function OrganizationProtectedRoute({
-  children,
-  organizationId,
-}: {
-  children: React.ReactNode;
-  organizationId?: string;
-}) {
-  return (
-    <ProtectedRoute requireAuth requireOrganization organizationId={organizationId}>
-      {children}
-    </ProtectedRoute>
-  );
 }
 
 export function PublicRoute({ children }: { children: React.ReactNode }) {

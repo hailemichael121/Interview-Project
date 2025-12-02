@@ -51,31 +51,8 @@ async function apiFetch<T>(
   options: RequestInit = {},
   organizationId?: string
 ): Promise<ApiResponse<T>> {
-  let authToken = null;
-
-  if (typeof window !== "undefined") {
-    authToken = localStorage.getItem("auth_token");
-
-    if (!authToken) {
-      const sessionToken = document.cookie
-        .split("; ")
-        .find(
-          (row) =>
-            row.startsWith("better-auth.session_token=") ||
-            row.startsWith("__Secure-better-auth.session_token=")
-        )
-        ?.split("=")[1];
-      authToken = sessionToken;
-    }
-  }
-
-  if (!authToken) {
-    throw new Error("No active session. Please sign in.");
-  }
-
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    Origin: window.location.origin,
     ...(options.headers as Record<string, string>),
   };
 
@@ -83,34 +60,20 @@ async function apiFetch<T>(
     headers["X-Organization-Id"] = organizationId;
   }
 
-  headers["Authorization"] = `Bearer ${authToken}`;
-
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers,
-    credentials: "include",
+    credentials: "include", // <-- important
   });
 
   if (!response.ok) {
-    let errorMessage = `API Error: ${response.status}`;
-    try {
-      const errorData = await response.json();
-      errorMessage = errorData.message || errorData.error || errorMessage;
-    } catch {
-      const text = await response.text();
-      errorMessage = text || errorMessage;
-    }
-
-    if (response.status === 401) {
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("auth_user");
-    }
-
-    throw new Error(errorMessage);
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `API error: ${response.status}`);
   }
 
   return response.json();
 }
+
 // ==================== AUTH API ====================
 export const authApi = {
   signUp: async (data: { name: string; email: string; password: string }) =>
