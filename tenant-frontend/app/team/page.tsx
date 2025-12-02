@@ -1,4 +1,3 @@
-// app/team/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -246,7 +245,7 @@ export default function TeamPage() {
   };
 
   const handleSendInvite = () => {
-    console.log(`Inviting ${inviteEmail} as ${inviteRole}`);
+    // send invite and close dialog
     setInviteEmail("");
     setInviteRole("member");
     setIsInviteOpen(false);
@@ -335,7 +334,7 @@ export default function TeamPage() {
                   </Button>
                 </DialogTrigger>
 
-                {/* --- DIALOG CONTENT FIXES: WIDER & BACKGROUND --- */}
+                {/* Invite member dialog */}
                 <DialogContent
                   // Increased width for desktop screens: sm:max-w-[425px] -> sm:max-w-lg (512px)
                   className="sm:max-w-lg p-0 border-none rounded-xl shadow-2xl overflow-hidden 
@@ -378,7 +377,7 @@ export default function TeamPage() {
                         <SelectTrigger id="invite-role" className="h-11">
                           <SelectValue placeholder="Select a role" />
                         </SelectTrigger>
-                        {/* FIX: Set explicit background for SelectContent */}
+                        {/* Select content styling */}
                         <SelectContent className="bg-[hsl(var(--popover))]">
                           <SelectItem value="member" className="py-2">
                             <div className="flex items-center gap-3">

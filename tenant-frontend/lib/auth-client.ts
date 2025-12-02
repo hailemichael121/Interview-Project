@@ -1,18 +1,16 @@
-// lib/auth-client.ts - FIXED VERSION
+// lib/auth-client.ts 
 "use client";
 
 import { createAuthClient } from "better-auth/react";
-import { organizationClient } from "better-auth/client/plugins";
 
-const backendUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://tenant-backend-cz23.onrender.com";
 
- const authClient = createAuthClient({
-  baseURL: `${backendUrl}`, // Should be JUST the base URL, NOT /api/auth
-  basePath: "/api/auth", // Better Auth will add this prefix
+ export const authClient = createAuthClient({
+  baseURL: backendUrl,  
+  basePath: "/api/auth", 
   fetchOptions: {
-    credentials: "include",
+    credentials: "include",  
   },
-  plugins: [organizationClient()],
 });
+
 export default authClient;

@@ -1,8 +1,8 @@
 // lib/api-service.ts
-import authClient  from "./auth-client";
+import authClient from "./auth-client";
 
-// API Base URL
-const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+// API Base URL - Use your Render backend URL
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "https://tenant-backend-cz23.onrender.com";
 
 // ==================== TYPES ====================
 export interface Organization {
@@ -11,6 +11,7 @@ export interface Organization {
   slug: string;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string | null;
   role?: string;
   joinedAt?: string;
   memberId?: string;
@@ -26,11 +27,13 @@ export interface OrganizationMember {
   userId: string;
   role: "OWNER" | "REVIEWER" | "MEMBER" | "USER";
   joinedAt: string;
+  deletedAt?: string | null;
   user?: {
     id: string;
     name: string | null;
     email: string;
     image: string | null;
+    createdAt: string;
   };
 }
 
@@ -58,6 +61,11 @@ export interface Outline {
     id: string;
     name: string;
     userId?: string | null;
+    user?: {
+      id: string;
+      name: string | null;
+      email: string;
+    };
   };
   createdBy?: {
     id: string;
@@ -100,8 +108,8 @@ export interface UserProfile {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
-  members?: Array<{
-    id: string;
+  memberships?: Array<{
+    memberId: string;
     role: string;
     joinedAt: string;
     organization: Organization;
@@ -157,7 +165,7 @@ export interface CreateOutlineDto {
   target?: number;
   limit?: number;
   reviewerId?: string | null;
-  organizationId?: string;
+  organizationId?: string; // CUID, not UUID
 }
 
 export interface UpdateOutlineDto {
@@ -197,6 +205,7 @@ async function apiFetch<T>(
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "Origin": window.location.origin, // Add origin header for CORS
     ...(options.headers as Record<string, string>),
   };
 
@@ -205,7 +214,16 @@ async function apiFetch<T>(
     headers["X-Organization-Id"] = organizationId;
   }
 
-  // Note: Cookies are automatically sent with credentials: 'include'
+  // Include session token in headers as fallback
+  const sessionToken = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('better-auth.session_token='))
+    ?.split('=')[1];
+
+  if (sessionToken) {
+    headers["Cookie"] = `better-auth.session_token=${sessionToken}`;
+  }
+
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers,
@@ -282,17 +300,30 @@ export const userApi = {
   // Get current user with context (includes memberships)
   getCurrentUser: async () => {
     return apiFetch<{
-      user: UserProfile;
-      context: {
-        currentOrganizationId: string | null;
-        currentMemberRole: string | null;
-        organizationMemberships: Array<{
-          organizationId: string;
-          organization: Organization;
+      data: {
+        user: {
+          id: string;
+          email: string;
+          name: string | null;
           role: string;
-          memberId: string;
-          joinedAt: string;
-        }>;
+          tenantId: string | null;
+          image: string | null;
+          emailVerified: boolean;
+          banned: boolean;
+          createdAt: string;
+          updatedAt: string;
+        };
+        context: {
+          currentOrganizationId: string | null;
+          currentMemberRole: string | null;
+          organizationMemberships: Array<{
+            organizationId: string;
+            organization: Organization;
+            role: string;
+            memberId: string;
+            joinedAt: string;
+          }>;
+        };
       };
     }>("/users/me", {
       method: "GET",
@@ -301,7 +332,7 @@ export const userApi = {
 
   // Get user by ID (admin only)
   getUserById: async (userId: string) => {
-    return apiFetch<UserProfile>(`/users/${userId}`, {
+    return apiFetch<{ data: UserProfile }>(`/users/${userId}`, {
       method: "GET",
     });
   },
@@ -386,7 +417,10 @@ export const invitationApi = {
   },
 
   // Accept an invitation
-  acceptInvitation: async (invitationId: string, email: string) => {
+  acceptInvitation: async (invitationId: string) => {
+    const session = await authClient.getSession();
+    if (!session) throw new Error("No session found");
+    
     return apiFetch<{
       data: {
         organization: Organization;
@@ -399,17 +433,20 @@ export const invitationApi = {
       message: string;
     }>(`/users/invitations/${invitationId}/accept`, {
       method: "POST",
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email: session.user.email }),
     });
   },
 
   // Decline an invitation
-  declineInvitation: async (invitationId: string, email: string) => {
+  declineInvitation: async (invitationId: string) => {
+    const session = await authClient.getSession();
+    if (!session) throw new Error("No session found");
+    
     return apiFetch<{ message: string }>(
       `/users/invitations/${invitationId}/decline`,
       {
         method: "POST",
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: session.user.email }),
       }
     );
   },
@@ -446,7 +483,7 @@ export const organizationApi = {
   // List user's organizations
   listUserOrganizations: async (page = 1, perPage = 10) => {
     return apiFetch<{
-      data: Array<Organization>;
+      data: Organization[];
       page: number;
       perPage: number;
       total: number;
@@ -475,11 +512,7 @@ export const organizationApi = {
         };
       };
       message: string;
-    }>(
-      `/api/organization/${organizationId}`,
-      { method: "GET" },
-      organizationId
-    );
+    }>(`/api/organization/${organizationId}`, { method: "GET" }, organizationId);
   },
 
   // Update organization (owners only)
@@ -513,7 +546,7 @@ export const organizationApi = {
         };
       };
       message: string;
-    }>(`/api/organization/${organizationId}/switch`, { method: "POST" });
+    }>(`/api/organization/${organizationId}/switch`, { method: "POST" }, organizationId);
   },
 
   // List organization members
@@ -556,7 +589,10 @@ export const organizationApi = {
   },
 
   // Accept invitation via token
-  acceptInvite: async (token: string, email: string) => {
+  acceptInvite: async (token: string) => {
+    const session = await authClient.getSession();
+    if (!session) throw new Error("No session found");
+    
     return apiFetch<{
       data: {
         organization: {
@@ -573,7 +609,7 @@ export const organizationApi = {
       message: string;
     }>(`/api/organization/accept-invite/${token}`, {
       method: "POST",
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email: session.user.email }),
     });
   },
 
@@ -594,18 +630,30 @@ export const organizationApi = {
 export const outlineApi = {
   // Create outline (requires organization context)
   createOutline: async (data: CreateOutlineDto, organizationId?: string) => {
+    const finalOrgId = organizationId || data.organizationId;
+    if (!finalOrgId) {
+      throw new Error("Organization context is required");
+    }
+    
     return apiFetch<Outline>(
       "/api/outlines",
       {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          organizationId: finalOrgId,
+        }),
       },
-      organizationId || data.organizationId
+      finalOrgId
     );
   },
 
   // List all outlines for current organization
-  listOutlines: async (page = 1, perPage = 10, organizationId?: string) => {
+  listOutlines: async (organizationId: string, page = 1, perPage = 10) => {
+    if (!organizationId) {
+      throw new Error("Organization context is required");
+    }
+    
     return apiFetch<{
       data: Outline[];
       page: number;
@@ -620,7 +668,11 @@ export const outlineApi = {
   },
 
   // Get single outline
-  getOutline: async (outlineId: string, organizationId?: string) => {
+  getOutline: async (outlineId: string, organizationId: string) => {
+    if (!organizationId) {
+      throw new Error("Organization context is required");
+    }
+    
     return apiFetch<Outline>(
       `/api/outlines/${outlineId}`,
       { method: "GET" },
@@ -632,8 +684,12 @@ export const outlineApi = {
   updateOutline: async (
     outlineId: string,
     data: UpdateOutlineDto,
-    organizationId?: string
+    organizationId: string
   ) => {
+    if (!organizationId) {
+      throw new Error("Organization context is required");
+    }
+    
     return apiFetch<Outline>(
       `/api/outlines/${outlineId}`,
       {
@@ -645,7 +701,11 @@ export const outlineApi = {
   },
 
   // Delete outline (soft delete)
-  deleteOutline: async (outlineId: string, organizationId?: string) => {
+  deleteOutline: async (outlineId: string, organizationId: string) => {
+    if (!organizationId) {
+      throw new Error("Organization context is required");
+    }
+    
     return apiFetch<Outline>(
       `/api/outlines/${outlineId}`,
       { method: "DELETE" },
@@ -654,7 +714,11 @@ export const outlineApi = {
   },
 
   // Get organization statistics
-  getOrganizationStats: async (organizationId?: string) => {
+  getOrganizationStats: async (organizationId: string) => {
+    if (!organizationId) {
+      throw new Error("Organization context is required");
+    }
+    
     return apiFetch<{
       data: {
         organizationId: string;
@@ -672,10 +736,14 @@ export const outlineApi = {
 
   // Get outlines assigned to current user as reviewer
   getAssignedOutlines: async (
+    organizationId: string,
     page = 1,
-    perPage = 10,
-    organizationId?: string
+    perPage = 10
   ) => {
+    if (!organizationId) {
+      throw new Error("Organization context is required");
+    }
+    
     return apiFetch<{
       data: Outline[];
       page: number;
@@ -690,7 +758,11 @@ export const outlineApi = {
   },
 
   // Get outlines created by current user
-  getMyOutlines: async (page = 1, perPage = 10, organizationId?: string) => {
+  getMyOutlines: async (organizationId: string, page = 1, perPage = 10) => {
+    if (!organizationId) {
+      throw new Error("Organization context is required");
+    }
+    
     return apiFetch<{
       data: Outline[];
       page: number;
@@ -713,6 +785,9 @@ export const healthApi = {
       const response = await fetch(`${API_BASE}/`, {
         method: "GET",
         credentials: "include",
+        headers: {
+          "Origin": window.location.origin,
+        },
       });
       return response.ok;
     } catch {
@@ -728,6 +803,7 @@ export const healthApi = {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          "Origin": window.location.origin,
         },
       });
 
