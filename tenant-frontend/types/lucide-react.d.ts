@@ -88,13 +88,15 @@ declare module "lucide-react" {
   export const XCircle: Icon;
   export const XIcon: Icon;
   export const ChevronLeft: Icon;
+  export const Github: Icon;
+  export const Apple: Icon;
 
   // Note: Some icons like "Trash2" and "ChevronsUpDown" don't exist in lucide-react
   // They should be replaced with "Trash" and appropriate alternatives
-  
+
   // Type for dynamic imports
   export type IconType = Icon;
-  
+
   // Export default if needed for dynamic imports
   const icons: { [key: string]: Icon };
   export default icons;

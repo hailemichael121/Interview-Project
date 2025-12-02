@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 // src/main.ts
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
@@ -32,12 +33,20 @@ async function bootstrap() {
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:5173',
+    'https://tenanncy-h9sifrs7k-hailemichael121s-projects.vercel.app',
     'https://tenanncy.vercel.app',
   ].filter(Boolean);
 
   app.enableCors({
-    origin: allowedOrigins,
-    credentials: true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true, // ✅ This is CRITICAL for cookies
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -47,8 +56,14 @@ async function bootstrap() {
       'X-Requested-With',
       'Accept',
       'Origin',
+      'Access-Control-Allow-Credentials', // Add this
     ],
-    exposedHeaders: ['Authorization', 'Set-Cookie', 'X-Organization-Id'],
+    exposedHeaders: [
+      'Authorization',
+      'Set-Cookie',
+      'X-Organization-Id',
+      'Access-Control-Allow-Credentials',
+    ],
   });
 
   const port = process.env.PORT || 3001;
