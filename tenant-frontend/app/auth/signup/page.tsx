@@ -132,7 +132,7 @@ export default function SignUpPage() {
         {/* Right: Form */}
         <div className="flex-1 flex items-center justify-center py-12 px-6">
           <div className="w-full max-w-md animate-in slide-in-from-right-32 duration-700">
-            <Card className="border-0 shadow-2xl backdrop-blur-xl bg-white/95 dark:bg-gray-900/95">
+            <Card className="border-0 shadow-2xl backdrop-blur-xl ">
               <CardHeader className="text-center pb-10">
                 <CardTitle className="text-4xl font-bold text-muted-foreground">
                   Create Account

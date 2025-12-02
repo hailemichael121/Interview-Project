@@ -64,7 +64,7 @@ export default function SignInPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       {/* Full-Screen Wavy Background */}
-      <div className="fixed inset-0 -z-10">
+     <div className="fixed inset-0 -z-10">
         <svg
           className="absolute inset-0 w-full h-full"
           viewBox="0 0 1440 900"
@@ -73,14 +73,14 @@ export default function SignInPage() {
         >
           <defs>
             <linearGradient id="wave-light" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#1E3A8A" />
-              <stop offset="45%" stopColor="#3B82F6" />
-              <stop offset="100%" stopColor="#60A5FA" />
+              <stop offset="0%" stopColor="#2C3E50" />
+              <stop offset="45%" stopColor="#5D768B" />
+              <stop offset="100%" stopColor="#94A3B8" />
             </linearGradient>
             <linearGradient id="wave-dark" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#1E40AF" />
-              <stop offset="50%" stopColor="#1D4ED8" />
-              <stop offset="100%" stopColor="#3B82F6" />
+              <stop offset="0%" stopColor="#1E293B" />
+              <stop offset="50%" stopColor="#334155" />
+              <stop offset="100%" stopColor="#475569" />
             </linearGradient>
           </defs>
 
@@ -127,7 +127,7 @@ export default function SignInPage() {
         {/* Right: Form */}
         <div className="flex-1 flex items-center justify-center py-12 px-6">
           <div className="w-full max-w-md animate-in slide-in-from-right-32 duration-700">
-            <Card className="border-0 shadow-2xl backdrop-blur-xl bg-white/95 dark:bg-gray-900/95">
+            <Card className="border-0 shadow-2xl backdrop-blur-xl ">
               <CardHeader className="text-center pb-10">
                 <CardTitle className="text-4xl font-bold text-muted-foreground">
                   Welcome Back
