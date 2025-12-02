@@ -1,4 +1,4 @@
-// app/auth/signin/page.tsx
+// app/auth/signin/page.tsx - CREATE THIS FILE
 "use client";
 
 import { useState } from "react";
@@ -12,70 +12,52 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowRight, Building } from "lucide-react";
 import { toast } from "sonner";
 import { AnimatedTitle } from "@/components/animated-title";
-import { useAuthTransition } from "@/components/auth-transition";
 import { Logo } from "@/components/logo";
 import { useRouter } from "next/navigation";
-import authClient from "@/lib/auth-client";
+import Link from "next/link";
+import { useAuthActions } from "@/hooks/use-auth-actions";
 
 export default function SignInPage() {
   const router = useRouter();
-  const { navigate, transitionClass } = useAuthTransition();
-  const [isLoading, setIsLoading] = useState(false);
+  const { signIn, isLoading: authLoading } = useAuthActions();
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
+    
     try {
-      const result = await authClient.signIn.email({
-        email: formData.email,
-        password: formData.password,
-      });
+      await signIn(formData.email, formData.password);
+      
+      // Show success message
+      toast.success("Signed in successfully!");
+      
+      // Redirect to dashboard
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1000);
+      
+    } catch (error: unknown) {
+      console.error("Sign in error:", error);
+      // Error is already handled in useAuthActions hook
+    }
+  };
 
-      if (result.error) {
-        toast.error(result.error.message || "Invalid credentials");
-        return;
-      }
-
-      // Successful sign in
-      toast.success("Welcome back!");
-
-      // Get the session to verify
-      const session = await authClient.getSession();
-
-      if (session.data) {
-        // Wait a moment for cookies to be set
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        // Fetch user context to check for organizations
-        try {
-          const api = (await import("@/lib/api-service")).apiService;
-          const userData = await api.user.getCurrentUser();
-
-          if (
-            userData.success &&
-            userData.data.context.organizationMemberships.length > 0
-          ) {
-            router.push("/dashboard");
-          } else {
-            router.push("/organization/create");
-          }
-        } catch (error) {
-          console.error("Error fetching user context:", error);
-          router.push("/dashboard");
-        }
-      } else {
-        toast.error("Failed to create session");
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to sign in");
-    } finally {
-      setIsLoading(false);
+  const handleDemoSignIn = async () => {
+    try {
+      await signIn("demo@example.com", "demo123");
+      toast.success("Signed in with demo account!");
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1000);
+    } catch  {
+      toast.error("Demo sign in failed. Please use your own account.");
     }
   };
 
@@ -91,14 +73,14 @@ export default function SignInPage() {
         >
           <defs>
             <linearGradient id="wave-light" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#2C3E50" />
-              <stop offset="45%" stopColor="#5D768B" />
-              <stop offset="100%" stopColor="#94A3B8" />
+              <stop offset="0%" stopColor="#1E3A8A" />
+              <stop offset="45%" stopColor="#3B82F6" />
+              <stop offset="100%" stopColor="#60A5FA" />
             </linearGradient>
             <linearGradient id="wave-dark" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#1E293B" />
-              <stop offset="50%" stopColor="#334155" />
-              <stop offset="100%" stopColor="#475569" />
+              <stop offset="0%" stopColor="#1E40AF" />
+              <stop offset="50%" stopColor="#1D4ED8" />
+              <stop offset="100%" stopColor="#3B82F6" />
             </linearGradient>
           </defs>
 
@@ -118,117 +100,148 @@ export default function SignInPage() {
       </div>
 
       {/* Content */}
-      <div className={`relative z-10 flex min-h-screen ${transitionClass}`}>
+      <div className="relative z-10 flex min-h-screen">
         {/* Left: Branding */}
         <div className="hidden lg:flex lg:w-1/2 items-center justify-center px-12">
-          <div className="text-center max-w-lg">
+          <div className="text-center max-w-md">
             <Logo className="w-32 h-32 mx-auto mb-8" />
             <AnimatedTitle text="Welcome Back" size="md" />
             <h2 className="mt-8 text-5xl font-bold text-white drop-shadow-lg">
-              Your Workspace Awaits
+              Continue Your Journey
             </h2>
             <p className="mt-6 text-xl text-white/90 drop-shadow">
-              Pick up right where you left off.
+              Access your organizations and collaborate with your team.
             </p>
-            <Button
-              onClick={() => navigate("/auth/signup")}
-              size="lg"
-              variant="secondary"
-              className="mt-12 bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 hover:text-gray-900"
-            >
-              New here? Create Account <ArrowRight className="ml-2" />
-            </Button>
+            <Link href="/auth/signup">
+              <Button
+                size="lg"
+                variant="secondary"
+                className="mt-12 bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 hover:text-gray-900"
+              >
+                Need an account? Sign Up <ArrowRight className="ml-2" />
+              </Button>
+            </Link>
           </div>
         </div>
 
         {/* Right: Form */}
         <div className="flex-1 flex items-center justify-center py-12 px-6">
-          <div className="w-full max-w-md animate-in slide-in-from-left-32 duration-700">
-            <Card className="border-0 shadow-2xl backdrop-blur-xl">
+          <div className="w-full max-w-md animate-in slide-in-from-right-32 duration-700">
+            <Card className="border-0 shadow-2xl backdrop-blur-xl bg-white/95 dark:bg-gray-900/95">
               <CardHeader className="text-center pb-10">
                 <CardTitle className="text-4xl font-bold text-muted-foreground">
-                  Sign In
+                  Welcome Back
                 </CardTitle>
                 <CardDescription className="text-lg text-muted-foreground">
-                  Access your workspace instantly
+                  Sign in to your workspace
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                    <Label className="text-base font-semibold text-muted-foreground">
                       Email
                     </Label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-3.5 h-5 w-5 icon-muted" />
+                      <Mail className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
                       <Input
                         required
                         type="email"
                         placeholder="you@company.com"
-                        className="pl-12 h-14 text-base input-default border-light-300 text-black-gray dark:text-milky-white placeholder:text-muted-foreground"
+                        className="pl-12 h-14 text-base border-gray-300 dark:border-gray-600"
                         value={formData.email}
                         onChange={(e) =>
                           setFormData({ ...formData, email: e.target.value })
                         }
+                        disabled={authLoading}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                      Password
-                    </Label>
+                    <div className="flex justify-between items-center">
+                      <Label className="text-base font-semibold text-muted-foreground">
+                        Password
+                      </Label>
+                      <Link
+                        href="/auth/forgot-password"
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
                     <div className="relative">
-                      <Lock className="absolute left-4 top-3.5 h-5 w-5 icon-muted" />
+                      <Lock className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
                       <Input
                         required
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="pl-12 pr-14 h-14 text-base input-default border-light-300 text-black-gray dark:text-milky-white placeholder:text-muted-foreground"
+                        className="pl-12 pr-14 h-14 text-base border-gray-300 dark:border-gray-600"
                         value={formData.password}
                         onChange={(e) =>
                           setFormData({ ...formData, password: e.target.value })
                         }
+                        disabled={authLoading}
                       />
-                      <Button
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-2 icon-muted hover-light-100"
+                        className="absolute right-2 top-2 p-2 text-gray-400 hover:text-gray-600"
                         onClick={() => setShowPassword(!showPassword)}
+                        disabled={authLoading}
                       >
                         {showPassword ? (
                           <EyeOff className="h-5 w-5" />
                         ) : (
                           <Eye className="h-5 w-5" />
                         )}
-                      </Button>
+                      </button>
                     </div>
                   </div>
 
                   <Button
                     type="submit"
                     size="lg"
-                    disabled={isLoading}
-                    className="relative w-full h-16 text-xl font-semibold text-white bg-blue-950 hover:bg-blue-900 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-blue-600/40 overflow-hidden group rounded-2xl"
+                    disabled={authLoading}
+                    className="w-full h-14 text-lg font-semibold"
                   >
-                    <span className="relative z-10">
-                      {isLoading ? "Signing in..." : "Sign In"}
-                    </span>
-                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000" />
+                    {authLoading ? "Signing in..." : "Sign In"}
+                  </Button>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-gray-300 dark:border-gray-600" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">
+                        Or continue with
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    onClick={handleDemoSignIn}
+                    disabled={authLoading}
+                    className="w-full h-14"
+                  >
+                    <Building className="mr-2 h-5 w-5" />
+                    Try Demo Account
                   </Button>
                 </form>
 
-                <p className="text-center mt-8 text-gray-700 dark:text-gray-200">
-                  Don&apos;t have an account?{" "}
-                  <Button
-                    variant="link"
-                    className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                    onClick={() => navigate("/auth/signup")}
-                  >
-                    Sign up
-                  </Button>
-                </p>
+                <div className="mt-8 text-center">
+                  <p className="text-gray-600 dark:text-gray-300">
+                    Don&apos;t have an account?{" "}
+                    <Link
+                      href="/auth/signup"
+                      className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                    >
+                      Sign up
+                    </Link>
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>

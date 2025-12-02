@@ -200,7 +200,7 @@ export default function HomePage() {
                 <CardHeader className="pb-6">
                   <div
                     className="w-14 h-14 rounded-xl flex items-center justify-center mb-5
-                                  bg-gradient-to-br from-gray-100 to-gray-200 
+                                  bg-linear-to-br from-gray-100 to-gray-200 
                                   dark:from-gray-700 dark:to-gray-800 
                                   ring-4 ring-white/60 dark:ring-gray-900/40"
                   >

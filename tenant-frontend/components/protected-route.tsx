@@ -1,9 +1,8 @@
-// components/protected-route.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import authClient  from "@/lib/auth-client";
+import authClient from "@/lib/auth-client";
 import { apiService } from "@/lib/api-service";
 
 interface ProtectedRouteProps {
@@ -51,21 +50,20 @@ export function ProtectedRoute({
         if (requireOrganization && session?.data?.user) {
           try {
             // Get user's current organization context
-            const userData = await apiService.user.getCurrentUser();
+            const userData = await apiService.user.getProfile();
 
-            if (userData.success) {
-              const hasOrg =
-                userData.data.context.organizationMemberships.length > 0;
-              const currentOrgId = userData.data.context.currentOrganizationId;
+            if (userData.success && userData.data) {
+              // FIXED: Use memberships instead of context
+              const hasOrg = userData.data.memberships && userData.data.memberships.length > 0;
+              const currentOrgId = userData.data.memberships?.[0]?.organization.id || null;
 
               setHasOrganization(hasOrg);
 
               // If specific organization is required
               if (organizationId) {
-                const isMember =
-                  userData.data.context.organizationMemberships.some(
-                    (m: any) => m.organizationId === organizationId
-                  );
+                const isMember = userData.data.memberships?.some(
+                  (m: any) => m.organization.id === organizationId
+                ) || false;
 
                 if (!isMember) {
                   router.replace("/dashboard");

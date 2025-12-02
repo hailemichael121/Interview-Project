@@ -1,4 +1,3 @@
-// hooks/use-session.ts - UPDATED VERSION
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -74,6 +73,23 @@ export interface UserContext {
     memberId: string;
     joinedAt: string;
   }>;
+  invitations?: Array<{
+    id: string;
+    organization: {
+      id: string;
+      name: string;
+      slug: string;
+      createdAt: string;
+    };
+    role: string;
+    expires: string;
+    invitedAt: string;
+  }>;
+  stats?: {
+    totalOrganizations: number;
+    pendingInvitations: number;
+    assignedOutlines: number;
+  };
 }
 
 export interface UserWithContext extends SessionData {
@@ -89,6 +105,52 @@ interface UseSessionReturn {
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
 }
+
+// Transform memberships from backend to context format
+const transformMembershipsToContext = (
+  memberships: Array<{
+    memberId: string;
+    role: string;
+    joinedAt: string;
+    organization: {
+      id: string;
+      name: string;
+      slug: string;
+      createdAt: string;
+      updatedAt: string;
+      deletedAt?: string | null;
+      role?: string;
+      joinedAt?: string;
+      memberId?: string;
+      _count?: {
+        members: number;
+        outlines: number;
+      };
+    };
+  }>,
+  invitations?: Array<any>,
+  stats?: any
+): UserContext | null => {
+  if (!memberships || memberships.length === 0) return null;
+
+  return {
+    currentOrganizationId: memberships[0]?.organization.id || null,
+    currentMemberRole: memberships[0]?.role || null,
+    organizationMemberships: memberships.map((membership) => ({
+      organizationId: membership.organization.id,
+      organization: {
+        id: membership.organization.id,
+        name: membership.organization.name,
+        slug: membership.organization.slug,
+      },
+      role: membership.role,
+      memberId: membership.memberId,
+      joinedAt: membership.joinedAt,
+    })),
+    invitations: invitations || [],
+    stats: stats,
+  };
+};
 
 /**
  * Main session hook that manages authentication state
@@ -114,10 +176,15 @@ export function useSession(): UseSessionReturn {
   // Fetch user context from backend
   const fetchUserContext = useCallback(async (userId: string): Promise<UserContext | null> => {
     try {
-      const userData = await apiService.user.getCurrentUser();
+      const userData = await apiService.user.getProfile();
       
-      if (userData.success && userData.data?.context) {
-        return userData.data.context;
+      if (userData.success && userData.data) {
+        // Transform backend response to context format
+        return transformMembershipsToContext(
+          userData.data.memberships || [],
+          userData.data.invitations,
+          userData.data.stats
+        );
       }
       return null;
     } catch (error) {
@@ -264,6 +331,8 @@ export function useOrganizationContext() {
   const currentOrganizationId = data?.context?.currentOrganizationId || null;
   const currentMemberRole = data?.context?.currentMemberRole || null;
   const organizationMemberships = data?.context?.organizationMemberships || [];
+  const invitations = data?.context?.invitations || [];
+  const stats = data?.context?.stats || {};
 
   const hasOrganization = organizationMemberships.length > 0;
   const isOwner = currentMemberRole === "OWNER";
@@ -285,6 +354,8 @@ export function useOrganizationContext() {
     currentOrganizationId,
     currentMemberRole,
     organizationMemberships,
+    invitations,
+    stats,
     hasOrganization,
     isOwner,
     isOrganizationReviewer,
@@ -303,6 +374,7 @@ export function useAuth() {
   return {
     isAuthenticated: !!data?.user,
     user: data?.user || null,
+    context: data?.context || null,
     isLoading,
     signOut,
   };
@@ -311,10 +383,9 @@ export function useAuth() {
 /**
  * Hook for protected routes - redirects if not authenticated
  */
-export function useProtectedRoute(redirectUrl = "/login") {
+export function useProtectedRoute(redirectUrl = "/auth/signin") {
   const { isAuthenticated, isLoading } = useAuth();
-  const router = useRouter(); // You'll need to import from next/navigation
-
+  const router = useRouter();  
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push(redirectUrl);

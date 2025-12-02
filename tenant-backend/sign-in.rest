@@ -39,13 +39,7 @@ Cookie: better-auth.session_token={{authToken}}
   "slug": "kan-first-org"
 }
 
-> {%
-    // Capture the NEW organization ID
-    if (response.body.success && response.body.data) {
-        client.global.set("organizationId", response.body.data.id);
-        console.log("New Organization ID:", response.body.data.id);
-    }
-%}
+ 
 
 ###
 # 5. LIST USER ORGANIZATIONS

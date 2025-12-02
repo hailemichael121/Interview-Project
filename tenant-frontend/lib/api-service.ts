@@ -108,16 +108,12 @@ export interface UserProfile {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
-  memberships?: Array<{
+   memberships?: Array<{
     memberId: string;
     role: string;
     joinedAt: string;
     organization: Organization;
   }>;
-  reviewerProfile?: {
-    id: string;
-    outlines: Outline[];
-  };
   invitations?: Array<{
     id: string;
     organization: Organization;
@@ -132,14 +128,16 @@ export interface UserProfile {
   };
 }
 
+ 
 export interface ApiResponse<T = any> {
   success: boolean;
-  data: T;
+  data: T;   
   message?: string;
   page?: number;
   perPage?: number;
   total?: number;
 }
+
 
 export interface CreateOrganizationDto {
   name: string;
@@ -283,7 +281,7 @@ export const authApi = {
 // ==================== USER API ====================
 export const userApi = {
   // Get current user profile with details
-  getProfile: async () => {
+ getProfile: async () => {
     return apiFetch<UserProfile>("/users/profile", {
       method: "GET",
     });
@@ -297,38 +295,15 @@ export const userApi = {
     });
   },
 
-  // Get current user with context (includes memberships)
+  // Get current user 
   getCurrentUser: async () => {
     return apiFetch<{
-      data: {
-        user: {
-          id: string;
-          email: string;
-          name: string | null;
-          role: string;
-          tenantId: string | null;
-          image: string | null;
-          emailVerified: boolean;
-          banned: boolean;
-          createdAt: string;
-          updatedAt: string;
-        };
-        context: {
-          currentOrganizationId: string | null;
-          currentMemberRole: string | null;
-          organizationMemberships: Array<{
-            organizationId: string;
-            organization: Organization;
-            role: string;
-            memberId: string;
-            joinedAt: string;
-          }>;
-        };
-      };
-    }>("/users/me", {
+      success: boolean;
+      data: UserProfile;  // <-- This matches backend response
+    }>("/users/profile", {  // Changed from /users/me to /users/profile
       method: "GET",
     });
-  },
+  }, // <-- REMOVE THE EXTRA COMMA AND BRACE HERE
 
   // Get user by ID (admin only)
   getUserById: async (userId: string) => {
@@ -336,7 +311,6 @@ export const userApi = {
       method: "GET",
     });
   },
-
   // List all users with pagination (admin only)
   listUsers: async (page = 1, perPage = 10) => {
     return apiFetch<{
@@ -714,24 +688,23 @@ export const outlineApi = {
   },
 
   // Get organization statistics
-  getOrganizationStats: async (organizationId: string) => {
-    if (!organizationId) {
-      throw new Error("Organization context is required");
-    }
-    
-    return apiFetch<{
-      data: {
-        organizationId: string;
-        organizationName: string;
-        organizationSlug: string;
-        totalOutlines: number;
-        completedOutlines: number;
-        inProgressOutlines: number;
-        pendingOutlines: number;
-        completionRate: number;
-      };
-      message: string;
-    }>("/api/outlines/organization/stats", { method: "GET" }, organizationId);
+ getOrganizationStats: async (organizationId: string) => {
+  if (!organizationId) {
+    throw new Error("Organization context is required");
+  }
+  
+  const response = await apiFetch<{
+    organizationId: string;
+    organizationName: string;
+    organizationSlug: string;
+    totalOutlines: number;
+    completedOutlines: number;
+    inProgressOutlines: number;
+    pendingOutlines: number;
+    completionRate: number;
+  }>("/api/outlines/organization/stats", { method: "GET" }, organizationId);
+    return response;
+
   },
 
   // Get outlines assigned to current user as reviewer

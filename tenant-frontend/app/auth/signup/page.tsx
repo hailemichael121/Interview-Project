@@ -1,4 +1,4 @@
-// app/auth/signup/page.tsx
+// app/auth/signup/page.tsx - UPDATED
 "use client";
 
 import { useState } from "react";
@@ -19,8 +19,9 @@ import { AnimatedTitle } from "@/components/animated-title";
 import { useAuthTransition } from "@/components/auth-transition";
 import { Logo } from "@/components/logo";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-export default function AuthPage() {
+export default function SignUpPage() {
   const router = useRouter();
   const { navigate, transitionClass } = useAuthTransition();
   const [isLoading, setIsLoading] = useState(false);
@@ -36,6 +37,7 @@ export default function AuthPage() {
     setIsLoading(true);
 
     try {
+      // Sign up with Better Auth
       const result = await authClient.signUp.email({
         name: formData.name,
         email: formData.email,
@@ -43,28 +45,23 @@ export default function AuthPage() {
       });
 
       if (result.error) {
-        toast.error(result.error.message || "Something went wrong");
+        toast.error(result.error.message || "Registration failed. Please try again.");
         return;
       }
 
-      // Successful sign up
-      toast.success("Account created successfully!");
+      // Show success message
+      toast.success("Account created successfully! Please sign in.");
 
-      // Get the session to verify
-      const session = await authClient.getSession();
+      // Redirect to sign in page
+      setTimeout(() => {
+        router.push("/auth/signin");
+      }, 1500);
 
-      if (session.data) {
-        // Wait a moment for cookies to be set
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        // Redirect to organization creation for new users
-        router.push("/organization/create");
-      } else {
-        toast.error("Failed to create session");
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to sign up");
-    } finally {
+  } catch (error: unknown) {
+      console.error("Sign up error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to create account. Please try again.";
+      toast.error(errorMessage);
+    }finally {
       setIsLoading(false);
     }
   };
@@ -120,21 +117,22 @@ export default function AuthPage() {
             <p className="mt-6 text-xl text-white/90 drop-shadow">
               Multi-tenant collaboration, built for modern teams.
             </p>
-            <Button
-              onClick={() => navigate("/auth/signin")}
-              size="lg"
-              variant="secondary"
-              className="mt-12 bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 hover:text-gray-900"
-            >
-              Already have an account? Sign In <ArrowRight className="ml-2" />
-            </Button>
+            <Link href="/auth/signin">
+              <Button
+                size="lg"
+                variant="secondary"
+                className="mt-12 bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 hover:text-gray-900"
+              >
+                Already have an account? Sign In <ArrowRight className="ml-2" />
+              </Button>
+            </Link>
           </div>
         </div>
 
         {/* Right: Form */}
         <div className="flex-1 flex items-center justify-center py-12 px-6">
           <div className="w-full max-w-md animate-in slide-in-from-right-32 duration-700">
-            <Card className="border-0 shadow-2xl backdrop-blur-xl">
+            <Card className="border-0 shadow-2xl backdrop-blur-xl bg-white/95 dark:bg-gray-900/95">
               <CardHeader className="text-center pb-10">
                 <CardTitle className="text-4xl font-bold text-muted-foreground">
                   Create Account
@@ -150,15 +148,16 @@ export default function AuthPage() {
                       Full Name
                     </Label>
                     <div className="relative">
-                      <Users className="absolute left-4 top-3.5 h-5 w-5 icon-muted" />
+                      <Users className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
                       <Input
                         required
                         placeholder="John Doe"
-                        className="pl-12 h-14 text-base input-default border-light-300 text-black-gray dark:text-milky-white placeholder:text-muted-foreground"
+                        className="pl-12 h-14 text-base border-gray-300 dark:border-gray-600"
                         value={formData.name}
                         onChange={(e) =>
                           setFormData({ ...formData, name: e.target.value })
                         }
+                        disabled={isLoading}
                       />
                     </div>
                   </div>
@@ -168,16 +167,17 @@ export default function AuthPage() {
                       Email
                     </Label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-3.5 h-5 w-5 icon-muted" />
+                      <Mail className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
                       <Input
                         required
                         type="email"
                         placeholder="you@company.com"
-                        className="pl-12 h-14 text-base input-default border-light-300 text-black-gray dark:text-milky-white placeholder:text-muted-foreground"
+                        className="pl-12 h-14 text-base border-gray-300 dark:border-gray-600"
                         value={formData.email}
                         onChange={(e) =>
                           setFormData({ ...formData, email: e.target.value })
                         }
+                        disabled={isLoading}
                       />
                     </div>
                   </div>
@@ -187,31 +187,31 @@ export default function AuthPage() {
                       Password
                     </Label>
                     <div className="relative">
-                      <Lock className="absolute left-4 top-3.5 h-5 w-5 icon-muted" />
+                      <Lock className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
                       <Input
                         required
                         type={showPassword ? "text" : "password"}
                         minLength={8}
                         placeholder="••••••••"
-                        className="pl-12 pr-14 h-14 text-base input-default border-light-300 text-black-gray dark:text-milky-white placeholder:text-muted-foreground"
+                        className="pl-12 pr-14 h-14 text-base border-gray-300 dark:border-gray-600"
                         value={formData.password}
                         onChange={(e) =>
                           setFormData({ ...formData, password: e.target.value })
                         }
+                        disabled={isLoading}
                       />
-                      <Button
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-2 icon-muted hover-light-100"
+                        className="absolute right-2 top-2 p-2 text-gray-400 hover:text-gray-600"
                         onClick={() => setShowPassword(!showPassword)}
+                        disabled={isLoading}
                       >
                         {showPassword ? (
                           <EyeOff className="h-5 w-5" />
                         ) : (
                           <Eye className="h-5 w-5" />
                         )}
-                      </Button>
+                      </button>
                     </div>
                   </div>
 
@@ -219,25 +219,26 @@ export default function AuthPage() {
                     type="submit"
                     size="lg"
                     disabled={isLoading}
-                    className="relative w-full h-16 text-xl font-semibold text-white bg-blue-950 hover:bg-blue-900 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-blue-600/40 overflow-hidden group rounded-2xl"
+                    className="w-full h-14 text-lg font-semibold"
                   >
-                    <span className="relative z-10">
-                      {isLoading ? "Creating Account..." : "Create Account"}
-                    </span>
-                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000" />
+                    {isLoading ? "Creating Account..." : "Create Account"}
                   </Button>
                 </form>
 
-                <p className="text-center mt-8 text-gray-700 dark:text-gray-200">
-                  Already have an account?{" "}
-                  <Button
-                    variant="link"
-                    className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                    onClick={() => navigate("/auth/signin")}
-                  >
-                    Sign in
-                  </Button>
-                </p>
+                <div className="mt-8 text-center">
+                  <p className="text-gray-600 dark:text-gray-300">
+                    Already have an account?{" "}
+                    <Link
+                      href="/auth/signin"
+                      className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                    >
+                      Sign in
+                    </Link>
+                  </p>
+                  <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+                    By creating an account, you agree to our Terms of Service and Privacy Policy
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>

@@ -27,7 +27,7 @@ export const useApi = () => {
         const result = await apiCall();
         onSuccess?.(result);
         return result;
-      } catch (error: any) {
+      } catch (error: unknown) {
         const errorMessage = error.message || "An unknown error occurred";
         onError?.(errorMessage);
         return null;

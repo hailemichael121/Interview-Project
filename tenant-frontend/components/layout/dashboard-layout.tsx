@@ -52,11 +52,23 @@ interface DashboardLayoutProps {
   organization?: {
     id: string;
     name: string;
-    role: "owner" | "member";
+    role: "owner" | "member" | "reviewer";
   };
+  memberships?: Array<{
+    organizationId: string;
+    organization: {
+      id: string;
+      name: string;
+      slug: string;
+    };
+    role: string;
+    memberId: string;
+    joinedAt: string;
+  }>;
+  isLoading?: boolean;
 }
 
-export function DashboardLayout({ children, organization }: DashboardLayoutProps) {
+export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const { currentOrg, setCurrentOrg } = useOrg();
