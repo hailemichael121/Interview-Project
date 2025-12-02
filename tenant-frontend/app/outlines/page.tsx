@@ -1,16 +1,15 @@
-// app/outlines/page.tsx
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { OutlineTable } from "@/components/outlines/outlines-table";
-import { useOrganizationContext } from "@/hooks/use-session";
+ import { useOrganizationContext } from "@/hooks/use-session";
 import { apiService } from "@/lib/api-service";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, FileText } from "lucide-react";
 import Link from "next/link";
 import { Outline } from "@/types/types";
+import { OutlineTableSimple } from "@/components/outlines/outline-table-compact";
 
 export default function OutlinesPage() {
   const {
@@ -49,9 +48,10 @@ export default function OutlinesPage() {
       } else {
         toast.error(response.message || "Failed to fetch outlines");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching outlines:", error);
-      toast.error(error.message || "Failed to load outlines");
+      const errorMessage = error instanceof Error ? error.message : "Failed to load outlines";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -59,7 +59,7 @@ export default function OutlinesPage() {
   }, [currentOrganizationId, page]);
 
   // Update outline
-  const handleUpdateOutline = async (outlineId: string, updateData: any) => {
+  const handleUpdateOutline = async (outlineId: string, updateData: Partial<Outline>) => {
     if (!currentOrganizationId) {
       toast.error("No organization selected");
       return;
@@ -86,7 +86,7 @@ export default function OutlinesPage() {
       }
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to create outline";
+        error instanceof Error ? error.message : "Failed to update outline";
       toast.error(errorMessage);
     }
   };
@@ -115,7 +115,7 @@ export default function OutlinesPage() {
       }
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to create outline";
+        error instanceof Error ? error.message : "Failed to delete outline";
       toast.error(errorMessage);
     }
   };
@@ -147,10 +147,10 @@ export default function OutlinesPage() {
   if (!hasOrganization && !orgLoading) {
     return (
       <DashboardLayout>
-        <div className="flex h-screen items-center justify-center bg-[hsl(var(--background))]">
+        <div className="flex h-screen items-center justify-center bg-background">
           <div className="text-center">
             <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-lg text-[hsl(var(--muted-foreground))]">
+            <p className="text-lg text-muted-foreground">
               Please select an organization to view outlines
             </p>
             <Link href="/dashboard">
@@ -171,7 +171,7 @@ export default function OutlinesPage() {
           <div className="flex items-center justify-center h-96">
             <div className="flex flex-col items-center gap-4">
               <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-[hsl(var(--muted-foreground))]">
+              <p className="text-muted-foreground">
                 Loading outlines...
               </p>
             </div>
@@ -188,10 +188,10 @@ export default function OutlinesPage() {
         <div className="mb-10">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-4xl font-bold text-[hsl(var(--foreground))]">
+              <h1 className="text-4xl font-bold text-foreground">
                 Outlines
               </h1>
-              <p className="mt-3 text-lg text-[hsl(var(--muted-foreground))]">
+              <p className="mt-3 text-lg text-muted-foreground">
                 Manage and organize your project outlines
               </p>
             </div>
@@ -219,35 +219,35 @@ export default function OutlinesPage() {
 
           {/* Stats Summary */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-[hsl(var(--card))] border border-light-300 rounded-lg p-4">
-              <div className="text-2xl font-bold text-[hsl(var(--foreground))]">
+            <div className="bg-card border rounded-lg p-4">
+              <div className="text-2xl font-bold text-foreground">
                 {outlines.length}
               </div>
-              <div className="text-sm text-[hsl(var(--muted-foreground))]">
+              <div className="text-sm text-muted-foreground">
                 Total Outlines
               </div>
             </div>
-            <div className="bg-[hsl(var(--card))] border border-light-300 rounded-lg p-4">
+            <div className="bg-card border rounded-lg p-4">
               <div className="text-2xl font-bold text-green-600">
                 {outlines.filter((o) => o.status === "COMPLETED").length}
               </div>
-              <div className="text-sm text-[hsl(var(--muted-foreground))]">
+              <div className="text-sm text-muted-foreground">
                 Completed
               </div>
             </div>
-            <div className="bg-[hsl(var(--card))] border border-light-300 rounded-lg p-4">
+            <div className="bg-card border rounded-lg p-4">
               <div className="text-2xl font-bold text-blue-600">
                 {outlines.filter((o) => o.status === "IN_PROGRESS").length}
               </div>
-              <div className="text-sm text-[hsl(var(--muted-foreground))]">
+              <div className="text-sm text-muted-foreground">
                 In Progress
               </div>
             </div>
-            <div className="bg-[hsl(var(--card))] border border-light-300 rounded-lg p-4">
+            <div className="bg-card border rounded-lg p-4">
               <div className="text-2xl font-bold text-yellow-600">
                 {outlines.filter((o) => o.status === "PENDING").length}
               </div>
-              <div className="text-sm text-[hsl(var(--muted-foreground))]">
+              <div className="text-sm text-muted-foreground">
                 Pending
               </div>
             </div>
@@ -255,22 +255,20 @@ export default function OutlinesPage() {
         </div>
 
         {/* Table Container */}
-        <div className="rounded-xl border border-light-300 bg-[hsl(var(--card))] shadow-sm overflow-hidden">
-          <OutlineTable
+        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+          <OutlineTableSimple
             data={outlines}
-            onUpdate={handleUpdateOutline}
             onDelete={handleDeleteOutline}
             onStatusChange={handleStatusUpdate}
             isLoading={isLoading}
             currentUserRole={currentMemberRole || ""}
-            organizationId={currentOrganizationId || ""}
           />
         </div>
 
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-8">
-            <div className="text-sm text-[hsl(var(--muted-foreground))]">
+            <div className="text-sm text-muted-foreground">
               Showing {outlines.length} outlines
             </div>
             <div className="flex items-center gap-2">
@@ -282,7 +280,7 @@ export default function OutlinesPage() {
               >
                 Previous
               </Button>
-              <span className="text-sm text-[hsl(var(--muted-foreground))] px-4">
+              <span className="text-sm text-muted-foreground px-4">
                 Page {page} of {totalPages}
               </span>
               <Button

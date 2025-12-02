@@ -1,4 +1,3 @@
-// app/dashboard/page.tsx
 "use client";
 
 import { ProtectedRoute } from "@/components/protected-route";
@@ -34,20 +33,14 @@ import {
 import Link from "next/link";
 import { apiService } from "@/lib/api-service";
 import { toast } from "sonner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Invitation } from "@/types/types";
+import { DataTable } from "@/components/ui/data-table";
+import { createTextColumn, createDateColumn, createBadgeColumn } from "@/components/ui/table-columns";
+import { ColumnDef } from "@tanstack/react-table";
 
 type ActivityOutline = {
   id: string;
@@ -60,6 +53,64 @@ type ActivityOutline = {
   createdAt: string;
 };
 
+type OrganizationStats = {
+  totalOutlines: number;
+  completedOutlines: number;
+  inProgressOutlines: number;
+  pendingOutlines: number;
+  completionRate: number;
+};
+
+type ApiResponseOutline = {
+  id: string;
+  header?: string;
+  status?: string;
+  sectionType?: string;
+  reviewer?: {
+    name: string;
+  };
+  createdAt?: string;
+};
+
+ interface ApiMember {
+  id: string;
+  user?: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+    createdAt: string;
+  };
+  role: string;
+  joinedAt: string;
+}
+ 
+ interface UIMember {
+  id: string;
+  user: {
+    name?: string;
+    email: string;
+    image?: string;
+  };
+  role: string;
+  joinedAt: string;
+}
+
+ interface UIInvitation {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  expires: string;
+  createdAt: string;
+  organizationId: string;
+  organization?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+}
+
 function DashboardContent() {
   const {
     currentOrganizationId,
@@ -69,16 +120,16 @@ function DashboardContent() {
     isLoading: orgLoading,
   } = useOrganizationContext();
 
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<OrganizationStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [recentActivity, setRecentActivity] = useState<ActivityOutline[]>([]);
-  const [invitations, setInvitations] = useState<any[]>([]);
-  const [members, setMembers] = useState<any[]>([]);
+  const [invitations, setInvitations] = useState<UIInvitation[]>([]);
+  const [members, setMembers] = useState<UIMember[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [refreshing, setRefreshing] = useState(false);
 
   const currentOrganization = organizationMemberships.find(
-    (membership: any) => membership.organizationId === currentOrganizationId
+    (membership) => membership.organizationId === currentOrganizationId
   );
 
   const isOwner = currentMemberRole === "OWNER";
@@ -92,18 +143,17 @@ function DashboardContent() {
     try {
       setRefreshing(true);
 
-      // Fetch data in parallel
-      const [statsResponse, outlinesResponse] = await Promise.all([
+       const [statsResponse, outlinesResponse] = await Promise.all([
         apiService.outline.getOrganizationStats(currentOrganizationId),
         apiService.outline.listOutlines(currentOrganizationId, 1, 5),
       ]);
 
       if (statsResponse.success) {
-        setStats(statsResponse.data);
+        setStats(statsResponse.data as OrganizationStats);
       }
 
       if (outlinesResponse.success) {
-        const activityOutlines = outlinesResponse.data.map((outline: any) => ({
+        const activityOutlines = outlinesResponse.data.map((outline: ApiResponseOutline) => ({
           id: outline.id,
           header: outline.header || "",
           status: outline.status || "DRAFT",
@@ -114,7 +164,6 @@ function DashboardContent() {
         setRecentActivity(activityOutlines);
       }
 
-      // Try to fetch members if organization exists
       try {
         const membersResponse = await apiService.organization.listMembers(
           currentOrganizationId,
@@ -122,7 +171,18 @@ function DashboardContent() {
           100
         );
         if (membersResponse.success) {
-          setMembers(membersResponse.data);
+          const apiMembers = membersResponse.data as ApiMember[] || [];
+          const uiMembers: UIMember[] = apiMembers.map((member: ApiMember) => ({
+            id: member.id,
+            user: {
+              name: member.user?.name || undefined,
+              email: member.user?.email || "unknown@example.com",
+              image: member.user?.image || undefined,
+            },
+            role: member.role,
+            joinedAt: member.joinedAt,
+          }));
+          setMembers(uiMembers);
         }
       } catch (membersError) {
         console.log("Could not fetch members:", membersError);
@@ -130,17 +190,29 @@ function DashboardContent() {
 
       // Try to fetch invitations if owner
       if (isOwner) {
-        try {
-          const invitationsResponse =
-            await apiService.invitation.getPendingInvitations();
-          if (invitationsResponse.success) {
-            setInvitations(invitationsResponse.data || []);
-          }
-        } catch (invitationsError) {
-          console.log("Could not fetch invitations:", invitationsError);
-        }
-      }
-    } catch (error) {
+  try {
+    const invitationsResponse =
+      await apiService.invitation.getPendingInvitations();
+    if (invitationsResponse.success) {
+      const apiInvitations = invitationsResponse.data as any[] || [];
+      const uiInvitations: UIInvitation[] = apiInvitations.map((inv: any) => ({
+        id: inv.id,
+        email: inv.email || "",
+        role: inv.role,
+        status: inv.status,
+        expires: inv.expires,
+        createdAt: inv.createdAt,
+        organizationId: inv.organizationId,
+        organization: inv.organization,
+      }));
+      setInvitations(uiInvitations);
+    }
+  } catch {
+    // Silently fail for invitations
+    console.log("Could not fetch invitations");
+  }
+}
+    } catch (error: unknown) {
       console.error("Error fetching dashboard data:", error);
       const errorMessage =
         error instanceof Error
@@ -152,6 +224,7 @@ function DashboardContent() {
       setRefreshing(false);
     }
   }, [currentOrganizationId, isOwner]);
+
   const handleResendInvitation = async (
     invitationId: string,
     email: string
@@ -163,16 +236,14 @@ function DashboardContent() {
       // Note: Backend doesn't have resend endpoint yet
       toast.error("Resend feature coming soon");
     } catch {
-      // Changed to 'any' or specific type
       toast.error("Failed to resend invitation");
     }
   };
 
   const handleRevokeInvitation = async (
     invitationId: string,
-    invitation: Invitation
+    invitation: UIInvitation
   ) => {
-    // Changed parameter
     if (!confirm(`Revoke invitation for ${invitation.email}?`)) return;
 
     try {
@@ -183,6 +254,7 @@ function DashboardContent() {
       toast.error("Failed to revoke invitation");
     }
   };
+
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
@@ -197,7 +269,7 @@ function DashboardContent() {
     return (
       <div className="space-y-6 px-4 lg:px-6">
         <div className="text-center py-12">
-          <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
+          <div className="w-24 h-24 mx-auto mb-6 bg-linear-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center">
             <Building className="h-12 w-12 text-primary" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
@@ -239,6 +311,66 @@ function DashboardContent() {
       </div>
     );
   }
+
+  // Define table columns for invitations
+  const invitationColumns: ColumnDef<UIInvitation>[] = [
+    createTextColumn<UIInvitation>("email", "Email"),
+    createBadgeColumn<UIInvitation>("role", "Role", { variant: "outline" }),
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const invitation = row.original;
+        return (
+          <Badge
+            variant={
+              invitation.status === "PENDING"
+                ? "outline"
+                : invitation.status === "ACCEPTED"
+                ? "default"
+                : "destructive"
+            }
+          >
+            {invitation.status}
+          </Badge>
+        );
+      },
+    },
+    createDateColumn<UIInvitation>("expires", "Expires", {
+      format: "MMM d, yyyy",
+    }),
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const invitation = row.original;
+        return (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                handleResendInvitation(invitation.id, invitation.email)
+              }
+              disabled={invitation.status !== "PENDING"}
+            >
+              <Mail className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                handleRevokeInvitation(invitation.id, invitation)
+              }
+              disabled={invitation.status !== "PENDING"}
+            >
+              <XCircle className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
 
   return (
     <div className="space-y-6 px-4 lg:px-6">
@@ -320,7 +452,9 @@ function DashboardContent() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Your Role</span>
-                <Badge variant={isOwner ? "default" : "secondary"}>
+                <Badge
+                  variant={isOwner ? "default" : "secondary"}
+                >
                   {currentMemberRole}
                 </Badge>
               </div>
@@ -638,79 +772,18 @@ function DashboardContent() {
               </CardHeader>
               <CardContent>
                 {invitations.length > 0 ? (
-                  <div className="border rounded-lg">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Role</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Expires</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {invitations.map((invitation) => (
-                          <TableRow key={invitation.id}>
-                            <TableCell className="font-medium">
-                              {invitation.email}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{invitation.role}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  invitation.status === "PENDING"
-                                    ? "outline"
-                                    : invitation.status === "ACCEPTED"
-                                    ? "default"
-                                    : "destructive"
-                                }
-                              >
-                                {invitation.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {new Date(
-                                invitation.expires
-                              ).toLocaleDateString()}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleResendInvitation(
-                                      invitation.id,
-                                      invitation.email
-                                    )
-                                  }
-                                  disabled={invitation.status !== "PENDING"}
-                                >
-                                  <Mail className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleRevokeInvitation(
-                                      invitation.id,
-                                      invitation
-                                    )
-                                  }
-                                  disabled={invitation.status !== "PENDING"}
-                                >
-                                  <XCircle className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                  <DataTable
+                    columns={invitationColumns}
+                    data={invitations}
+                    emptyState={{
+                      title: "No Pending Invitations",
+                      description: "Invite team members to collaborate in your workspace",
+                      action: {
+                        label: "Invite Members",
+                        href: "/team/invite",
+                      },
+                    }}
+                  />
                 ) : (
                   <div className="text-center py-12">
                     <Mail className="h-16 w-16 text-gray-400 mx-auto mb-4" />
