@@ -38,12 +38,33 @@ export default function SignInPage() {
     try {
       console.log("Attempting sign in...");
 
-      // Sign in
-      const result = await authClient.signIn.email({
-        email: formData.email,
-        password: formData.password,
-      });
+      // Use direct fetch to get full control over cookies
+      const response = await fetch(
+        `${
+          process.env.NEXT_PUBLIC_BACKEND_URL ||
+          "https://tenant-backend-cz23.onrender.com"
+        }/api/auth/sign-in/email`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Origin: window.location.origin,
+          },
+          credentials: "include", // IMPORTANT: Send/receive cookies
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+          }),
+        }
+      );
 
+      console.log("Response status:", response.status);
+
+      // Get all response headers
+      const setCookieHeader = response.headers.get("set-cookie");
+      console.log("Set-Cookie header:", setCookieHeader);
+
+      const result = await response.json();
       console.log("Sign in result:", result);
 
       if (result.error) {
@@ -51,30 +72,56 @@ export default function SignInPage() {
         return;
       }
 
-      // Wait a moment for cookies to propagate
+      // MANUALLY EXTRACT AND SET THE TOKEN FROM RESPONSE
+      if (result.token) {
+        // Store token in localStorage
+        localStorage.setItem("auth_token", result.token);
+
+        // Also store the full response for session management
+        localStorage.setItem("auth_user", JSON.stringify(result.user));
+
+        const cookieValue = `${result.token}; path=/; max-age=604800; SameSite=Lax; Secure`;
+        document.cookie = `__Secure-better-auth.session_token=${cookieValue}`;
+        document.cookie = `better-auth.session_token=${cookieValue}`;
+      }
+
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Debug: Check cookies and session
       console.log("Current cookies:", document.cookie);
+      console.log(
+        "LocalStorage auth_token:",
+        localStorage.getItem("auth_token")
+      );
 
-      // Check session manually
       const sessionCheck = await authClient.getSession();
       console.log("Session after login:", sessionCheck);
 
       if (!sessionCheck?.data?.user) {
-        toast.error("Session not created. Check console for details.");
-        return;
+        const storedToken = localStorage.getItem("auth_token");
+        if (storedToken) {
+          console.log("Using manually stored token");
+          const manualSession = {
+            data: {
+              user: result.user,
+              session: {
+                token: storedToken,
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+              },
+            },
+          };
+          console.log("Manual session created:", manualSession);
+        }
       }
 
       toast.success("Signed in successfully!");
 
-      // Force a hard redirect to ensure auth state is refreshed
       window.location.href = "/dashboard";
     } catch (error) {
       console.error("Sign in error:", error);
       toast.error(error instanceof Error ? error.message : "Sign in failed");
     }
   };
+
   // Social sign-in handlers
   const handleGitHubSignIn = () => {
     toast.info("GitHub sign-in coming soon");

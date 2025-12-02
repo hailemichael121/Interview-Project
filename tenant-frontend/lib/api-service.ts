@@ -45,13 +45,31 @@ import {
  * Generic authenticated fetch wrapper
  * Automatically injects session cookie and organization context header
  */
+// lib/api-service.ts - UPDATED apiFetch function
 async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {},
   organizationId?: string
 ): Promise<ApiResponse<T>> {
-  const session = await authClient.getSession();
-  if (!session?.data?.session) {
+  let authToken = null;
+
+  if (typeof window !== "undefined") {
+    authToken = localStorage.getItem("auth_token");
+
+    if (!authToken) {
+      const sessionToken = document.cookie
+        .split("; ")
+        .find(
+          (row) =>
+            row.startsWith("better-auth.session_token=") ||
+            row.startsWith("__Secure-better-auth.session_token=")
+        )
+        ?.split("=")[1];
+      authToken = sessionToken;
+    }
+  }
+
+  if (!authToken) {
     throw new Error("No active session. Please sign in.");
   }
 
@@ -61,20 +79,11 @@ async function apiFetch<T>(
     ...(options.headers as Record<string, string>),
   };
 
-  // Inject organization context if provided
   if (organizationId) {
     headers["X-Organization-Id"] = organizationId;
   }
 
-  // Extract session token from cookies (Better-Auth format)
-  const sessionToken = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("better-auth.session_token="))
-    ?.split("=")[1];
-
-  if (sessionToken) {
-    headers["Cookie"] = `better-auth.session_token=${sessionToken}`;
-  }
+  headers["Authorization"] = `Bearer ${authToken}`;
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
@@ -82,7 +91,6 @@ async function apiFetch<T>(
     credentials: "include",
   });
 
-  // Unified error handling
   if (!response.ok) {
     let errorMessage = `API Error: ${response.status}`;
     try {
@@ -92,12 +100,17 @@ async function apiFetch<T>(
       const text = await response.text();
       errorMessage = text || errorMessage;
     }
+
+    if (response.status === 401) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
+    }
+
     throw new Error(errorMessage);
   }
 
   return response.json();
 }
-
 // ==================== AUTH API ====================
 export const authApi = {
   signUp: async (data: { name: string; email: string; password: string }) =>

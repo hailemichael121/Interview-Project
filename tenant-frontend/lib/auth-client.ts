@@ -1,4 +1,4 @@
-// lib/auth-client.ts - UPDATED WITH DEBUGGING
+// lib/auth-client.ts
 "use client";
 
 import { createAuthClient } from "better-auth/react";
@@ -10,43 +10,69 @@ const backendUrl =
 export const authClient = createAuthClient({
   baseURL: backendUrl,
   basePath: "/api/auth",
+
   fetchOptions: {
     credentials: "include",
     mode: "cors",
   },
+
+  // Add proper TypeScript types for storage functions
+  storage: {
+    getItem: (key: string) => {
+      if (typeof window !== "undefined") {
+        return localStorage.getItem(key);
+      }
+      return null;
+    },
+    setItem: (key: string, value: string) => {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(key, value);
+      }
+    },
+    removeItem: (key: string) => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(key);
+      }
+    },
+  },
+
   session: {
     cookie: {
       name: "better-auth.session_token",
-      sameSite: "none",
+      sameSite: "lax",
       secure: true,
       httpOnly: false,
+      path: "/",
     },
   },
 });
 
-export const checkAuthStatus = async () => {
-  try {
-    const session = await authClient.getSession();
-    console.log("Session check result:", session);
+export const setAuthCookieManually = (token: string) => {
+  if (typeof window === "undefined") return;
 
-    const cookies = document.cookie;
-    console.log("Browser cookies:", cookies);
+  const cookieValue = `${token}; path=/; max-age=604800; SameSite=Lax; Secure`;
 
-    const response = await fetch(`${backendUrl}/api/auth/get-session`, {
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+  document.cookie = `__Secure-better-auth.session_token=${cookieValue}`;
+  document.cookie = `better-auth.session_token=${cookieValue}`;
 
-    console.log("Manual session fetch:", await response.json());
-    console.log("Response headers:", response.headers.get("set-cookie"));
+  localStorage.setItem("auth_token", token);
+};
 
-    return session;
-  } catch (error) {
-    console.error("Auth check failed:", error);
-    return null;
-  }
+export const getAuthToken = (): string | null => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("auth_token");
+};
+
+export const clearAuthToken = () => {
+  if (typeof window === "undefined") return;
+
+  localStorage.removeItem("auth_token");
+  localStorage.removeItem("auth_user");
+
+  // Clear cookies
+  const pastDate = new Date(0).toUTCString();
+  document.cookie = `better-auth.session_token=; path=/; expires=${pastDate}`;
+  document.cookie = `__Secure-better-auth.session_token=; path=/; expires=${pastDate}`;
 };
 
 export default authClient;

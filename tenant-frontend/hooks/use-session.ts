@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import authClient from "@/lib/auth-client";
 import { apiService } from "@/lib/api-service";
 import { UserProfile } from "@/lib/types";
+import { SessionHelper } from "@/lib/session-helper";
 
 interface BetterAuthUser {
   id: string;
@@ -108,20 +109,77 @@ export function useSession() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // hooks/use-session.ts - UPDATED fetchSession function
   const fetchSession = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const authRes = await authClient.getSession();
-      const authData = authRes?.data;
+      // First try authClient
+      let authRes;
+      try {
+        authRes = await authClient.getSession();
+      } catch (err) {
+        console.log("Auth client session check failed, using manual check");
+      }
 
-      if (!authData?.user || !authData.session) {
+      // If authClient fails, check localStorage
+      if (!authRes?.data?.user) {
+        const manualToken = SessionHelper.getToken();
+        const manualUser = SessionHelper.getUser();
+
+        if (manualToken && manualUser) {
+          console.log("Using manually stored session");
+
+          const sessionUser: SessionUser = {
+            id: manualUser.id,
+            email: manualUser.email,
+            name: manualUser.name || null,
+            image: manualUser.image || null,
+            role: manualUser.role || "USER",
+            emailVerified: manualUser.emailVerified || false,
+            banned: manualUser.banned || false,
+            createdAt: new Date(manualUser.createdAt || Date.now()),
+            updatedAt: new Date(manualUser.updatedAt || Date.now()),
+            tenantId: manualUser.tenantId || null,
+          };
+
+          const baseSession: SessionData = {
+            user: sessionUser,
+            expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+            sessionId: `manual_${manualUser.id}`,
+            token: manualToken,
+          };
+
+          // Try to get full profile from backend
+          try {
+            const profileRes = await apiService.user.getProfile();
+            if (profileRes.success && profileRes.data) {
+              const profile = profileRes.data;
+              const context = transformMembershipsToContext(
+                profile.memberships,
+                profile.invitations,
+                profile.stats
+              );
+              setData({ ...baseSession, context });
+            } else {
+              setData({ ...baseSession, context: null });
+            }
+          } catch {
+            setData({ ...baseSession, context: null });
+          }
+          return;
+        }
+
+        // No session found
         setData(null);
         return;
       }
 
-      // Get full profile from backend (has role, memberships, etc.)
+      // Original logic for successful authClient session
+      const authData = authRes.data;
+
+      // Get full profile from backend
       const profileRes = await apiService.user.getProfile();
 
       if (!profileRes.success || !profileRes.data) {
@@ -136,7 +194,7 @@ export function useSession() {
         email: authData.user.email,
         name: authData.user.name || profile.name || null,
         image: authData.user.image || profile.image || null,
-        role: profile.role || "USER", // role comes from backend!
+        role: profile.role || "USER",
         emailVerified: authData.user.emailVerified,
         banned: profile.banned,
         createdAt: authData.user.createdAt,
@@ -156,6 +214,12 @@ export function useSession() {
         profile.invitations,
         profile.stats
       );
+
+      // Store in SessionHelper for backup
+      if (authData.session.token) {
+        SessionHelper.setToken(authData.session.token);
+        SessionHelper.setUser(authData.user);
+      }
 
       setData({ ...baseSession, context });
     } catch (err) {
