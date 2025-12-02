@@ -48,7 +48,7 @@ import { useOrganizationContext } from "@/hooks/use-session";
 import { apiService } from "@/lib/api-service";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import type { OrganizationMember, ApiInvitation } from "@/lib/types";
+import type { OrganizationMember, ApiInvitation } from "@/types/types";
 
 interface TeamMember extends OrganizationMember {
   status?: "ACTIVE" | "PENDING" | "INACTIVE";

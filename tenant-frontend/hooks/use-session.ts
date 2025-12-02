@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import authClient from "@/lib/auth-client";
 import { apiService } from "@/lib/api-service";
-import { UserProfile } from "@/lib/types";
+import { UserProfile } from "@/types/types";
 import { SessionHelper } from "@/lib/session-helper";
 
 interface BetterAuthUser {

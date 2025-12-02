@@ -51,7 +51,7 @@ import {
   DashboardStats,
   Member,
   Invitation, // Changed from Invitation
-} from "@/lib/types";
+} from "@/types/types";
 
 type ActivityOutline = {
   id: string;

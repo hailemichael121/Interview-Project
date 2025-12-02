@@ -62,7 +62,8 @@ Content-Type: {{contentType}}
 
 GET {{baseUrl}}/users/me
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
+Cookie: better-auth.session_token=X8cEn4pBhYBShXI2JvnUI0yHNQbJuGHz.gioSpvjBAH7eKqVK0RKvEvkkFRRDc70n1qITgEG2ei4%3D
+
 
 ###
 # 2.1 USER — GET DETAILED PROFILE
@@ -70,7 +71,7 @@ Cookie: better-auth.session_token={{authToken}}
 
 GET {{baseUrl}}/users/profile
 Origin: {{frontendUrl}}
-Cookie: better-auth.session_token={{authToken}}
+Cookie: better-auth.session_token=1YbvgOnK76VkRY7CpNajGo3Gx6FyDvXj.6E5yeepp%2F9wCWrTPj%2BWaqXER7Ys3eh1HhjKsu%2FNNfT0%3D
 
 ###
 # 2.2 USER — UPDATE PROFILE

@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, FileText } from "lucide-react";
 import Link from "next/link";
-import { Outline } from "@/lib/types";
+import { Outline } from "@/types/types";
 
 export default function OutlinesPage() {
   const {

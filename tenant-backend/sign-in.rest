@@ -3,8 +3,9 @@
 @contentType = application/json
 
 # Current session token
-@authToken = XqbBeuZMApfApoA48laC1tcmEwpaFsAe.M0HnCGeqbIg7rkv5gOkAoUqWQ3S0sLXaTs02PNesz6s%3D
+@authToken = X8cEn4pBhYBShXI2JvnUI0yHNQbJuGHz.gioSpvjBAH7eKqVK0RKvEvkkFRRDc70n1qITgEG2ei4%3D
 @userId = 0vB4HtESESnoz1YnPyl52q2KepJWYdzE
+# Cookie: better-auth.session_token=X8cEn4pBhYBShXI2JvnUI0yHNQbJuGHz.gioSpvjBAH7eKqVK0RKvEvkkFRRDc70n1qITgEG2ei4%3D
 
 # NEW organization ID from create response
 @organizationId = cminmtswt00021zay8qmet0gh
@@ -35,8 +36,8 @@ Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
 
 {
-  "name": "Kan First Organization",
-  "slug": "kan-first-org"
+  "name": "Kano First Organization",
+  "slug": "kano-first-org"
 }
 
  
@@ -81,7 +82,7 @@ Cookie: better-auth.session_token={{authToken}}
 X-Organization-Id: {{organizationId}}
 
 {
-  "email": "test@example.com",
+  "email": "teset@example.com",
   "role": "MEMBER",
   "organizationId": "{{organizationId}}"
 }
@@ -95,7 +96,7 @@ Cookie: better-auth.session_token={{authToken}}
 X-Organization-Id: cminmtswt00021zay8qmet0gh
 
 {
-  "header": "My First Outline",
+  "header": "My Firsdte Outline",
   "sectionType": "EXECUTIVE_SUMMARY",
   "target": 1000,
   "limit": 1200,
@@ -109,3 +110,15 @@ Origin: {{frontendUrl}}
 Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
 X-Organization-Id: {{organizationId}}
+
+###
+# Accept: invitation to organization (example only, not executed here)
+###
+POST {{baseUrl}}/api/organization/invite/accept
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+Cookie: better-auth.session_token={{authToken}}
+
+{
+  "token": "cmioh60df00021z9j5fnelydi"
+}

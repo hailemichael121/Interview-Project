@@ -1,7 +1,7 @@
 // app/auth/signin/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,7 +12,15 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  ArrowRight,
+  ChevronDown,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AnimatedTitle } from "@/components/animated-title";
 import { Logo } from "@/components/logo";
@@ -21,7 +29,25 @@ import Link from "next/link";
 import { useAuthActions } from "@/hooks/use-auth-actions";
 import { Apple } from "lucide-react";
 import { Github } from "lucide-react";
-import authClient from "@/lib/auth-client";
+
+const backendUrl =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  "https://tenant-backend-cz23.onrender.com";
+
+// Common email domains for suggestions
+const EMAIL_DOMAINS = [
+  "gmail.com",
+  "yahoo.com",
+  "outlook.com",
+  "hotmail.com",
+  "icloud.com",
+  "protonmail.com",
+  "aol.com",
+  "zoho.com",
+  "yandex.com",
+  "mail.com",
+  "gmx.com",
+];
 
 export default function SignInPage() {
   const router = useRouter();
@@ -31,95 +57,266 @@ export default function SignInPage() {
     email: "",
     password: "",
   });
+  const [emailSuggestions, setEmailSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Generate email suggestions
+  useEffect(() => {
+    const email = formData.email.trim();
+    if (!email.includes("@") || email.endsWith("@")) {
+      setEmailSuggestions([]);
+      return;
+    }
+
+    const atIndex = email.indexOf("@");
+    const username = email.substring(0, atIndex);
+    const partialDomain = email.substring(atIndex + 1).toLowerCase();
+
+    if (username && partialDomain) {
+      const suggestions = EMAIL_DOMAINS.filter((domain) =>
+        domain.startsWith(partialDomain)
+      )
+        .map((domain) => `${username}@${domain}`)
+        .slice(0, 5); // Limit to 5 suggestions
+
+      setEmailSuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
+    } else {
+      setEmailSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [formData.email]);
+
+  // Clear all auth data before sign-in
+  const clearAuthData = () => {
+    if (typeof window === "undefined") return;
+
+    // Clear localStorage
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_user");
+
+    // Clear all auth-related cookies
+    const cookieNames = [
+      "better-auth.session_token",
+      "__Secure-better-auth.session_token",
+    ];
+
+    const pastDate = new Date(0).toUTCString();
+    cookieNames.forEach((name) => {
+      document.cookie = `${name}=; path=/; expires=${pastDate};`;
+    });
+
+    console.log("Cleared old auth data");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      console.log("Attempting sign in...");
+    if (!formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
 
-      // Use direct fetch to get full control over cookies
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_BACKEND_URL ||
-          "https://tenant-backend-cz23.onrender.com"
-        }/api/auth/sign-in/email`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Origin: window.location.origin,
-          },
-          credentials: "include", // IMPORTANT: Send/receive cookies
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-          }),
-        }
-      );
+    setIsSubmitting(true);
+
+    try {
+      console.log("Attempting sign in with:", {
+        email: formData.email,
+        passwordLength: formData.password.length,
+      });
+
+      // Clear old auth data first
+      clearAuthData();
+
+      // Use direct fetch to get full control
+      const response = await fetch(`${backendUrl}/api/auth/sign-in/email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: window.location.origin,
+          Accept: "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          password: formData.password,
+        }),
+      });
 
       console.log("Response status:", response.status);
 
-      // Get all response headers
+      // Get response headers
       const setCookieHeader = response.headers.get("set-cookie");
       console.log("Set-Cookie header:", setCookieHeader);
+
+      // Check response content type
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        console.error("Non-JSON response:", text);
+        throw new Error(
+          `Server returned ${response.status}: ${text.substring(0, 100)}`
+        );
+      }
 
       const result = await response.json();
       console.log("Sign in result:", result);
 
-      if (result.error) {
-        toast.error(result.error.message || "Sign in failed");
+      if (response.status !== 200 || result.error) {
+        const errorMessage =
+          result.error?.message || result.message || "Sign in failed";
+        console.error("Sign in failed:", errorMessage);
+
+        if (
+          errorMessage.includes("Invalid email") ||
+          errorMessage.includes("password")
+        ) {
+          toast.error(
+            "Invalid email or password. Please check your credentials."
+          );
+        } else {
+          toast.error(errorMessage);
+        }
+        setIsSubmitting(false);
         return;
       }
 
-      // MANUALLY EXTRACT AND SET THE TOKEN FROM RESPONSE
-      if (result.token) {
-        // Store token in localStorage
-        localStorage.setItem("auth_token", result.token);
+      // EXTRACT AND STORE THE FULL TOKEN FROM COOKIES
+      let fullToken = null;
 
-        // Also store the full response for session management
-        localStorage.setItem("auth_user", JSON.stringify(result.user));
-
-        const cookieValue = `${result.token}; path=/; max-age=604800; SameSite=Lax; Secure`;
-        document.cookie = `__Secure-better-auth.session_token=${cookieValue}`;
-        document.cookie = `better-auth.session_token=${cookieValue}`;
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      console.log("Current cookies:", document.cookie);
-      console.log(
-        "LocalStorage auth_token:",
-        localStorage.getItem("auth_token")
-      );
-
-      const sessionCheck = await authClient.getSession();
-      console.log("Session after login:", sessionCheck);
-
-      if (!sessionCheck?.data?.user) {
-        const storedToken = localStorage.getItem("auth_token");
-        if (storedToken) {
-          console.log("Using manually stored token");
-          const manualSession = {
-            data: {
-              user: result.user,
-              session: {
-                token: storedToken,
-                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-              },
-            },
-          };
-          console.log("Manual session created:", manualSession);
+      if (setCookieHeader) {
+        // Try to extract token from Set-Cookie header
+        const cookieMatch = setCookieHeader.match(
+          /better-auth\.session_token=([^;]+)/i
+        );
+        if (cookieMatch && cookieMatch[1]) {
+          fullToken = decodeURIComponent(cookieMatch[1]);
+          console.log("Extracted token from Set-Cookie:", fullToken);
         }
       }
 
-      toast.success("Signed in successfully!");
+      // If no cookie token, check if result has token
+      if (!fullToken && result.token) {
+        fullToken = result.token;
+        console.log("Using token from response:", fullToken);
+      }
 
-      window.location.href = "/dashboard";
+      if (fullToken) {
+        // Store in localStorage
+        localStorage.setItem("auth_token", fullToken);
+        localStorage.setItem(
+          "auth_user",
+          JSON.stringify(result.user || result)
+        );
+
+        // Also set cookie manually to ensure it's there
+        const cookieValue = `${encodeURIComponent(
+          fullToken
+        )}; path=/; max-age=604800; SameSite=Lax; Secure`;
+        document.cookie = `__Secure-better-auth.session_token=${cookieValue}`;
+        document.cookie = `better-auth.session_token=${cookieValue}`;
+
+        console.log("Token stored:", {
+          localStorage:
+            localStorage.getItem("auth_token")?.substring(0, 20) + "...",
+          cookies: document.cookie,
+        });
+      } else {
+        console.warn("No token found in response!");
+      }
+
+      // Wait a moment for cookies to propagate
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Test the session by making a simple API call
+      try {
+        console.log("Testing session with profile API...");
+
+        // First try using fetch with credentials
+        const profileResponse = await fetch(`${backendUrl}/users/profile`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Origin: window.location.origin,
+          },
+          credentials: "include",
+        });
+
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          console.log("Profile API success:", profileData.success);
+          toast.success("Signed in successfully!");
+
+          // Redirect to dashboard after successful auth
+          setTimeout(() => {
+            window.location.href = "/dashboard";
+          }, 500);
+        } else {
+          console.error("Profile API failed:", profileResponse.status);
+          toast.error("Session created but verification failed");
+        }
+      } catch (apiError) {
+        console.error("Profile API error:", apiError);
+        toast.success("Signed in! Redirecting...");
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 500);
+      }
     } catch (error) {
       console.error("Sign in error:", error);
-      toast.error(error instanceof Error ? error.message : "Sign in failed");
+      let errorMessage = "Sign in failed";
+
+      if (error instanceof Error) {
+        if (error.message.includes("401")) {
+          errorMessage = "Invalid email or password";
+        } else if (error.message.includes("network")) {
+          errorMessage = "Network error. Please check your connection.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  // Handle email input change with suggestions
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData({ ...formData, email: value });
+
+    // Show suggestions if @ is present and domain is being typed
+    if (value.includes("@") && !value.endsWith("@")) {
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  // Handle suggestion selection
+  const handleSuggestionSelect = (suggestion: string) => {
+    setFormData({ ...formData, email: suggestion });
+    setShowSuggestions(false);
+    emailInputRef.current?.focus();
   };
 
   // Social sign-in handlers
@@ -217,7 +414,7 @@ export default function SignInPage() {
                     type="button"
                     variant="outline"
                     onClick={handleGitHubSignIn}
-                    disabled={authLoading}
+                    disabled={isSubmitting}
                     className="h-12"
                   >
                     <Github className="h-5 w-5" />
@@ -227,7 +424,7 @@ export default function SignInPage() {
                     type="button"
                     variant="outline"
                     onClick={handleGoogleSignIn}
-                    disabled={authLoading}
+                    disabled={isSubmitting}
                     className="h-12"
                   >
                     <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -254,7 +451,7 @@ export default function SignInPage() {
                     type="button"
                     variant="outline"
                     onClick={handleAppleSignIn}
-                    disabled={authLoading}
+                    disabled={isSubmitting}
                     className="h-12"
                   >
                     <Apple className="h-5 w-5" />
@@ -274,24 +471,75 @@ export default function SignInPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-2">
+                  <div className="space-y-2 relative">
                     <Label className="text-base font-semibold text-muted-foreground">
                       Email
                     </Label>
                     <div className="relative">
                       <Mail className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
                       <Input
+                        ref={emailInputRef}
                         required
                         type="email"
                         placeholder="you@company.com"
                         className="pl-12 h-14 text-base border-gray-300 dark:border-gray-600"
                         value={formData.email}
-                        onChange={(e) =>
-                          setFormData({ ...formData, email: e.target.value })
-                        }
-                        disabled={authLoading}
+                        onChange={handleEmailChange}
+                        onFocus={() => {
+                          if (emailSuggestions.length > 0) {
+                            setShowSuggestions(true);
+                          }
+                        }}
+                        disabled={isSubmitting}
                       />
+                      {showSuggestions && (
+                        <button
+                          type="button"
+                          className="absolute right-3 top-3.5"
+                          onClick={() => setShowSuggestions(false)}
+                        >
+                          <ChevronDown className="h-5 w-5 text-gray-400 rotate-180" />
+                        </button>
+                      )}
                     </div>
+
+                    {/* Email Suggestions Dropdown */}
+                    {showSuggestions && emailSuggestions.length > 0 && (
+                      <div
+                        ref={suggestionsRef}
+                        className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg"
+                      >
+                        <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                              Suggestions
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setShowSuggestions(false)}
+                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="max-h-48 overflow-y-auto">
+                          {emailSuggestions.map((suggestion, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0"
+                              onClick={() => handleSuggestionSelect(suggestion)}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Mail className="h-4 w-4 text-gray-400" />
+                                <span className="text-sm">{suggestion}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -317,13 +565,13 @@ export default function SignInPage() {
                         onChange={(e) =>
                           setFormData({ ...formData, password: e.target.value })
                         }
-                        disabled={authLoading}
+                        disabled={isSubmitting}
                       />
                       <button
                         type="button"
                         className="absolute right-2 top-2 p-2 text-gray-400 hover:text-gray-600"
                         onClick={() => setShowPassword(!showPassword)}
-                        disabled={authLoading}
+                        disabled={isSubmitting}
                       >
                         {showPassword ? (
                           <EyeOff className="h-5 w-5" />
@@ -337,18 +585,44 @@ export default function SignInPage() {
                   <Button
                     type="submit"
                     size="lg"
-                    disabled={authLoading}
+                    disabled={isSubmitting}
                     className="relative w-full h-16 text-xl font-semibold text-white hover:bg-gray-900 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-blue-600/40 overflow-hidden group rounded-2xl"
                   >
                     <span className="relative z-10">
-                      {authLoading ? "Signing in..." : "Sign In"}
+                      {isSubmitting ? (
+                        <span className="flex items-center justify-center">
+                          <svg
+                            className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Signing in...
+                        </span>
+                      ) : (
+                        "Sign In"
+                      )}
                     </span>
                     <span className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/30 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000" />
                   </Button>
                 </form>
 
                 <div className="mt-8 text-center">
-                  <p className="text-gray-600 dark:text-gray-300">
+                  <p className="text-sm text-muted-foreground">
                     Don&apos;t have an account?{" "}
                     <Link
                       href="/auth/signup"

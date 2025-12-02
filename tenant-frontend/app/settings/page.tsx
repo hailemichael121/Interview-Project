@@ -35,7 +35,7 @@ import { useAuth } from "@/hooks/use-session";
 import { apiService } from "@/lib/api-service";
 import { toast } from "sonner";
 
-import type { UserProfile } from "@/lib/types";
+import type { UserProfile } from "@/types/types";
 
 export default function SettingsPage() {
   const { user, isLoading: authLoading, signOut } = useAuth();

@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 import { apiService } from "@/lib/api-service";
 import { useAuth } from "@/hooks/use-session";
 import { toast } from "sonner";
-import type { Organization, UserProfile } from "@/lib/types";
+import type { Organization, UserProfile } from "@/types/types";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },

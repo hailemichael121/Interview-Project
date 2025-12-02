@@ -42,7 +42,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import Link from "next/link";
-import { Outline } from "@/lib/types";
+import { Outline } from "@/types/types";
 
 interface OutlineTableProps {
   data: Outline[];

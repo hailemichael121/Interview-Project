@@ -17,7 +17,7 @@ import {
   InvitationListResponse,
   OrganizationSwitchResponse,
   ApiResponse,
-} from "@/lib/types";
+} from "@/types/types";
 import { useCallback, useState } from "react";
 
 interface ApiState<T> {

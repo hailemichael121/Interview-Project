@@ -39,7 +39,7 @@ import {
   UserListResponse,
   OrganizationSwitchResponse,
   ApiInvitation,
-} from "./types";
+} from "../types/types";
 
 /**
  * Generic authenticated fetch wrapper
