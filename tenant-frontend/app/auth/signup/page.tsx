@@ -23,7 +23,7 @@ import Link from "next/link";
 
 export default function SignUpPage() {
   const router = useRouter();
-  const { navigate, transitionClass } = useAuthTransition();
+  const { transitionClass } = useAuthTransition();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -45,7 +45,9 @@ export default function SignUpPage() {
       });
 
       if (result.error) {
-        toast.error(result.error.message || "Registration failed. Please try again.");
+        toast.error(
+          result.error.message || "Registration failed. Please try again."
+        );
         return;
       }
 
@@ -56,12 +58,14 @@ export default function SignUpPage() {
       setTimeout(() => {
         router.push("/auth/signin");
       }, 1500);
-
-  } catch (error: unknown) {
+    } catch (error: unknown) {
       console.error("Sign up error:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to create account. Please try again.";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to create account. Please try again.";
       toast.error(errorMessage);
-    }finally {
+    } finally {
       setIsLoading(false);
     }
   };
@@ -219,9 +223,12 @@ export default function SignUpPage() {
                     type="submit"
                     size="lg"
                     disabled={isLoading}
-                    className="w-full h-14 text-lg font-semibold"
+                    className="relative w-full h-16 text-xl font-semibold text-white  hover:bg-gray-900 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-blue-600/40 overflow-hidden group rounded-2xl"
                   >
-                    {isLoading ? "Creating Account..." : "Create Account"}
+                    <span className="relative z-10">
+                      {isLoading ? "Creating Account..." : "Create Account"}
+                    </span>
+                    <span className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/30 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000" />
                   </Button>
                 </form>
 
@@ -236,7 +243,8 @@ export default function SignUpPage() {
                     </Link>
                   </p>
                   <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-                    By creating an account, you agree to our Terms of Service and Privacy Policy
+                    By creating an account, you agree to our Terms of Service
+                    and Privacy Policy
                   </p>
                 </div>
               </CardContent>

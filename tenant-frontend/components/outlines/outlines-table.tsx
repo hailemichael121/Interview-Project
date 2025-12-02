@@ -9,18 +9,18 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { 
-  Eye, 
-  Edit, 
-  Trash, 
-  MoreVertical, 
-  CheckCircle, 
-  Clock, 
+import {
+  Eye,
+  Edit,
+  Trash,
+  MoreVertical,
+  CheckCircle,
+  Clock,
   AlertCircle,
   User,
   FileText,
   ChevronRight,
-  Loader2
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -41,14 +41,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Outline } from "@/lib/api-service";
 import Link from "next/link";
+import { Outline } from "@/lib/types";
 
 interface OutlineTableProps {
   data: Outline[];
   onUpdate: (outlineId: string, data: any) => Promise<any>;
   onDelete: (outlineId: string) => Promise<void>;
-  onStatusChange: (outlineId: string, newStatus: Outline["status"]) => Promise<void>;
+  onStatusChange: (
+    outlineId: string,
+    newStatus: Outline["status"]
+  ) => Promise<void>;
   isLoading: boolean;
   currentUserRole: string;
   organizationId: string;
@@ -56,16 +59,12 @@ interface OutlineTableProps {
 
 export function OutlineTable({
   data,
-  onUpdate,
   onDelete,
   onStatusChange,
   isLoading,
   currentUserRole,
-  organizationId,
 }: OutlineTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [editData, setEditData] = React.useState<Record<string, any>>({});
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [updatingId, setUpdatingId] = React.useState<string | null>(null);
 
@@ -73,12 +72,15 @@ export function OutlineTable({
   const formatSectionType = (type: string) => {
     return type
       .toLowerCase()
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, l => l.toUpperCase());
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
   // Handle status change
-  const handleStatusChange = async (outlineId: string, newStatus: Outline["status"]) => {
+  const handleStatusChange = async (
+    outlineId: string,
+    newStatus: Outline["status"]
+  ) => {
     try {
       setUpdatingId(outlineId);
       await onStatusChange(outlineId, newStatus);
@@ -137,19 +139,19 @@ export function OutlineTable({
             icon: AlertCircle,
             color: "text-yellow-600 dark:text-yellow-400",
             bg: "bg-yellow-100 dark:bg-yellow-900/30",
-            label: "Pending"
+            label: "Pending",
           },
           IN_PROGRESS: {
             icon: Clock,
             color: "text-blue-600 dark:text-blue-400",
             bg: "bg-blue-100 dark:bg-blue-900/30",
-            label: "In Progress"
+            label: "In Progress",
           },
           COMPLETED: {
             icon: CheckCircle,
             color: "text-green-600 dark:text-green-400",
             bg: "bg-green-100 dark:bg-green-900/30",
-            label: "Completed"
+            label: "Completed",
           },
         };
 
@@ -158,7 +160,9 @@ export function OutlineTable({
 
         return (
           <div className="flex items-center gap-2">
-            <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${config.bg}`}>
+            <div
+              className={`flex items-center gap-2 px-3 py-1 rounded-full ${config.bg}`}
+            >
               {updatingId === outline.id ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -168,7 +172,8 @@ export function OutlineTable({
                 {config.label}
               </span>
             </div>
-            {(currentUserRole === "REVIEWER" || currentUserRole === "OWNER") && updatingId !== outline.id ? (
+            {(currentUserRole === "REVIEWER" || currentUserRole === "OWNER") &&
+            updatingId !== outline.id ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
@@ -178,7 +183,9 @@ export function OutlineTable({
                 <DropdownMenuContent align="end">
                   {outline.status !== "COMPLETED" && (
                     <DropdownMenuItem
-                      onClick={() => handleStatusChange(outline.id, "COMPLETED")}
+                      onClick={() =>
+                        handleStatusChange(outline.id, "COMPLETED")
+                      }
                       disabled={updatingId === outline.id}
                     >
                       Mark as Completed
@@ -186,7 +193,9 @@ export function OutlineTable({
                   )}
                   {outline.status !== "IN_PROGRESS" && (
                     <DropdownMenuItem
-                      onClick={() => handleStatusChange(outline.id, "IN_PROGRESS")}
+                      onClick={() =>
+                        handleStatusChange(outline.id, "IN_PROGRESS")
+                      }
                       disabled={updatingId === outline.id}
                     >
                       Mark as In Progress
@@ -211,14 +220,18 @@ export function OutlineTable({
       accessorKey: "target",
       header: "Target",
       cell: ({ row }) => (
-        <div className="text-right font-mono">{row.original.target.toLocaleString()} words</div>
+        <div className="text-right font-mono">
+          {row.original.target.toLocaleString()} words
+        </div>
       ),
     },
     {
       accessorKey: "limit",
       header: "Limit",
       cell: ({ row }) => (
-        <div className="text-right font-mono">{row.original.limit.toLocaleString()} words</div>
+        <div className="text-right font-mono">
+          {row.original.limit.toLocaleString()} words
+        </div>
       ),
     },
     {
@@ -249,9 +262,10 @@ export function OutlineTable({
       id: "actions",
       cell: ({ row }) => {
         const outline = row.original;
-        const canEdit = currentUserRole === "OWNER" || 
-                       currentUserRole === "REVIEWER" ||
-                       outline.createdBy?.user?.id === "current-user-id"; // You'll need to get current user ID
+        const canEdit =
+          currentUserRole === "OWNER" ||
+          currentUserRole === "REVIEWER" ||
+          outline.createdBy?.user?.id === "current-user-id"; // You'll need to get current user ID
 
         return (
           <div className="flex items-center gap-2">
@@ -260,7 +274,7 @@ export function OutlineTable({
                 <Eye className="h-4 w-4" />
               </Button>
             </Link>
-            
+
             {canEdit && (
               <Link href={`/outlines/${outline.id}/edit`}>
                 <Button variant="ghost" size="sm">
@@ -269,7 +283,8 @@ export function OutlineTable({
               </Link>
             )}
 
-            {(currentUserRole === "OWNER" || outline.createdBy?.user?.id === "current-user-id") && (
+            {(currentUserRole === "OWNER" ||
+              outline.createdBy?.user?.id === "current-user-id") && (
               <Button
                 variant="ghost"
                 size="sm"

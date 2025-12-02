@@ -1,6 +1,16 @@
 // lib/types.ts
 
-// Base types matching your API responses
+// ==================== BASE RESPONSE TYPE ====================
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data: T;
+  message?: string;
+  page?: number;
+  perPage?: number;
+  total?: number;
+}
+
+// ==================== DASHBOARD SPECIFIC TYPES ====================
 export interface DashboardStats {
   organizationId: string;
   organizationName: string;
@@ -26,65 +36,16 @@ export interface Member {
 
 export interface Invitation {
   id: string;
-  email: string;
+  email: string; // ADDED: email field
   organization: Organization;
   role: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REVOKED' | 'EXPIRED';
+  status?: "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED"; // ADDED: status field
   expires: string;
   token?: string;
   invitedAt?: string;
 }
 
-export interface TeamMember {
-  id: string;
-  user: {
-    id: string;
-    name: string | null;
-    email: string;
-    image: string | null;
-    createdAt: string;
-  };
-  role: "OWNER" | "MEMBER" | "REVIEWER";
-  joinedAt: string;
-  status?: "ACTIVE" | "PENDING" | "INACTIVE";
-}
-
-export interface UserProfileData {
-  id: string;
-  email: string;
-  name: string | null;
-  role: string;
-  tenantId: string | null;
-  banned: boolean;
-  emailVerified: boolean;
-  image: string | null;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt: string | null;
-  memberships?: Array<{
-    memberId: string;
-    role: string;
-    joinedAt: string;
-    organization: {
-      id: string;
-      name: string;
-      slug: string;
-      createdAt: string;
-      updatedAt: string;
-      _count: {
-        members: number;
-        outlines: number;
-      };
-    };
-  }>;
-  stats?: {
-    totalOrganizations: number;
-    pendingInvitations: number;
-    assignedOutlines: number;
-  };
-}
-
-// Types from api-service.ts for reference and reusability
+// ==================== ORGANIZATION TYPES ====================
 export interface Organization {
   id: string;
   name: string;
@@ -117,6 +78,21 @@ export interface OrganizationMember {
   };
 }
 
+export interface OrganizationDetails extends Organization {
+  members: Array<{
+    id: string;
+    role: string;
+    joinedAt: string;
+    user: {
+      id: string;
+      email: string;
+      name: string | null;
+      image: string | null;
+    };
+  }>;
+}
+
+// ==================== OUTLINE TYPES ====================
 export interface Outline {
   id: string;
   header: string;
@@ -158,6 +134,18 @@ export interface Outline {
   organization?: Organization;
 }
 
+export interface OutlineStats {
+  organizationId: string;
+  organizationName: string;
+  organizationSlug: string;
+  totalOutlines: number;
+  completedOutlines: number;
+  inProgressOutlines: number;
+  pendingOutlines: number;
+  completionRate: number;
+}
+
+// ==================== USER TYPES ====================
 export interface UserProfile {
   id: string;
   email: string;
@@ -190,43 +178,90 @@ export interface UserProfile {
   };
 }
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data: T;
-  message?: string;
-  page?: number;
-  perPage?: number;
-  total?: number;
+export interface SessionUser {
+  id: string;
+  email: string;
+  name: string | null;
+  image: string | null;
+  role: string;
+  emailVerified: boolean;
+  banned: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  tenantId: string | null;
 }
 
-export interface OutlineListResponse {
-  data: Outline[];
+export interface CurrentUserResponse {
+  user: SessionUser;
+  context: {
+    currentOrganizationId: string | null;
+    currentMemberRole: string | null;
+    organizationMemberships: Array<{
+      organizationId: string;
+      organization: Organization;
+      role: string;
+      memberId: string;
+      joinedAt: string;
+    }>;
+  };
+}
+
+export interface ApiInvitation {
+  id: string;
+  organization: Organization;
+  role: string;
+  expires: string;
+  token: string;
+  email?: string; // Optional email from backend
+}
+
+// ==================== RESPONSE WRAPPER TYPES ====================
+export interface OrganizationListResponse extends ApiResponse<Organization[]> {
   page: number;
   perPage: number;
   total: number;
-  message: string;
 }
 
-export interface MemberListResponse {
-  data: OrganizationMember[];
+export interface MemberListResponse extends ApiResponse<OrganizationMember[]> {
   page: number;
   perPage: number;
   total: number;
-  message: string;
 }
 
-export interface InvitationListResponse {
-  data: Array<{
-    id: string;
-    organization: Organization;
-    role: string;
-    expires: string;
-    token: string;
-  }>;
-  message: string;
+export interface OutlineListResponse extends ApiResponse<Outline[]> {
+  page: number;
+  perPage: number;
+  total: number;
 }
 
-// Create DTO types for consistency
+export interface OutlineStatsResponse extends ApiResponse<OutlineStats> {}
+
+export interface UserProfileResponse extends ApiResponse<UserProfile> {}
+
+export interface InvitationListResponse extends ApiResponse<ApiInvitation[]> {}
+
+export interface UserListResponse
+  extends ApiResponse<Array<UserProfile & { organizationCount: number }>> {
+  page: number;
+  perPage: number;
+  total: number;
+}
+
+export interface OrganizationSwitchResponse
+  extends ApiResponse<{
+    organization: {
+      id: string;
+      name: string;
+      slug: string;
+    };
+    membership: {
+      id: string;
+      role: string;
+      joinedAt: string;
+    };
+  }> {}
+
+// ==================== DTO TYPES ====================
 export interface CreateOrganizationDto {
   name: string;
   slug?: string;

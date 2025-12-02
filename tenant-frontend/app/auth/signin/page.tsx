@@ -31,18 +31,17 @@ export default function SignInPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       await signIn(formData.email, formData.password);
-      
+
       // Show success message
       toast.success("Signed in successfully!");
-      
+
       // Redirect to dashboard
       setTimeout(() => {
         router.push("/dashboard");
       }, 1000);
-      
     } catch (error: unknown) {
       console.error("Sign in error:", error);
       // Error is already handled in useAuthActions hook
@@ -56,7 +55,7 @@ export default function SignInPage() {
       setTimeout(() => {
         router.push("/dashboard");
       }, 1000);
-    } catch  {
+    } catch {
       toast.error("Demo sign in failed. Please use your own account.");
     }
   };
@@ -64,7 +63,7 @@ export default function SignInPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       {/* Full-Screen Wavy Background */}
-     <div className="fixed inset-0 -z-10">
+      <div className="fixed inset-0 -z-10">
         <svg
           className="absolute inset-0 w-full h-full"
           viewBox="0 0 1440 900"
@@ -202,9 +201,12 @@ export default function SignInPage() {
                     type="submit"
                     size="lg"
                     disabled={authLoading}
-                    className="w-full h-14 text-lg font-semibold"
+                    className="relative w-full h-16 text-xl font-semibold text-white  hover:bg-gray-900 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-blue-600/40 overflow-hidden group rounded-2xl"
                   >
-                    {authLoading ? "Signing in..." : "Sign In"}
+                    <span className="relative z-10">
+                      {authLoading ? "Signing in..." : "Sign In"}
+                    </span>
+                    <span className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/30 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000" />
                   </Button>
 
                   <div className="relative">

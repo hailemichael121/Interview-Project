@@ -1,3 +1,4 @@
+// components/protected-route.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -31,39 +32,33 @@ export function ProtectedRoute({
       try {
         setIsLoading(true);
 
-        // Check authentication
+        // Check session
         const session = await authClient.getSession();
+        const user = session?.data?.user;
 
-        // Check if session exists and has data
-        const hasValidSession = session && session.data && session.data.user;
-
-        if (!hasValidSession && requireAuth) {
-          setIsAuthenticated(false);
-          setIsLoading(false);
+        if (!user && requireAuth) {
           router.replace(redirectTo);
           return;
         }
 
-        setIsAuthenticated(!!hasValidSession);
+        setIsAuthenticated(!!user);
 
-        // If organization is required, check if user has one
-        if (requireOrganization && session?.data?.user) {
+        // Check organization if required
+        if (requireOrganization && user) {
           try {
-            // Get user's current organization context
-            const userData = await apiService.user.getProfile();
+            const profileRes = await apiService.user.getProfile();
 
-            if (userData.success && userData.data) {
-              // FIXED: Use memberships instead of context
-              const hasOrg = userData.data.memberships && userData.data.memberships.length > 0;
-              const currentOrgId = userData.data.memberships?.[0]?.organization.id || null;
+            if (profileRes.success && profileRes.data) {
+              const memberships = profileRes.data.memberships || [];
+              const hasOrg = memberships.length > 0;
 
               setHasOrganization(hasOrg);
 
-              // If specific organization is required
+              // Specific org required?
               if (organizationId) {
-                const isMember = userData.data.memberships?.some(
-                  (m: any) => m.organization.id === organizationId
-                ) || false;
+                const isMember = memberships.some(
+                  (m) => m.organization.id === organizationId
+                );
 
                 if (!isMember) {
                   router.replace("/dashboard");
@@ -71,26 +66,21 @@ export function ProtectedRoute({
                 }
               }
 
-              // If no organization but required, redirect to create one
-              if (
-                requireOrganization &&
-                !hasOrg &&
-                !pathname.includes("/organization/create")
-              ) {
+              // No org but required → redirect to create
+              if (!hasOrg && !pathname.includes("/organization/create")) {
                 router.replace("/organization/create");
                 return;
               }
             }
-          } catch (error) {
-            console.error("Error checking organization:", error);
+          } catch (err) {
+            console.error("Failed to load profile:", err);
           }
         }
 
         setIsLoading(false);
       } catch (error) {
-        console.error("Auth check error:", error);
+        console.error("Auth check failed:", error);
         setIsLoading(false);
-
         if (requireAuth) {
           router.replace(redirectTo);
         }
@@ -98,46 +88,30 @@ export function ProtectedRoute({
     };
 
     checkAuth();
-  }, [
-    requireAuth,
-    requireOrganization,
-    organizationId,
-    router,
-    redirectTo,
-    pathname,
-  ]);
+  }, [requireAuth, requireOrganization, organizationId, router, redirectTo, pathname]);
 
-  // Show loading state
+  // Loading spinner
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full w-full min-h-[400px]">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <div className="text-sm text-muted-foreground">
-            Checking session...
-          </div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <p className="text-sm text-muted-foreground">Checking session...</p>
         </div>
       </div>
     );
   }
 
-  // Check conditions
-  if (requireAuth && !isAuthenticated) {
-    return null; // Will redirect in useEffect
-  }
-
-  if (
-    requireOrganization &&
-    !hasOrganization &&
-    !pathname.includes("/organization/create")
-  ) {
-    return null; // Will redirect in useEffect
+  // Redirects are handled in useEffect
+  if (requireAuth && !isAuthenticated) return null;
+  if (requireOrganization && !hasOrganization && !pathname.includes("/organization/create")) {
+    return null;
   }
 
   return <>{children}</>;
 }
 
-// Helper component for routes that require organization context
+// Helper wrappers
 export function OrganizationProtectedRoute({
   children,
   organizationId,
@@ -146,17 +120,12 @@ export function OrganizationProtectedRoute({
   organizationId?: string;
 }) {
   return (
-    <ProtectedRoute
-      requireAuth={true}
-      requireOrganization={true}
-      organizationId={organizationId}
-    >
+    <ProtectedRoute requireAuth requireOrganization organizationId={organizationId}>
       {children}
     </ProtectedRoute>
   );
 }
 
-// Helper component for public routes (no auth required)
 export function PublicRoute({ children }: { children: React.ReactNode }) {
   return <ProtectedRoute requireAuth={false}>{children}</ProtectedRoute>;
 }

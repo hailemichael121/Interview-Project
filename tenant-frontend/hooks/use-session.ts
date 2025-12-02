@@ -1,17 +1,16 @@
+// hooks/use-session.ts
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import authClient from "@/lib/auth-client";
 import { apiService } from "@/lib/api-service";
-import { useRouter } from "next/navigation";
+import { UserProfile } from "@/lib/types";
 
-// Better Auth types based on actual response
 interface BetterAuthUser {
   id: string;
   email: string;
   name?: string | null;
   image?: string | null;
-  role?: string;
   emailVerified: boolean;
   banned: boolean;
   createdAt: Date;
@@ -24,8 +23,6 @@ interface BetterAuthSession {
   userId: string;
   expiresAt: Date;
   token: string;
-  ipAddress?: string | null;
-  userAgent?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,10 +32,9 @@ interface BetterAuthResponse {
     user: BetterAuthUser;
     session: BetterAuthSession;
   };
-  error?: any;
+  error?: unknown;
 }
 
-// Our application session types
 export interface SessionUser {
   id: string;
   email: string;
@@ -53,9 +49,9 @@ export interface SessionUser {
 }
 
 export interface SessionData {
-  user: SessionUser | null;
-  expires: Date | null;
-  sessionId: string | null;
+  user: SessionUser;
+  expires: Date;
+  sessionId: string;
   token?: string | null;
 }
 
@@ -64,27 +60,12 @@ export interface UserContext {
   currentMemberRole: string | null;
   organizationMemberships: Array<{
     organizationId: string;
-    organization: {
-      id: string;
-      name: string;
-      slug: string;
-    };
+    organization: { id: string; name: string; slug: string };
     role: string;
     memberId: string;
     joinedAt: string;
   }>;
-  invitations?: Array<{
-    id: string;
-    organization: {
-      id: string;
-      name: string;
-      slug: string;
-      createdAt: string;
-    };
-    role: string;
-    expires: string;
-    invitedAt: string;
-  }>;
+  invitations?: Array<any>;
   stats?: {
     totalOrganizations: number;
     pendingInvitations: number;
@@ -93,304 +74,138 @@ export interface UserContext {
 }
 
 export interface UserWithContext extends SessionData {
-  context?: UserContext | null;
+  context: UserContext | null;
 }
 
-// Session state interface
-interface UseSessionReturn {
-  data: UserWithContext | null;
-  session: SessionData | null;
-  isLoading: boolean;
-  error: string | null;
-  refresh: () => Promise<void>;
-  signOut: () => Promise<void>;
-}
-
-// Transform memberships from backend to context format
 const transformMembershipsToContext = (
-  memberships: Array<{
-    memberId: string;
-    role: string;
-    joinedAt: string;
-    organization: {
-      id: string;
-      name: string;
-      slug: string;
-      createdAt: string;
-      updatedAt: string;
-      deletedAt?: string | null;
-      role?: string;
-      joinedAt?: string;
-      memberId?: string;
-      _count?: {
-        members: number;
-        outlines: number;
-      };
-    };
-  }>,
-  invitations?: Array<any>,
-  stats?: any
+  memberships: UserProfile["memberships"] = [],
+  invitations?: UserProfile["invitations"],
+  stats?: UserProfile["stats"]
 ): UserContext | null => {
-  if (!memberships || memberships.length === 0) return null;
+  if (memberships.length === 0) return null;
 
   return {
-    currentOrganizationId: memberships[0]?.organization.id || null,
-    currentMemberRole: memberships[0]?.role || null,
-    organizationMemberships: memberships.map((membership) => ({
-      organizationId: membership.organization.id,
+    currentOrganizationId: memberships[0].organization.id,
+    currentMemberRole: memberships[0].role,
+    organizationMemberships: memberships.map((m) => ({
+      organizationId: m.organization.id,
       organization: {
-        id: membership.organization.id,
-        name: membership.organization.name,
-        slug: membership.organization.slug,
+        id: m.organization.id,
+        name: m.organization.name,
+        slug: m.organization.slug,
       },
-      role: membership.role,
-      memberId: membership.memberId,
-      joinedAt: membership.joinedAt,
+      role: m.role,
+      memberId: m.memberId,
+      joinedAt: m.joinedAt,
     })),
     invitations: invitations || [],
-    stats: stats,
+    stats,
   };
 };
 
-/**
- * Main session hook that manages authentication state
- * Combines Better Auth session with backend user context
- */
-export function useSession(): UseSessionReturn {
-  const [session, setSession] = useState<SessionData | null>(null);
-  const [userWithContext, setUserWithContext] = useState<UserWithContext | null>(null);
+export function useSession() {
+  const [data, setData] = useState<UserWithContext | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch session data from Better Auth
-  const fetchAuthSession = useCallback(async (): Promise<BetterAuthResponse | null> => {
-    try {
-      const response = await authClient.getSession();
-      return response as BetterAuthResponse;
-    } catch (error) {
-      console.error("Better Auth session error:", error);
-      return null;
-    }
-  }, []);
-
-  // Fetch user context from backend
-  const fetchUserContext = useCallback(async (userId: string): Promise<UserContext | null> => {
-    try {
-      const userData = await apiService.user.getProfile();
-      
-      if (userData.success && userData.data) {
-        // Transform backend response to context format
-        return transformMembershipsToContext(
-          userData.data.memberships || [],
-          userData.data.invitations,
-          userData.data.stats
-        );
-      }
-      return null;
-    } catch (error) {
-      console.warn("Failed to fetch user context:", error);
-      return null;
-    }
-  }, []);
-
-  // Transform Better Auth response to our SessionData
-  const transformSession = useCallback((authResponse: BetterAuthResponse | null): SessionData | null => {
-    if (!authResponse?.data?.user || !authResponse.data.session) {
-      return null;
-    }
-
-    const { user, session: authSession } = authResponse.data;
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name || null,
-        image: user.image || null,
-        role: user.role || "USER",
-        emailVerified: user.emailVerified,
-        banned: user.banned,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        tenantId: user.tenantId || null,
-      },
-      expires: authSession.expiresAt,
-      sessionId: authSession.id,
-      token: authSession.token,
-    };
-  }, []);
-
-  // Main session fetch function
   const fetchSession = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // 1. Get session from Better Auth
-      const authResponse = await fetchAuthSession();
-      
-      // 2. Transform to our format
-      const sessionData = transformSession(authResponse);
-      
-      if (!sessionData) {
-        setSession(null);
-        setUserWithContext(null);
+      const authRes = await authClient.getSession();
+      const authData = authRes?.data;
+
+      if (!authData?.user || !authData.session) {
+        setData(null);
         return;
       }
 
-      setSession(sessionData);
+      // Get full profile from backend (has role, memberships, etc.)
+      const profileRes = await apiService.user.getProfile();
 
-      // 3. Fetch additional context from backend
-      const context = await fetchUserContext(sessionData.user.id);
+      if (!profileRes.success || !profileRes.data) {
+        setData(null);
+        return;
+      }
 
-      const fullUserData: UserWithContext = {
-        ...sessionData,
-        context: context || undefined,
+      const profile = profileRes.data;
+
+      const sessionUser: SessionUser = {
+        id: authData.user.id,
+        email: authData.user.email,
+        name: authData.user.name || profile.name || null,
+        image: authData.user.image || profile.image || null,
+        role: profile.role || "USER", // role comes from backend!
+        emailVerified: authData.user.emailVerified,
+        banned: profile.banned,
+        createdAt: authData.user.createdAt,
+        updatedAt: authData.user.updatedAt,
+        tenantId: profile.tenantId || null,
       };
 
-      setUserWithContext(fullUserData);
-    } catch (error) {
-      console.error("Session fetch error:", error);
-      setError(error instanceof Error ? error.message : "Failed to fetch session");
-      setSession(null);
-      setUserWithContext(null);
+      const baseSession: SessionData = {
+        user: sessionUser,
+        expires: authData.session.expiresAt,
+        sessionId: authData.session.id,
+        token: authData.session.token,
+      };
+
+      const context = transformMembershipsToContext(
+        profile.memberships,
+        profile.invitations,
+        profile.stats
+      );
+
+      setData({ ...baseSession, context });
+    } catch (err) {
+      console.error("Session error:", err);
+      setError(err instanceof Error ? err.message : "Authentication failed");
+      setData(null);
     } finally {
       setIsLoading(false);
     }
-  }, [fetchAuthSession, transformSession, fetchUserContext]);
+  }, []);
 
-  // Refresh session function
-  const refreshSession = useCallback(async () => {
-    await fetchSession();
-  }, [fetchSession]);
-
-  // Sign out function
   const signOut = useCallback(async () => {
     try {
       await authClient.signOut();
-      setSession(null);
-      setUserWithContext(null);
-    } catch (error) {
-      console.error("Sign out error:", error);
-      setError(error instanceof Error ? error.message : "Failed to sign out");
+      setData(null);
+    } catch (err) {
+      console.error("Sign out failed:", err);
     }
   }, []);
 
-  // Initial fetch
   useEffect(() => {
     fetchSession();
   }, [fetchSession]);
 
-  return {
-    data: userWithContext,
-    session,
-    isLoading,
-    error,
-    refresh: refreshSession,
-    signOut,
-  };
+  return { data, isLoading, error, refresh: fetchSession, signOut };
 }
 
-/**
- * Hook to check user roles
- */
-export function useRole() {
-  const { data, isLoading } = useSession();
-
-  const hasRole = useCallback((role: string | string[]): boolean => {
-    if (!data?.user?.role) return false;
-
-    const userRole = data.user.role.toUpperCase();
-    const requiredRoles = Array.isArray(role)
-      ? role.map((r) => r.toUpperCase())
-      : [role.toUpperCase()];
-
-    return requiredRoles.includes(userRole);
-  }, [data]);
-
-  const isAdmin = useCallback(() => hasRole(["ADMIN", "OWNER"]), [hasRole]);
-  const isReviewer = useCallback(() => hasRole(["REVIEWER", "OWNER", "ADMIN"]), [hasRole]);
-  const isMember = useCallback(() => hasRole(["MEMBER", "REVIEWER", "OWNER", "ADMIN"]), [hasRole]);
-
-  return {
-    role: data?.user?.role || null,
-    hasRole,
-    isAdmin,
-    isReviewer,
-    isMember,
-    isLoading,
-  };
-}
-
-/**
- * Hook to manage organization context
- */
-export function useOrganizationContext() {
-  const { data, isLoading } = useSession();
-
-  const currentOrganizationId = data?.context?.currentOrganizationId || null;
-  const currentMemberRole = data?.context?.currentMemberRole || null;
-  const organizationMemberships = data?.context?.organizationMemberships || [];
-  const invitations = data?.context?.invitations || [];
-  const stats = data?.context?.stats || {};
-
-  const hasOrganization = organizationMemberships.length > 0;
-  const isOwner = currentMemberRole === "OWNER";
-  const isOrganizationReviewer = ["REVIEWER", "OWNER"].includes(currentMemberRole || "");
-  const isOrganizationMember = ["MEMBER", "REVIEWER", "OWNER"].includes(currentMemberRole || "");
-
-  const switchOrganization = useCallback(async (organizationId: string) => {
-    try {
-      await apiService.organization.switchOrganization(organizationId);
-      // Refresh session to get updated context
-      window.location.reload(); // Simple approach, or you can call refresh()
-    } catch (error) {
-      console.error("Failed to switch organization:", error);
-      throw error;
-    }
-  }, []);
-
-  return {
-    currentOrganizationId,
-    currentMemberRole,
-    organizationMemberships,
-    invitations,
-    stats,
-    hasOrganization,
-    isOwner,
-    isOrganizationReviewer,
-    isOrganizationMember,
-    isLoading,
-    switchOrganization,
-  };
-}
-
-/**
- * Hook to check if user is authenticated
- */
 export function useAuth() {
   const { data, isLoading, signOut } = useSession();
-
   return {
-    isAuthenticated: !!data?.user,
     user: data?.user || null,
     context: data?.context || null,
+    isAuthenticated: !!data?.user,
     isLoading,
     signOut,
   };
 }
 
-/**
- * Hook for protected routes - redirects if not authenticated
- */
-export function useProtectedRoute(redirectUrl = "/auth/signin") {
-  const { isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();  
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push(redirectUrl);
-    }
-  }, [isAuthenticated, isLoading, redirectUrl, router]);
+export function useOrganizationContext() {
+  const { data, isLoading } = useSession();
+  const ctx = data?.context;
 
-  return { isAuthenticated, isLoading };
+  return {
+    currentOrganizationId: ctx?.currentOrganizationId || null,
+    currentMemberRole: ctx?.currentMemberRole || null,
+    organizationMemberships: ctx?.organizationMemberships || [],
+    invitations: ctx?.invitations || [],
+    stats: ctx?.stats || {},
+    hasOrganization: (ctx?.organizationMemberships?.length || 0) > 0,
+    isOwner: ctx?.currentMemberRole === "OWNER",
+    isLoading,
+  };
 }

@@ -82,7 +82,7 @@ export function Header({ onMenuClick, organization }: HeaderProps) {
 
           <div className="flex items-center space-x-2">
             <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-gradient-to-br from-gray-900 to-gray-700 text-white text-sm">
+              <AvatarFallback className="bg-linear-to-br from-gray-900 to-gray-700 text-white text-sm">
                 JD
               </AvatarFallback>
             </Avatar>

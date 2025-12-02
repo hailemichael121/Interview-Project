@@ -11,14 +11,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { 
-  Building, 
-  Plus, 
-  Users, 
-  FileText, 
-  BarChart, 
-  Clock, 
-  Loader2, 
+import {
+  Building,
+  Plus,
+  Users,
+  FileText,
+  BarChart,
+  Clock,
+  Loader2,
   Mail,
   Shield,
   Target,
@@ -28,7 +28,7 @@ import {
   UserPlus,
   Eye,
   XCircle,
-  CheckSquare
+  CheckSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { apiService } from "@/lib/api-service";
@@ -47,12 +47,10 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 // In app/dashboard/page.tsx, update the imports:
-import { 
-  DashboardStats, 
-  Member, 
-  Invitation, 
-  Outline, 
-  OutlineListResponse,
+import {
+  DashboardStats,
+  Member,
+  Invitation, // Changed from Invitation
 } from "@/lib/types";
 
 type ActivityOutline = {
@@ -66,14 +64,14 @@ type ActivityOutline = {
   createdAt: string;
 };
 export default function DashboardPage() {
-  const { 
-    currentOrganizationId, 
-    currentMemberRole, 
+  const {
+    currentOrganizationId,
+    currentMemberRole,
     organizationMemberships,
     hasOrganization,
-    isLoading: orgLoading 
+    isLoading: orgLoading,
   } = useOrganizationContext();
-  
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [recentActivity, setRecentActivity] = useState<ActivityOutline[]>([]);
@@ -83,10 +81,11 @@ export default function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
 
   const currentOrganization = organizationMemberships.find(
-    membership => membership.organizationId === currentOrganizationId
+    (membership) => membership.organizationId === currentOrganizationId
   );
 
   const isOwner = currentMemberRole === "OWNER";
+  // In app/dashboard/page.tsx, update the fetchDashboardData function:
 
   const fetchDashboardData = useCallback(async () => {
     if (!currentOrganizationId) {
@@ -96,17 +95,19 @@ export default function DashboardPage() {
 
     try {
       setRefreshing(true);
-      
+
       const [
         statsResponse,
         outlinesResponse,
         membersResponse,
-        invitationsResponse
+        invitationsResponse,
       ] = await Promise.all([
         apiService.outline.getOrganizationStats(currentOrganizationId),
         apiService.outline.listOutlines(currentOrganizationId, 1, 5),
         apiService.organization.listMembers(currentOrganizationId, 1, 100),
-        isOwner ? apiService.invitation.getPendingInvitations() : Promise.resolve({ success: false, data: [] })
+        isOwner
+          ? apiService.invitation.getPendingInvitations()
+          : Promise.resolve(null),
       ]);
 
       if (statsResponse.success) {
@@ -114,53 +115,52 @@ export default function DashboardPage() {
       }
 
       if (outlinesResponse.success) {
-        const responseData = outlinesResponse.data as OutlineListResponse;
-        const outlinesData = 'data' in responseData ? responseData.data : responseData;
-        const activityOutlines: ActivityOutline[] = outlinesData.map((outline: Outline) => ({
+        const activityOutlines = outlinesResponse.data.map((outline) => ({
           id: outline.id,
           header: outline.header || "",
           status: outline.status || "DRAFT",
           sectionType: outline.sectionType || "",
           reviewer: outline.reviewer,
-          createdAt: outline.createdAt || new Date().toISOString()
+          createdAt: outline.createdAt || new Date().toISOString(),
         }));
         setRecentActivity(activityOutlines);
       }
 
       if (membersResponse.success) {
-        const membersData = membersResponse.data;
-        const transformedMembers: Member[] = membersData.map((member: any) => ({
+        const transformedMembers = membersResponse.data.map((member) => ({
           id: member.id,
           user: member.user || {
-            id: member.userId || member.id,
+            id: member.id,
             name: null,
             email: "",
-            image: null
+            image: null,
           },
           role: member.role,
-          joinedAt: member.joinedAt
+          joinedAt: member.joinedAt,
         }));
         setMembers(transformedMembers);
       }
 
       if (isOwner && invitationsResponse?.success) {
-        const invitationsData = invitationsResponse.data || [];
-        const transformedInvitations: Invitation[] = invitationsData.map((inv: any) => ({
+        // FIXED: Properly handle ApiInvitation type
+        const transformedInvitations = invitationsResponse.data.map((inv) => ({
           id: inv.id,
-          email: inv.email || "",
+          email: inv.email || "", // Now email is optional in type
           organization: inv.organization,
           role: inv.role,
-          status: (inv.status || 'PENDING') as 'PENDING' | 'ACCEPTED' | 'REVOKED' | 'EXPIRED',
+          status: "PENDING" as const,
           expires: inv.expires,
           token: inv.token || "",
-          invitedAt: inv.invitedAt || ""
+          invitedAt: inv.expires,
         }));
         setInvitations(transformedInvitations);
       }
-
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to load dashboard data";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to load dashboard data";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -170,37 +170,44 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData]); 
+  }, [fetchDashboardData]);
 
   const handleRefresh = () => {
     fetchDashboardData();
     toast.success("Dashboard refreshed");
   };
 
-  const handleResendInvitation = async (invitationId: string, email: string) => {
+  const handleResendInvitation = async (
+    invitationId: string,
+    email: string
+  ) => {
     if (!confirm(`Resend invitation to ${email}?`)) return;
-    
+
     try {
       toast.loading("Resending invitation...");
-      // Note: You'll need to add a resend endpoint in your backend
+      // Note: Backend doesn't have resend endpoint yet
       toast.error("Resend feature coming soon");
-    } catch (error) {
+    } catch {
+      // Changed to 'any' or specific type
       toast.error("Failed to resend invitation");
     }
   };
 
-  const handleRevokeInvitation = async (invitationId: string, email: string) => {
-    if (!confirm(`Revoke invitation for ${email}?`)) return;
-    
+  const handleRevokeInvitation = async (
+    invitationId: string,
+    invitation: Invitation
+  ) => {
+    // Changed parameter
+    if (!confirm(`Revoke invitation for ${invitation.email}?`)) return;
+
     try {
       toast.loading("Revoking invitation...");
-      // Note: You'll need to add a revoke endpoint in your backend
+      // Note: Backend doesn't have revoke endpoint yet
       toast.error("Revoke feature coming soon");
-    } catch (error) {
+    } catch {
       toast.error("Failed to revoke invitation");
     }
   };
-
   // No organization selected
   if (!hasOrganization && !orgLoading) {
     return (
@@ -213,7 +220,8 @@ export default function DashboardPage() {
             Welcome to Workspace!
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
-            Start collaborating with your team by creating or joining an organization
+            Start collaborating with your team by creating or joining an
+            organization
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/organization/create">
@@ -256,17 +264,21 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <div className="flex items-center gap-3 mt-2">
             <p className="text-muted-foreground">
-              Welcome to {currentOrganization?.organization.name || "your"} workspace
+              Welcome to {currentOrganization?.organization.name || "your"}{" "}
+              workspace
             </p>
             {currentMemberRole && (
-              <Badge variant={isOwner ? "default" : "secondary"} className="gap-1">
+              <Badge
+                variant={isOwner ? "default" : "secondary"}
+                className="gap-1"
+              >
                 {isOwner && <Shield className="h-3 w-3" />}
                 {currentMemberRole}
               </Badge>
             )}
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
@@ -275,10 +287,12 @@ export default function DashboardPage() {
             disabled={refreshing}
             className="gap-2"
           >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+            />
             Refresh
           </Button>
-          
+
           {isOwner && (
             <Link href="/team/invite">
               <Button size="sm" className="gap-2">
@@ -307,20 +321,30 @@ export default function DashboardPage() {
           <CardContent>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Organizations</span>
-                <span className="font-semibold">{organizationMemberships.length}</span>
+                <span className="text-sm text-muted-foreground">
+                  Organizations
+                </span>
+                <span className="font-semibold">
+                  {organizationMemberships.length}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Team Members</span>
+                <span className="text-sm text-muted-foreground">
+                  Team Members
+                </span>
                 <span className="font-semibold">{members.length}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Your Role</span>
-                <Badge variant={isOwner ? "default" : "secondary"}>{currentMemberRole}</Badge>
+                <Badge variant={isOwner ? "default" : "secondary"}>
+                  {currentMemberRole}
+                </Badge>
               </div>
               {isOwner && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Pending Invites</span>
+                  <span className="text-sm text-muted-foreground">
+                    Pending Invites
+                  </span>
                   <span className="font-semibold">{invitations.length}</span>
                 </div>
               )}
@@ -331,11 +355,15 @@ export default function DashboardPage() {
         {/* Outline Statistics */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Outlines</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Outlines
+            </CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalOutlines || 0}</div>
+            <div className="text-2xl font-bold">
+              {stats?.totalOutlines || 0}
+            </div>
             <div className="mt-2">
               <Progress value={stats?.completionRate || 0} className="h-2" />
             </div>
@@ -351,7 +379,9 @@ export default function DashboardPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.inProgressOutlines || 0}</div>
+            <div className="text-2xl font-bold">
+              {stats?.inProgressOutlines || 0}
+            </div>
             <p className="text-xs text-muted-foreground mt-2">
               Currently active
             </p>
@@ -364,7 +394,9 @@ export default function DashboardPage() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.pendingOutlines || 0}</div>
+            <div className="text-2xl font-bold">
+              {stats?.pendingOutlines || 0}
+            </div>
             <p className="text-xs text-muted-foreground mt-2">
               Awaiting review
             </p>
@@ -373,11 +405,17 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Tabs Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
         <TabsList className="grid w-full md:w-auto grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="activity">Recent Activity</TabsTrigger>
-          {isOwner && <TabsTrigger value="invitations">Invitations</TabsTrigger>}
+          {isOwner && (
+            <TabsTrigger value="invitations">Invitations</TabsTrigger>
+          )}
         </TabsList>
 
         {/* Overview Tab */}
@@ -390,31 +428,45 @@ export default function DashboardPage() {
                   <TrendingUp className="h-5 w-5" />
                   Quick Actions
                 </CardTitle>
-                <CardDescription>Common tasks for your workspace</CardDescription>
+                <CardDescription>
+                  Common tasks for your workspace
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Link href="/outlines">
-                  <Button variant="outline" className="w-full justify-start gap-2">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2"
+                  >
                     <FileText className="h-4 w-4" />
                     Manage Outlines
                   </Button>
                 </Link>
                 <Link href="/team">
-                  <Button variant="outline" className="w-full justify-start gap-2">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2"
+                  >
                     <Users className="h-4 w-4" />
                     Manage Team ({members.length})
                   </Button>
                 </Link>
                 {isOwner && (
                   <Link href="/team/invite">
-                    <Button variant="outline" className="w-full justify-start gap-2">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-2"
+                    >
                       <Mail className="h-4 w-4" />
                       Invite Members
                     </Button>
                   </Link>
                 )}
                 <Link href="/settings">
-                  <Button variant="outline" className="w-full justify-start gap-2">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2"
+                  >
                     <Shield className="h-4 w-4" />
                     Settings
                   </Button>
@@ -429,20 +481,29 @@ export default function DashboardPage() {
                   <Users className="h-5 w-5" />
                   Team Members ({members.length})
                 </CardTitle>
-                <CardDescription>Recent additions to your workspace</CardDescription>
+                <CardDescription>
+                  Recent additions to your workspace
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {members.length > 0 ? (
                   <div className="space-y-3">
                     {members.slice(0, 5).map((member) => (
-                      <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
                             {member.user.image && (
-                              <AvatarImage src={member.user.image} alt={member.user.name || ""} />
+                              <AvatarImage
+                                src={member.user.image}
+                                alt={member.user.name || ""}
+                              />
                             )}
                             <AvatarFallback>
-                              {member.user.name?.charAt(0) || member.user.email.charAt(0).toUpperCase()}
+                              {member.user.name?.charAt(0) ||
+                                member.user.email.charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div>
@@ -450,11 +511,18 @@ export default function DashboardPage() {
                               {member.user.name || member.user.email}
                             </p>
                             <div className="flex items-center gap-2 mt-1">
-                              <Badge variant={member.role === "OWNER" ? "default" : "secondary"}>
+                              <Badge
+                                variant={
+                                  member.role === "OWNER"
+                                    ? "default"
+                                    : "secondary"
+                                }
+                              >
                                 {member.role}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
-                                Joined: {new Date(member.joinedAt).toLocaleDateString()}
+                                Joined:{" "}
+                                {new Date(member.joinedAt).toLocaleDateString()}
                               </span>
                             </div>
                           </div>
@@ -474,7 +542,9 @@ export default function DashboardPage() {
                 ) : (
                   <div className="text-center py-8">
                     <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">No team members yet</p>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      No team members yet
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -496,24 +566,29 @@ export default function DashboardPage() {
               {recentActivity.length > 0 ? (
                 <div className="space-y-4">
                   {recentActivity.map((outline) => (
-                    <div key={outline.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+                    <div
+                      key={outline.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                    >
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h4 className="font-semibold">{outline.header}</h4>
-                          <Badge variant={
-                            outline.status === 'COMPLETED' 
-                              ? 'default'
-                              : outline.status === 'IN_PROGRESS'
-                              ? 'secondary'
-                              : 'outline'
-                          }>
+                          <Badge
+                            variant={
+                              outline.status === "COMPLETED"
+                                ? "default"
+                                : outline.status === "IN_PROGRESS"
+                                ? "secondary"
+                                : "outline"
+                            }
+                          >
                             {outline.status}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <FileText className="h-3 w-3" />
-                            {outline.sectionType.replace(/_/g, ' ')}
+                            {outline.sectionType.replace(/_/g, " ")}
                           </span>
                           {outline.reviewer && (
                             <span className="flex items-center gap-1">
@@ -521,7 +596,10 @@ export default function DashboardPage() {
                               {outline.reviewer.name}
                             </span>
                           )}
-                          <span>Created: {new Date(outline.createdAt).toLocaleDateString()}</span>
+                          <span>
+                            Created:{" "}
+                            {new Date(outline.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -546,7 +624,9 @@ export default function DashboardPage() {
                 <div className="text-center py-12">
                   <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium mb-2">No Activity Yet</h3>
-                  <p className="text-muted-foreground mb-6">Create your first outline to get started</p>
+                  <p className="text-muted-foreground mb-6">
+                    Create your first outline to get started
+                  </p>
                   <Link href="/outlines/create">
                     <Button>
                       <Plus className="mr-2 h-4 w-4" />
@@ -568,7 +648,9 @@ export default function DashboardPage() {
                   <Mail className="h-5 w-5" />
                   Pending Invitations ({invitations.length})
                 </CardTitle>
-                <CardDescription>Invitations sent to join this workspace</CardDescription>
+                <CardDescription>
+                  Invitations sent to join this workspace
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {invitations.length > 0 ? (
@@ -586,37 +668,55 @@ export default function DashboardPage() {
                       <TableBody>
                         {invitations.map((invitation) => (
                           <TableRow key={invitation.id}>
-                            <TableCell className="font-medium">{invitation.email}</TableCell>
+                            <TableCell className="font-medium">
+                              {invitation.email}
+                            </TableCell>
                             <TableCell>
                               <Badge variant="outline">{invitation.role}</Badge>
                             </TableCell>
                             <TableCell>
-                              <Badge variant={
-                                invitation.status === 'PENDING' ? 'outline' :
-                                invitation.status === 'ACCEPTED' ? 'default' :
-                                'destructive'
-                              }>
+                              <Badge
+                                variant={
+                                  invitation.status === "PENDING"
+                                    ? "outline"
+                                    : invitation.status === "ACCEPTED"
+                                    ? "default"
+                                    : "destructive"
+                                }
+                              >
                                 {invitation.status}
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {new Date(invitation.expires).toLocaleDateString()}
+                              {new Date(
+                                invitation.expires
+                              ).toLocaleDateString()}
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleResendInvitation(invitation.id, invitation.email)}
-                                  disabled={invitation.status !== 'PENDING'}
+                                  onClick={() =>
+                                    handleResendInvitation(
+                                      invitation.id,
+                                      invitation.email
+                                    )
+                                  }
+                                  disabled={invitation.status !== "PENDING"}
                                 >
                                   <Mail className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleRevokeInvitation(invitation.id, invitation.email)}
-                                  disabled={invitation.status !== 'PENDING'}
+                                  onClick={() =>
+                                    handleRevokeInvitation(
+                                      invitation.id,
+                                      invitation
+                                    )
+                                  }
+                                  disabled={invitation.status !== "PENDING"}
                                 >
                                   <XCircle className="h-4 w-4" />
                                 </Button>
@@ -630,7 +730,9 @@ export default function DashboardPage() {
                 ) : (
                   <div className="text-center py-12">
                     <Mail className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No Pending Invitations</h3>
+                    <h3 className="text-lg font-medium mb-2">
+                      No Pending Invitations
+                    </h3>
                     <p className="text-muted-foreground mb-6">
                       Invite team members to collaborate in your workspace
                     </p>
@@ -662,19 +764,30 @@ export default function DashboardPage() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-medium">Completion Rate</span>
-                  <span className="text-sm font-bold">{stats?.completionRate ? Math.round(stats.completionRate) : 0}%</span>
+                  <span className="text-sm font-bold">
+                    {stats?.completionRate
+                      ? Math.round(stats.completionRate)
+                      : 0}
+                    %
+                  </span>
                 </div>
                 <Progress value={stats?.completionRate || 0} className="h-2" />
               </div>
               <Separator />
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-3 bg-primary/5 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">{stats?.completedOutlines || 0}</div>
+                  <div className="text-2xl font-bold text-primary">
+                    {stats?.completedOutlines || 0}
+                  </div>
                   <div className="text-sm text-muted-foreground">Completed</div>
                 </div>
                 <div className="text-center p-3 bg-secondary/5 rounded-lg">
-                  <div className="text-2xl font-bold text-secondary">{stats?.inProgressOutlines || 0}</div>
-                  <div className="text-sm text-muted-foreground">In Progress</div>
+                  <div className="text-2xl font-bold text-secondary">
+                    {stats?.inProgressOutlines || 0}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    In Progress
+                  </div>
                 </div>
               </div>
             </div>
@@ -700,9 +813,15 @@ export default function DashboardPage() {
                   }`}
                 >
                   <div>
-                    <p className="font-medium">{membership.organization.name}</p>
+                    <p className="font-medium">
+                      {membership.organization.name}
+                    </p>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant={membership.role === "OWNER" ? "default" : "secondary"} >
+                      <Badge
+                        variant={
+                          membership.role === "OWNER" ? "default" : "secondary"
+                        }
+                      >
                         {membership.role}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
