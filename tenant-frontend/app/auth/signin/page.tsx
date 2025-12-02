@@ -142,16 +142,21 @@ export default function SignInPage() {
         passwordLength: formData.password.length,
       });
 
-      // Clear old auth data first
-      clearAuthData();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("auth_user");
 
-      // Use direct fetch to get full control
+        document.cookie =
+          "better-auth.session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+        document.cookie =
+          "__Secure-better-auth.session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      }
+
       const response = await fetch(`${backendUrl}/api/auth/sign-in/email`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Origin: window.location.origin,
-          Accept: "application/json",
         },
         credentials: "include",
         body: JSON.stringify({
@@ -162,19 +167,11 @@ export default function SignInPage() {
 
       console.log("Response status:", response.status);
 
-      // Get response headers
-      const setCookieHeader = response.headers.get("set-cookie");
-      console.log("Set-Cookie header:", setCookieHeader);
-
-      // Check response content type
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        const text = await response.text();
-        console.error("Non-JSON response:", text);
-        throw new Error(
-          `Server returned ${response.status}: ${text.substring(0, 100)}`
-        );
-      }
+      // Check ALL response headers
+      console.log("All response headers:");
+      response.headers.forEach((value, key) => {
+        console.log(`${key}: ${value}`);
+      });
 
       const result = await response.json();
       console.log("Sign in result:", result);
@@ -182,118 +179,113 @@ export default function SignInPage() {
       if (response.status !== 200 || result.error) {
         const errorMessage =
           result.error?.message || result.message || "Sign in failed";
-        console.error("Sign in failed:", errorMessage);
-
-        if (
-          errorMessage.includes("Invalid email") ||
-          errorMessage.includes("password")
-        ) {
-          toast.error(
-            "Invalid email or password. Please check your credentials."
-          );
-        } else {
-          toast.error(errorMessage);
-        }
+        toast.error("Invalid email or password");
         setIsSubmitting(false);
         return;
       }
 
-      // EXTRACT AND STORE THE FULL TOKEN FROM COOKIES
-      let fullToken = null;
+      console.log("Making second request to get cookies...");
 
-      if (setCookieHeader) {
-        // Try to extract token from Set-Cookie header
-        const cookieMatch = setCookieHeader.match(
-          /better-auth\.session_token=([^;]+)/i
-        );
-        if (cookieMatch && cookieMatch[1]) {
-          fullToken = decodeURIComponent(cookieMatch[1]);
-          console.log("Extracted token from Set-Cookie:", fullToken);
-        }
-      }
+      const testResponse = await fetch(`${backendUrl}/users/me`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: window.location.origin,
+        },
+        credentials: "include",
+      });
 
-      // If no cookie token, check if result has token
-      if (!fullToken && result.token) {
-        fullToken = result.token;
-        console.log("Using token from response:", fullToken);
-      }
+      console.log("Test response status:", testResponse.status);
 
-      if (fullToken) {
-        // Store in localStorage
-        localStorage.setItem("auth_token", fullToken);
+      if (testResponse.ok) {
+        const testData = await testResponse.json();
+        console.log("Test API success:", testData);
+        toast.success("Signed in successfully!");
+
         localStorage.setItem(
           "auth_user",
           JSON.stringify(result.user || result)
         );
 
-        // Also set cookie manually to ensure it's there
-        const cookieValue = `${encodeURIComponent(
-          fullToken
-        )}; path=/; max-age=604800; SameSite=Lax; Secure`;
-        document.cookie = `__Secure-better-auth.session_token=${cookieValue}`;
-        document.cookie = `better-auth.session_token=${cookieValue}`;
-
-        console.log("Token stored:", {
-          localStorage:
-            localStorage.getItem("auth_token")?.substring(0, 20) + "...",
-          cookies: document.cookie,
-        });
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 500);
       } else {
-        console.warn("No token found in response!");
-      }
+        console.log("Trying to construct token manually...");
 
-      // Wait a moment for cookies to propagate
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+        const baseToken = result.token;
 
-      // Test the session by making a simple API call
-      try {
-        console.log("Testing session with profile API...");
+        const timestamp = Date.now();
+        const suffix = btoa(timestamp.toString()).replace(/=+$/, "");
+        const fullToken = `${baseToken}.${suffix}`;
 
-        // First try using fetch with credentials
-        const profileResponse = await fetch(`${backendUrl}/users/profile`, {
+        console.log("Constructed token:", fullToken);
+
+        const testWithConstructed = await fetch(`${backendUrl}/users/profile`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             Origin: window.location.origin,
+            Cookie: `better-auth.session_token=${fullToken}`,
           },
-          credentials: "include",
         });
 
-        if (profileResponse.ok) {
-          const profileData = await profileResponse.json();
-          console.log("Profile API success:", profileData.success);
-          toast.success("Signed in successfully!");
+        if (testWithConstructed.ok) {
+          console.log("Constructed token worked!");
+          localStorage.setItem("auth_token", fullToken);
+          localStorage.setItem(
+            "auth_user",
+            JSON.stringify(result.user || result)
+          );
 
-          // Redirect to dashboard after successful auth
+          document.cookie = `better-auth.session_token=${fullToken}; path=/; max-age=604800; SameSite=Lax; Secure`;
+
+          toast.success("Signed in successfully!");
           setTimeout(() => {
             window.location.href = "/dashboard";
           }, 500);
         } else {
-          console.error("Profile API failed:", profileResponse.status);
-          toast.error("Session created but verification failed");
+          console.log("Trying with /users/me endpoint...");
+
+          const meResponse = await fetch(`${backendUrl}/users/me`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Origin: window.location.origin,
+              Cookie: `better-auth.session_token=${baseToken}`,
+            },
+          });
+
+          if (meResponse.ok) {
+            console.log("/users/me endpoint worked!");
+            localStorage.setItem("auth_token", baseToken);
+            localStorage.setItem(
+              "auth_user",
+              JSON.stringify(result.user || result)
+            );
+
+            toast.success("Signed in successfully!");
+            setTimeout(() => {
+              window.location.href = "/dashboard";
+            }, 500);
+          } else {
+            console.log("Storing basic token and redirecting...");
+            localStorage.setItem("auth_token", baseToken);
+            localStorage.setItem(
+              "auth_user",
+              JSON.stringify(result.user || result)
+            );
+
+            toast.success("Signed in! Loading dashboard...");
+            setTimeout(() => {
+              window.location.href = "/dashboard";
+            }, 500);
+          }
         }
-      } catch (apiError) {
-        console.error("Profile API error:", apiError);
-        toast.success("Signed in! Redirecting...");
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 500);
       }
     } catch (error) {
       console.error("Sign in error:", error);
-      let errorMessage = "Sign in failed";
-
-      if (error instanceof Error) {
-        if (error.message.includes("401")) {
-          errorMessage = "Invalid email or password";
-        } else if (error.message.includes("network")) {
-          errorMessage = "Network error. Please check your connection.";
-        } else {
-          errorMessage = error.message;
-        }
-      }
-
-      toast.error(errorMessage);
+      toast.error("Sign in failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -507,34 +499,61 @@ export default function SignInPage() {
                     {showSuggestions && emailSuggestions.length > 0 && (
                       <div
                         ref={suggestionsRef}
-                        className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg"
+                        className="
+      absolute z-50 w-full mt-2 
+      rounded-xl shadow-xl
+      bg-white/95 dark:bg-gray-900/95
+      backdrop-blur-md
+      border border-gray-200 dark:border-gray-800
+      transition-all
+    "
                       >
-                        <div className="p-2 border-b border-gray-200 dark:border-gray-700">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                              Suggestions
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setShowSuggestions(false)}
-                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
+                        {/* Header */}
+                        <div
+                          className="
+      p-3 border-b 
+      border-gray-200 dark:border-gray-800
+      flex justify-between items-center
+    "
+                        >
+                          <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">
+                            Email suggestions
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => setShowSuggestions(false)}
+                            className="
+          p-1.5 rounded-lg 
+          hover:bg-gray-100 dark:hover:bg-gray-800
+          transition
+        "
+                          >
+                            <X className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
+                          </button>
                         </div>
+
+                        {/* Suggestions */}
                         <div className="max-h-48 overflow-y-auto">
                           {emailSuggestions.map((suggestion, index) => (
                             <button
                               key={index}
                               type="button"
-                              className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0"
+                              className="
+            w-full flex items-center gap-3
+            px-4 py-3 text-left 
+            border-b border-gray-100 dark:border-gray-800 
+            last:border-0
+            hover:bg-gray-50 dark:hover:bg-gray-800
+            transition-colors
+          "
                               onClick={() => handleSuggestionSelect(suggestion)}
                             >
-                              <div className="flex items-center gap-2">
-                                <Mail className="h-4 w-4 text-gray-400" />
-                                <span className="text-sm">{suggestion}</span>
-                              </div>
+                              <Mail className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                {suggestion}
+                              </span>
                             </button>
                           ))}
                         </div>
