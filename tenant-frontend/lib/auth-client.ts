@@ -8,15 +8,15 @@ const authClient = createAuthClient({
   fetchOptions: {
     credentials: "include",
   },
-  session: {
-    cookie: {
-      name: "__Secure-better-auth.session_token",
-      secure: true,
-      sameSite: "lax",
-      httpOnly: true,
-      path: "/",
-    },
-  },
+  // session: {
+  //   cookie: {
+  //     name: "__Secure-better-auth.session_token",
+  //     secure: true,
+  //     sameSite: "lax",
+  //     httpOnly: true,
+  //     path: "/",
+  //   },
+  // },
 });
 
 export default authClient;

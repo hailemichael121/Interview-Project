@@ -33,25 +33,13 @@ async function apiFetch<T>(
   options: RequestInit = {},
   organizationId?: string
 ): Promise<ApiResponse<T>> {
-  // Get session cookie from auth client
-  const session = await authClient.getSession();
-  const authToken = session?.data?.session?.token;
-
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
-    Origin: "https://tenanncy.onrender.com",
+    Origin: window.location.origin,
     ...(options.headers as Record<string, string>),
   };
 
-  // Add auth cookie if available
-  if (authToken) {
-    headers["Cookie"] = `better-auth.session_token=${encodeURIComponent(
-      authToken
-    )}`;
-  }
-
-  // Add organization header when provided
   if (organizationId) {
     headers["X-Organization-Id"] = organizationId;
   }

@@ -15,29 +15,25 @@ export async function POST(
     const url = `${BACKEND_URL}/api/auth/${path}`;
 
     const body = await request.json();
-
     const requestCookies = request.cookies.toString();
-
-    const requestOrigin =
-      request.headers.get("origin") || "https://tenanncy.onrender.com";
 
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Origin: requestOrigin,
         Cookie: requestCookies,
       },
       body: JSON.stringify(body),
+      credentials: "include",
     });
 
     const data = await response.json();
 
     const responseHeaders = new Headers();
-    const setCookieHeaders = response.headers.getSetCookie();
+    const backendCookies = response.headers.getSetCookie();
 
-    if (setCookieHeaders && setCookieHeaders.length > 0) {
-      setCookieHeaders.forEach((cookie) => {
+    if (backendCookies && backendCookies.length > 0) {
+      backendCookies.forEach((cookie) => {
         responseHeaders.append("Set-Cookie", cookie);
       });
     }
@@ -54,7 +50,6 @@ export async function POST(
     );
   }
 }
-
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ all: string[] }> }
