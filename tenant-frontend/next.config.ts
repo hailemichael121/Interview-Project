@@ -1,14 +1,10 @@
-// next.config.js
+// next.config.js - FIXED for Render
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone', // For production deployment
-  
+  output: "standalone", // Keep this for Render
+
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**.vercel.app",
-      },
       {
         protocol: "https",
         hostname: "**.onrender.com",
@@ -16,15 +12,10 @@ const nextConfig = {
     ],
   },
 
-  // Proxy only for local development
+  // Keep rewrites but update for production
   async rewrites() {
-    // In production, we make direct calls to backend
-    if (process.env.NODE_ENV === 'production') {
-      return [];
-    }
-    
-    // Local development proxy
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ||
+    const backendUrl =
+      process.env.NEXT_PUBLIC_BACKEND_URL ||
       "https://tenant-backend-cz23.onrender.com";
 
     return [
@@ -47,11 +38,10 @@ const nextConfig = {
     ];
   },
 
-  // CORS headers
   async headers() {
     return [
       {
-        source: "/:path*",
+        source: "/api/:path*",
         headers: [
           {
             key: "Access-Control-Allow-Credentials",
@@ -59,9 +49,7 @@ const nextConfig = {
           },
           {
             key: "Access-Control-Allow-Origin",
-            value: process.env.NODE_ENV === "production"
-              ? "https://tenanncy.vercel.app"
-              : "http://localhost:3000",
+            value: "https://tenanncy.onrender.com",
           },
           {
             key: "Access-Control-Allow-Methods",
@@ -69,7 +57,8 @@ const nextConfig = {
           },
           {
             key: "Access-Control-Allow-Headers",
-            value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Organization-Id, Cookie, Authorization",
+            value:
+              "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Organization-Id, Cookie, Authorization, Origin",
           },
         ],
       },

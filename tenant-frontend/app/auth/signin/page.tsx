@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -31,44 +31,53 @@ function SignInContent() {
     }
 
     setIsSubmitting(true);
+
     try {
-      // Direct call - signIn doesn't return error in the response
-      await signIn(formData.email.trim(), formData.password);
+      console.log("🌐 Frontend URL:", window.location.origin);
+      console.log("🔗 Making sign in request...");
+
+      const response = await authClient.signIn.email({
+        email: formData.email.trim(),
+        password: formData.password,
+      });
+
+      console.log("✅ Sign in response:", response);
+
+      if (response?.error) {
+        throw new Error(response.error.message || "Sign in failed");
+      }
 
       toast.success("Signed in successfully!");
 
-      // Wait a moment for cookies to be set
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Wait for cookies
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Verify session is actually set
+      // Check cookies
+      console.log("🍪 Cookies after sign in:", document.cookie);
+
+      // Check session
       const session = await authClient.getSession();
-      if (!session?.data?.user) {
-        throw new Error("Session not set properly");
-      }
+      console.log("📋 Session after sign in:", session);
 
       const redirectTo =
         sessionStorage.getItem("redirectAfterAuth") || "/dashboard";
       sessionStorage.removeItem("redirectAfterAuth");
 
-      // Use replace instead of push to avoid back button issues
+      console.log("🔄 Redirecting to:", redirectTo);
       router.replace(redirectTo);
     } catch (error: unknown) {
-      console.error("Sign in error:", error);
+      console.error("❌ Sign in error:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
           : "Sign in failed. Please try again.";
 
       toast.error(errorMessage);
-
-      // If it's a cookie/session issue, suggest clearing cookies
-      if (errorMessage.includes("cookie") || errorMessage.includes("session")) {
-        toast.error("Please try clearing your browser cookies and try again.");
-      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
   const handleSocialSignIn = () => {
     toast.info("Social sign-in coming soon");
   };
@@ -80,6 +89,24 @@ function SignInContent() {
     buttonText: "Need an account? Sign Up",
     buttonLink: "/auth/signup",
   };
+
+  useEffect(() => {
+    const debugAuth = async () => {
+      console.log("🔍 Auth Debug Info:");
+      console.log("Frontend URL:", window.location.origin);
+      console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
+      console.log("Current cookies:", document.cookie);
+
+      try {
+        const session = await authClient.getSession();
+        console.log("Current session:", session);
+      } catch (error) {
+        console.log("No session yet");
+      }
+    };
+
+    debugAuth();
+  }, []);
 
   return (
     <AuthLayout
