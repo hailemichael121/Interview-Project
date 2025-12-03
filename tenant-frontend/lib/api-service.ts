@@ -1,20 +1,6 @@
 // lib/api-service.ts
-/**
- *   API service
- * Handles all authenticated requests to the backend with proper session management,
- * organization context via X-Organization-Id header, and consistent error handling.
- *
- * Uses Better-Auth client for session management and cookie-based auth token passing.
- */
-
 import authClient from "./auth-client";
 
-// Backend API base URL (configurable via env or fallback to Render deployment)
-const API_BASE =
-  process.env.NEXT_PUBLIC_BACKEND_URL ||
-  "https://tenant-backend-cz23.onrender.com";
-
-// Import all shared types
 import {
   ApiResponse,
   Organization,
@@ -41,104 +27,41 @@ import {
   ApiInvitation,
 } from "../types/types";
 
- 
 async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {},
   organizationId?: string
 ): Promise<ApiResponse<T>> {
-  // Get current session to check authentication
-  let sessionData;
-  try {
-    const sessionResponse = await authClient.getSession();
-    sessionData = sessionResponse.data;
-  } catch (error) {
-    console.warn("Failed to get session:", error);
-  }
-
-  // Build headers
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "Accept": "application/json",
+    Accept: "application/json",
     ...(options.headers as Record<string, string>),
   };
 
-  // Add organization header
   if (organizationId) {
     headers["X-Organization-Id"] = organizationId;
   }
 
-  // Add Origin header for CORS
-  if (typeof window !== "undefined") {
-    headers["Origin"] = window.location.origin;
-  }
-
-  // If we have a session token, we need to manually handle cookies for cross-domain
-  const sessionToken = sessionData?.session?.token;
-  
-  // In production, we need to manually manage cookies since we're cross-domain
-  if (sessionToken && API_BASE !== window.location.origin) {
-    // Decode the token if it's URL encoded
-    const decodedToken = decodeURIComponent(sessionToken);
-    headers["Cookie"] = `__Secure-better-auth.session_token=${decodedToken}`;
-    
-    // Also add as Authorization header as backup
-    headers["Authorization"] = `Bearer ${sessionToken}`;
-  }
-
-  console.log(`API Fetch to: ${API_BASE}${endpoint}`);
-  console.log('Headers sent:', {
-    ...headers,
-    Cookie: headers.Cookie ? '***REDACTED***' : undefined,
-    Authorization: headers.Authorization ? '***REDACTED***' : undefined,
+  const response = await fetch(endpoint, {
+    ...options,
+    headers,
+    credentials: "include",
   });
 
-  try {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
-      headers,
-       credentials: API_BASE.includes(window.location.hostname) ? "include" : "omit",
-    });
-
-     if (response.status === 401) {
-       try {
-        await authClient.signOut();
-      } catch (e) {
-        console.warn("Failed to sign out:", e);
-      }
-      
-       if (typeof window !== "undefined") {
-        window.location.href = "/auth/signin";
-      }
-      
-      throw new Error("Session expired. Please sign in again.");
-    }
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.message || 
-                          errorData.error || 
-                          `API error: ${response.status} ${response.statusText}`;
-      throw new Error(errorMessage);
-    }
-
-    return response.json();
-  } catch (error) {
-    console.error("API fetch error:", error);
-    throw error;
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `API error: ${response.status}`);
   }
+
+  return response.json();
 }
 
-// ==================== AUTH API ====================
 export const authApi = {
-  signUp: async (data: { name: string; email: string; password: string }) => {
-    // For auth calls, use authClient directly
-    return authClient.signUp.email(data);
-  },
+  signUp: async (data: { name: string; email: string; password: string }) =>
+    authClient.signUp.email(data),
 
-  signIn: async (data: { email: string; password: string }) => {
-    return authClient.signIn.email(data);
-  },
+  signIn: async (data: { email: string; password: string }) =>
+    authClient.signIn.email(data),
 
   getSession: async () => authClient.getSession(),
 
@@ -148,33 +71,26 @@ export const authApi = {
     authClient.updateUser(data),
 };
 
-
-// ==================== USER API ====================
 export const userApi = {
-  /** Get current authenticated user's profile */
   getProfile: async (): Promise<UserProfileResponse> =>
-    apiFetch<UserProfile>("/users/profile", { method: "GET" }),
+    apiFetch<UserProfile>("/api/users/profile", { method: "GET" }),
 
-  /** Get current user with organization context */
   getCurrentUser: async (): Promise<ApiResponse<CurrentUserResponse>> =>
-    apiFetch<CurrentUserResponse>("/users/me", { method: "GET" }),
+    apiFetch<CurrentUserResponse>("/api/users/me", { method: "GET" }),
 
-  /** Update current user's profile */
   updateProfile: async (data: UpdateUserDto): Promise<UserProfileResponse> =>
-    apiFetch<UserProfile>("/users/profile", {
+    apiFetch<UserProfile>("/api/users/profile", {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
-  /** Admin: Get user by ID */
   getUserById: async (userId: string): Promise<UserProfileResponse> =>
-    apiFetch<UserProfile>(`/users/${userId}`, { method: "GET" }),
+    apiFetch<UserProfile>(`/api/users/${userId}`, { method: "GET" }),
 
-  /** Admin: List all users (paginated) */
   listUsers: async (page = 1, perPage = 10): Promise<UserListResponse> => {
     const res = await apiFetch<
       Array<UserProfile & { organizationCount: number }>
-    >(`/users?page=${page}&perPage=${perPage}`, { method: "GET" });
+    >(`/api/users?page=${page}&perPage=${perPage}`, { method: "GET" });
     return {
       ...res,
       page: res.page ?? page,
@@ -183,7 +99,6 @@ export const userApi = {
     };
   },
 
-  /** Admin: Search users by name/email */
   searchUsers: async (
     query: string,
     page = 1,
@@ -192,7 +107,7 @@ export const userApi = {
     const res = await apiFetch<
       Array<UserProfile & { organizationCount: number }>
     >(
-      `/users/search/${encodeURIComponent(
+      `/api/users/search/${encodeURIComponent(
         query
       )}?page=${page}&perPage=${perPage}`,
       { method: "GET" }
@@ -205,44 +120,36 @@ export const userApi = {
     };
   },
 
-  /** Admin: Get organizations a user belongs to */
   getUserOrganizations: async (userId: string, page = 1, perPage = 10) =>
     apiFetch<any>(
-      `/users/${userId}/organizations?page=${page}&perPage=${perPage}`,
-      {
-        method: "GET",
-      }
+      `/api/users/${userId}/organizations?page=${page}&perPage=${perPage}`,
+      { method: "GET" }
     ),
 
-  /** Admin: Soft delete a user */
   deleteUser: async (userId: string) =>
-    apiFetch<any>(`/users/${userId}`, { method: "DELETE" }),
+    apiFetch<any>(`/api/users/${userId}`, { method: "DELETE" }),
 };
 
-// ==================== INVITATION API ====================
 export const invitationApi = {
-  /** Get all pending invitations for current user */
   getPendingInvitations: async (): Promise<InvitationListResponse> =>
-    apiFetch<ApiInvitation[]>("/users/invitations", { method: "GET" }),
+    apiFetch<ApiInvitation[]>("/api/users/invitations", { method: "GET" }),
 
-  /** Accept invitation by ID (user-facing endpoint) */
   acceptInvitation: async (invitationId: string) => {
     const session = await authClient.getSession();
     if (!session?.data?.user?.email) throw new Error("No session found");
 
-    return apiFetch<any>(`/users/invitations/${invitationId}/accept`, {
+    return apiFetch<any>(`/api/users/invitations/${invitationId}/accept`, {
       method: "POST",
       body: JSON.stringify({ email: session.data.user.email }),
     });
   },
 
-  /** Decline invitation by ID */
   declineInvitation: async (invitationId: string) => {
     const session = await authClient.getSession();
     if (!session?.data?.user?.email) throw new Error("No session found");
 
     return apiFetch<{ message: string }>(
-      `/users/invitations/${invitationId}/decline`,
+      `/api/users/invitations/${invitationId}/decline`,
       {
         method: "POST",
         body: JSON.stringify({ email: session.data.user.email }),
@@ -251,16 +158,13 @@ export const invitationApi = {
   },
 };
 
-// ==================== ORGANIZATION API ====================
 export const organizationApi = {
-  /** Create a new organization */
   createOrganization: async (data: CreateOrganizationDto) =>
     apiFetch<any>("/api/organization/create", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
-  /** List organizations current user is member of */
   listUserOrganizations: async (
     page = 1,
     perPage = 10
@@ -277,17 +181,13 @@ export const organizationApi = {
     };
   },
 
-  /** Get full organization details (including members) */
   getOrganizationDetails: async (organizationId: string) =>
     apiFetch<OrganizationDetails>(
       `/api/organization/${organizationId}`,
-      {
-        method: "GET",
-      },
+      { method: "GET" },
       organizationId
     ),
 
-  /** Update organization name/slug (owner only) */
   updateOrganization: async (
     organizationId: string,
     data: UpdateOrganizationDto
@@ -301,19 +201,15 @@ export const organizationApi = {
       organizationId
     ),
 
-  /** Switch active organization context */
   switchOrganization: async (
     organizationId: string
   ): Promise<OrganizationSwitchResponse> =>
     apiFetch<any>(
       `/api/organization/${organizationId}/switch`,
-      {
-        method: "POST",
-      },
+      { method: "POST" },
       organizationId
     ),
 
-  /** List members in organization */
   listMembers: async (
     organizationId: string,
     page = 1,
@@ -332,7 +228,6 @@ export const organizationApi = {
     };
   },
 
-  /** Invite a new member (owner only) */
   inviteMember: async (organizationId: string, data: InviteMemberDto) =>
     apiFetch<any>(
       `/api/organization/${organizationId}/invite`,
@@ -343,7 +238,6 @@ export const organizationApi = {
       organizationId
     ),
 
-  /** Accept invite via magic token link */
   acceptInvite: async (token: string) => {
     const session = await authClient.getSession();
     if (!session?.data?.user?.email) throw new Error("No session found");
@@ -354,7 +248,6 @@ export const organizationApi = {
     });
   },
 
-  /** Remove/revoke a member (owner only) */
   revokeMember: async (organizationId: string, targetMemberId: string) =>
     apiFetch<{ message: string }>(
       `/api/organization/${organizationId}/revoke`,
@@ -366,9 +259,7 @@ export const organizationApi = {
     ),
 };
 
-// ==================== OUTLINE API ====================
 export const outlineApi = {
-  /** Create new outline in organization */
   createOutline: async (
     data: CreateOutlineDto,
     organizationId?: string
@@ -386,7 +277,6 @@ export const outlineApi = {
     );
   },
 
-  /** List outlines in current organization */
   listOutlines: async (
     organizationId: string,
     page = 1,
@@ -407,7 +297,6 @@ export const outlineApi = {
     };
   },
 
-  /** Get single outline by ID */
   getOutline: async (
     outlineId: string,
     organizationId: string
@@ -420,7 +309,6 @@ export const outlineApi = {
     );
   },
 
-  /** Update outline */
   updateOutline: async (
     outlineId: string,
     data: UpdateOutlineDto,
@@ -437,7 +325,6 @@ export const outlineApi = {
     );
   },
 
-  /** Soft delete outline */
   deleteOutline: async (
     outlineId: string,
     organizationId: string
@@ -450,7 +337,6 @@ export const outlineApi = {
     );
   },
 
-  /** Get organization-level outline statistics */
   getOrganizationStats: async (
     organizationId: string
   ): Promise<OutlineStatsResponse> => {
@@ -462,7 +348,6 @@ export const outlineApi = {
     );
   },
 
-  /** Get outlines assigned to current user as reviewer */
   getAssignedOutlines: async (
     organizationId: string,
     page = 1,
@@ -483,7 +368,6 @@ export const outlineApi = {
     };
   },
 
-  /** Get outlines created by current user */
   getMyOutlines: async (
     organizationId: string,
     page = 1,
@@ -505,7 +389,6 @@ export const outlineApi = {
   },
 };
 
-// ==================== COMPOSITE API SERVICE ====================
 export const apiService = {
   auth: authApi,
   user: userApi,
@@ -514,5 +397,4 @@ export const apiService = {
   outline: outlineApi,
 };
 
-// Default export
 export default apiService;

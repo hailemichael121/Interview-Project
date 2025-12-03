@@ -60,6 +60,11 @@ const nextConfig = {
             value:
               "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Organization-Id, Cookie, Authorization, Origin",
           },
+          // ✅ ADD THIS: Allows Set-Cookie to be exposed to frontend
+          {
+            key: "Access-Control-Expose-Headers",
+            value: "Set-Cookie",
+          },
         ],
       },
     ];
