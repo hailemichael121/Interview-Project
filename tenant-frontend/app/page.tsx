@@ -23,13 +23,14 @@ export default function HomePage() {
   const textRef = useRef<HTMLDivElement>(null);
   const waveRef = useRef<SVGSVGElement>(null);
 
- useEffect(() => {
+  useEffect(() => {
     const timer = setTimeout(() => {
       setMounted(true);
     }, 0);
 
     return () => clearTimeout(timer);
   }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       if (!textRef.current || !waveRef.current) return;
@@ -95,7 +96,6 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Wave Background */}
       <GradientBackground />
 
       <div className="relative z-10 min-h-screen">
@@ -128,7 +128,6 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* STATIC CARDS — NO HOVER EFFECTS */}
           <div className="grid md:grid-cols-3 gap-8 mb-24 mt-12">
             {[
               {
@@ -165,15 +164,15 @@ export default function HomePage() {
               <Card
                 key={i}
                 className="border border-gray-200/70 dark:border-gray-700/70 
-                           bg-white/40 dark:bg-gray-800/30 
-                           backdrop-blur-xl rounded-2xl overflow-hidden"
+                  bg-white/40 dark:bg-gray-800/30 
+                  backdrop-blur-xl rounded-2xl overflow-hidden"
               >
                 <CardHeader className="pb-6">
                   <div
                     className="w-14 h-14 rounded-xl flex items-center justify-center mb-5
-                                  bg-linear-to-br from-gray-100 to-gray-200 
-                                  dark:from-gray-700 dark:to-gray-800 
-                                  ring-4 ring-white/60 dark:ring-gray-900/40"
+                      bg-linear-to-br from-gray-100 to-gray-200 
+                      dark:from-gray-700 dark:to-gray-800 
+                      ring-4 ring-white/60 dark:ring-gray-900/40"
                   >
                     <div className="text-gray-900 dark:text-gray-100">
                       {item.icon}
@@ -204,7 +203,6 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* CTA — Also NO hover effects */}
           <div className="text-center py-16">
             <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-3xl p-12 border-2 border-gray-300 dark:border-gray-600 max-w-3xl mx-auto">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-50 mb-6">
@@ -229,7 +227,7 @@ export default function HomePage() {
                     size="lg"
                     variant="outline"
                     className="text-lg px-10 h-14 rounded-2xl border-2 border-gray-400 dark:border-gray-600 
-                               text-gray-900 dark:text-gray-100 font-semibold"
+                      text-gray-900 dark:text-gray-100 font-semibold"
                   >
                     Create Account
                   </Button>

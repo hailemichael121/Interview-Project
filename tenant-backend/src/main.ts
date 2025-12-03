@@ -35,6 +35,7 @@ async function bootstrap() {
     'http://localhost:5173',
     'https://tenanncy-h9sifrs7k-hailemichael121s-projects.vercel.app',
     'https://tenanncy.vercel.app',
+    'https://tenanncy.onrender.com',
   ].filter(Boolean);
 
   app.enableCors({

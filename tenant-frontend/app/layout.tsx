@@ -1,19 +1,15 @@
-// app/layout.tsx (update)
+// app/layout.tsx
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { OrgProvider } from "@/lib/org-context";
 import { ThemeToggler } from "@/components/theme-toggler";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const geist = Geist({
+  // New font configuration
+  variable: "--font-geist",
   subsets: ["latin"],
 });
 
@@ -25,19 +21,24 @@ export const metadata: Metadata = {
   },
 };
 
+const PaperOverlay = () => (
+  <div className="fixed inset-0 pointer-events-none z-9999 paper-overlay" />
+);
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={geist.variable}>
       <body
         suppressHydrationWarning={true}
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`antialiased font-sans`} // Changed 'font-serif' to 'font-sans'
       >
         <ThemeProvider>
           <OrgProvider>
+            <PaperOverlay />
             {children}
             <div className="fixed bottom-4 right-4 z-50">
               <ThemeToggler compact />

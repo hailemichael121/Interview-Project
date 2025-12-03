@@ -9,7 +9,7 @@ import { Mail, Lock, Users, Eye, EyeOff } from "lucide-react";
 import authClient from "@/lib/auth-client";
 import { useAuthTransition } from "@/components/auth-transition";
 import { AuthLayout } from "@/components/auth/auth-layout";
- import { DividerWithText } from "@/components/auth/divider-with-text";
+import { DividerWithText } from "@/components/auth/divider-with-text";
 import { FormInput } from "@/components/auth/form-input";
 import { EmailSuggestions } from "@/components/auth/email-suggestions";
 import { AuthCard } from "@/components/auth/auth-card";
@@ -69,7 +69,7 @@ export default function SignUpPage() {
     heading: "Start Your Journey",
     description: "Multi-tenant collaboration, built for modern teams.",
     buttonText: "Already have an account? Sign In",
-    buttonLink: "/auth/signin"
+    buttonLink: "/auth/signin",
   };
 
   return (
@@ -110,7 +110,9 @@ export default function SignUpPage() {
               type="email"
               placeholder="you@company.com"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
               disabled={isLoading}
               required
               icon={<Mail />}
@@ -127,7 +129,9 @@ export default function SignUpPage() {
             type={showPassword ? "text" : "password"}
             placeholder="••••••••"
             value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, password: e.target.value })
+            }
             disabled={isLoading}
             required
             minLength={8}
@@ -139,7 +143,11 @@ export default function SignUpPage() {
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isLoading}
               >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
               </button>
             }
           />
@@ -148,7 +156,7 @@ export default function SignUpPage() {
             type="submit"
             size="lg"
             disabled={isLoading}
-            className="relative w-full h-16 text-xl font-semibold text-white hover:bg-gray-900 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-blue-600/40 overflow-hidden group rounded-2xl"
+            className="relative w-full h-16 text-xl font-semibold  hover:text-amber-50 hover:bg-gray-900 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-blue-600/40 overflow-hidden group rounded-2xl"
           >
             <span className="relative z-10">
               {isLoading ? "Creating Account..." : "Create Account"}
@@ -168,8 +176,8 @@ export default function SignUpPage() {
             </Link>
           </p>
           <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            By creating an account, you agree to our Terms of Service
-            and Privacy Policy
+            By creating an account, you agree to our Terms of Service and
+            Privacy Policy
           </p>
         </div>
       </AuthCard>

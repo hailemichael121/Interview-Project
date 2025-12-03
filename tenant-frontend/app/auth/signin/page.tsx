@@ -8,7 +8,7 @@ import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useAuthActionsSimple } from "@/hooks/use-auth-actions";
 import { PublicRoute } from "@/components/protected-route";
-import { AuthLayout } from "@/components/auth/auth-layout"; 
+import { AuthLayout } from "@/components/auth/auth-layout";
 import { DividerWithText } from "@/components/auth/divider-with-text";
 import { FormInput } from "@/components/auth/form-input";
 import { EmailSuggestions } from "@/components/auth/email-suggestions";
@@ -23,51 +23,52 @@ function SignInContent() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!formData.email || !formData.password) {
-    toast.error("Please fill in all fields");
-    return;
-  }
-
-  setIsSubmitting(true);
-  try {
-    // Direct call - signIn doesn't return error in the response
-    await signIn(formData.email.trim(), formData.password);
-    
-    toast.success("Signed in successfully!");
-    
-    // Wait a moment for cookies to be set
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Verify session is actually set
-    const session = await authClient.getSession();
-    if (!session?.data?.user) {
-      throw new Error("Session not set properly");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
+      return;
     }
 
-    const redirectTo = sessionStorage.getItem("redirectAfterAuth") || "/dashboard";
-    sessionStorage.removeItem("redirectAfterAuth");
-    
-    // Use replace instead of push to avoid back button issues
-    router.replace(redirectTo);
-    
-  } catch (error: unknown) {
-    console.error("Sign in error:", error);
-    const errorMessage = error instanceof Error 
-      ? error.message 
-      : "Sign in failed. Please try again.";
-    
-    toast.error(errorMessage);
-    
-    // If it's a cookie/session issue, suggest clearing cookies
-    if (errorMessage.includes("cookie") || errorMessage.includes("session")) {
-      toast.error("Please try clearing your browser cookies and try again.");
+    setIsSubmitting(true);
+    try {
+      // Direct call - signIn doesn't return error in the response
+      await signIn(formData.email.trim(), formData.password);
+
+      toast.success("Signed in successfully!");
+
+      // Wait a moment for cookies to be set
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Verify session is actually set
+      const session = await authClient.getSession();
+      if (!session?.data?.user) {
+        throw new Error("Session not set properly");
+      }
+
+      const redirectTo =
+        sessionStorage.getItem("redirectAfterAuth") || "/dashboard";
+      sessionStorage.removeItem("redirectAfterAuth");
+
+      // Use replace instead of push to avoid back button issues
+      router.replace(redirectTo);
+    } catch (error: unknown) {
+      console.error("Sign in error:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Sign in failed. Please try again.";
+
+      toast.error(errorMessage);
+
+      // If it's a cookie/session issue, suggest clearing cookies
+      if (errorMessage.includes("cookie") || errorMessage.includes("session")) {
+        toast.error("Please try clearing your browser cookies and try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
   const handleSocialSignIn = () => {
     toast.info("Social sign-in coming soon");
   };
@@ -77,7 +78,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     heading: "Continue Your Journey",
     description: "Access your organizations and collaborate with your team.",
     buttonText: "Need an account? Sign Up",
-    buttonLink: "/auth/signup"
+    buttonLink: "/auth/signup",
   };
 
   return (
@@ -86,10 +87,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       formTitle="Welcome Back"
       formDescription="Sign in to your workspace"
     >
-      <AuthCard
-        title="Welcome Back"
-        description="Sign in to your workspace"
-      >
+      <AuthCard title="Welcome Back" description="Sign in to your workspace">
         <SocialButtons
           onGitHubClick={handleSocialSignIn}
           onGoogleClick={handleSocialSignIn}
@@ -106,7 +104,9 @@ const handleSubmit = async (e: React.FormEvent) => {
               type="email"
               placeholder="you@company.com"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
               disabled={isSubmitting}
               required
               icon={<Mail />}
@@ -135,7 +135,9 @@ const handleSubmit = async (e: React.FormEvent) => {
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
               disabled={isSubmitting}
               required
               icon={<Lock />}
@@ -146,7 +148,11 @@ const handleSubmit = async (e: React.FormEvent) => {
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isSubmitting}
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
                 </button>
               }
             />
@@ -156,13 +162,12 @@ const handleSubmit = async (e: React.FormEvent) => {
             type="submit"
             size="lg"
             disabled={isSubmitting || authLoading}
-            className=" relative w-full h-16 text-xl font-semibold rounded-2xl shadow-2xl hover:shadow-blue-600/40 group overflow-hidden"
+            className="relative w-full h-16 text-xl font-semibold  hover:text-amber-50 hover:bg-gray-900 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-blue-600/40 overflow-hidden group rounded-2xl"
           >
             <span className="relative z-10">
               {authLoading || isSubmitting ? "Signing in..." : "Sign In"}
             </span>
-                    <span className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/30 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000" />
-
+            <span className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/30 to-transparent skew-x-12 group-hover:translate-x-full transition-transform duration-1000" />
           </Button>
         </form>
 

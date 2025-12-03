@@ -85,6 +85,7 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  font-family: var(--font-geist);
 }
 
 @keyframes blink {
@@ -177,3 +178,28 @@ body {
 .dark .bg-light-100 { background-color: hsl(var(--hover-700)); }
 .dark .bg-light-200 { background-color: hsl(var(--hover-800)); }
 .dark .active-bg-light-200:active { background-color: hsl(var(--active-700)); }
+
+
+.paper-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+
+   background-color: rgba(245, 228, 211, 0.45);  
+
+   background-image:
+     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E"),
+     repeating-linear-gradient(
+      0deg,
+      rgba(80, 50, 30, 0.08) 0px,
+      rgba(80, 50, 30, 0.08) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+
+  background-blend-mode: multiply;
+
+   mix-blend-mode: multiply;
+  filter: sepia(22%) saturate(85%) hue-rotate(-5deg) brightness(0.96);
+}
