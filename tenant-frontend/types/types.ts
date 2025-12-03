@@ -1,7 +1,8 @@
-// lib/types.ts
-
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+// lib/types.ts - FIXED VERSION
 // ==================== BASE RESPONSE TYPE ====================
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
+  // Changed from 'any' to 'unknown'
   success: boolean;
   data: T;
   message?: string;
@@ -36,10 +37,10 @@ export interface Member {
 
 export interface Invitation {
   id: string;
-  email: string; // ADDED: email field
+  email: string;
   organization: Organization;
   role: string;
-  status?: "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED"; // ADDED: status field
+  status?: "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
   expires: string;
   token?: string;
   invitedAt?: string;
@@ -212,7 +213,7 @@ export interface ApiInvitation {
   role: string;
   expires: string;
   token: string;
-  email?: string; // Optional email from backend
+  email?: string;
 }
 
 // ==================== RESPONSE WRAPPER TYPES ====================
@@ -234,11 +235,17 @@ export interface OutlineListResponse extends ApiResponse<Outline[]> {
   total: number;
 }
 
-export interface OutlineStatsResponse extends ApiResponse<OutlineStats> {}
+export interface OutlineStatsResponse extends ApiResponse<OutlineStats> {
+  // Add properties if needed, otherwise remove extends
+}
 
-export interface UserProfileResponse extends ApiResponse<UserProfile> {}
+export interface UserProfileResponse extends ApiResponse<UserProfile> {
+  // Add properties if needed, otherwise remove extends
+}
 
-export interface InvitationListResponse extends ApiResponse<ApiInvitation[]> {}
+export interface InvitationListResponse extends ApiResponse<ApiInvitation[]> {
+  // Add properties if needed, otherwise remove extends
+}
 
 export interface UserListResponse
   extends ApiResponse<Array<UserProfile & { organizationCount: number }>> {
@@ -310,3 +317,11 @@ export interface InviteMemberDto {
   email: string;
   role: "MEMBER" | "OWNER";
 }
+
+export interface ApiSuccessResponse {
+  success: boolean;
+  message: string;
+  data?: unknown;
+}
+
+export type UserWithOrgs = UserProfile & { organizationCount: number };

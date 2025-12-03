@@ -1,4 +1,4 @@
-// lib/api-service.ts
+// lib/api-service.ts - FIXED VERSION
 import authClient from "./auth-client";
 
 import {
@@ -25,6 +25,7 @@ import {
   UserListResponse,
   OrganizationSwitchResponse,
   ApiInvitation,
+  ApiSuccessResponse,
 } from "../types/types";
 
 async function apiFetch<T>(
@@ -32,12 +33,25 @@ async function apiFetch<T>(
   options: RequestInit = {},
   organizationId?: string
 ): Promise<ApiResponse<T>> {
+  // Get session cookie from auth client
+  const session = await authClient.getSession();
+  const authToken = session?.data?.session?.token;
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
+    Origin: "https://tenanncy.onrender.com",
     ...(options.headers as Record<string, string>),
   };
 
+  // Add auth cookie if available
+  if (authToken) {
+    headers["Cookie"] = `better-auth.session_token=${encodeURIComponent(
+      authToken
+    )}`;
+  }
+
+  // Add organization header when provided
   if (organizationId) {
     headers["X-Organization-Id"] = organizationId;
   }
@@ -73,24 +87,24 @@ export const authApi = {
 
 export const userApi = {
   getProfile: async (): Promise<UserProfileResponse> =>
-    apiFetch<UserProfile>("/api/users/profile", { method: "GET" }),
+    apiFetch<UserProfile>("/users/profile", { method: "GET" }),
 
   getCurrentUser: async (): Promise<ApiResponse<CurrentUserResponse>> =>
-    apiFetch<CurrentUserResponse>("/api/users/me", { method: "GET" }),
+    apiFetch<CurrentUserResponse>("/users/me", { method: "GET" }),
 
   updateProfile: async (data: UpdateUserDto): Promise<UserProfileResponse> =>
-    apiFetch<UserProfile>("/api/users/profile", {
+    apiFetch<UserProfile>("/users/profile", {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
   getUserById: async (userId: string): Promise<UserProfileResponse> =>
-    apiFetch<UserProfile>(`/api/users/${userId}`, { method: "GET" }),
+    apiFetch<UserProfile>(`/users/${userId}`, { method: "GET" }),
 
   listUsers: async (page = 1, perPage = 10): Promise<UserListResponse> => {
     const res = await apiFetch<
       Array<UserProfile & { organizationCount: number }>
-    >(`/api/users?page=${page}&perPage=${perPage}`, { method: "GET" });
+    >(`/users?page=${page}&perPage=${perPage}`, { method: "GET" });
     return {
       ...res,
       page: res.page ?? page,
@@ -107,7 +121,7 @@ export const userApi = {
     const res = await apiFetch<
       Array<UserProfile & { organizationCount: number }>
     >(
-      `/api/users/search/${encodeURIComponent(
+      `/users/search/${encodeURIComponent(
         query
       )}?page=${page}&perPage=${perPage}`,
       { method: "GET" }
@@ -121,35 +135,38 @@ export const userApi = {
   },
 
   getUserOrganizations: async (userId: string, page = 1, perPage = 10) =>
-    apiFetch<any>(
-      `/api/users/${userId}/organizations?page=${page}&perPage=${perPage}`,
+    apiFetch<OrganizationListResponse>(
+      `/users/${userId}/organizations?page=${page}&perPage=${perPage}`,
       { method: "GET" }
     ),
 
   deleteUser: async (userId: string) =>
-    apiFetch<any>(`/api/users/${userId}`, { method: "DELETE" }),
+    apiFetch<ApiSuccessResponse>(`/users/${userId}`, { method: "DELETE" }),
 };
 
 export const invitationApi = {
   getPendingInvitations: async (): Promise<InvitationListResponse> =>
-    apiFetch<ApiInvitation[]>("/api/users/invitations", { method: "GET" }),
+    apiFetch<ApiInvitation[]>("/users/invitations", { method: "GET" }),
 
   acceptInvitation: async (invitationId: string) => {
     const session = await authClient.getSession();
     if (!session?.data?.user?.email) throw new Error("No session found");
 
-    return apiFetch<any>(`/api/users/invitations/${invitationId}/accept`, {
-      method: "POST",
-      body: JSON.stringify({ email: session.data.user.email }),
-    });
+    return apiFetch<ApiSuccessResponse>(
+      `/users/invitations/${invitationId}/accept`,
+      {
+        method: "POST",
+        body: JSON.stringify({ email: session.data.user.email }),
+      }
+    );
   },
 
   declineInvitation: async (invitationId: string) => {
     const session = await authClient.getSession();
     if (!session?.data?.user?.email) throw new Error("No session found");
 
-    return apiFetch<{ message: string }>(
-      `/api/users/invitations/${invitationId}/decline`,
+    return apiFetch<ApiSuccessResponse>(
+      `/users/invitations/${invitationId}/decline`,
       {
         method: "POST",
         body: JSON.stringify({ email: session.data.user.email }),
@@ -160,10 +177,28 @@ export const invitationApi = {
 
 export const organizationApi = {
   createOrganization: async (data: CreateOrganizationDto) =>
-    apiFetch<any>("/api/organization/create", {
+    apiFetch<{
+      organization: {
+        id: string;
+        name: string;
+        slug: string;
+      };
+      membership: {
+        id: string;
+        role: string;
+        joinedAt: string;
+      };
+    }>("/api/organization/create", {
       method: "POST",
       body: JSON.stringify(data),
-    }),
+    }).then(
+      (res) =>
+        ({
+          success: res.success,
+          data: res.data,
+          message: res.message,
+        } as OrganizationSwitchResponse)
+    ),
 
   listUserOrganizations: async (
     page = 1,
@@ -204,12 +239,29 @@ export const organizationApi = {
   switchOrganization: async (
     organizationId: string
   ): Promise<OrganizationSwitchResponse> =>
-    apiFetch<any>(
+    apiFetch<{
+      organization: {
+        id: string;
+        name: string;
+        slug: string;
+      };
+      membership: {
+        id: string;
+        role: string;
+        joinedAt: string;
+      };
+    }>(
       `/api/organization/${organizationId}/switch`,
       { method: "POST" },
       organizationId
+    ).then(
+      (res) =>
+        ({
+          success: res.success,
+          data: res.data,
+          message: res.message,
+        } as OrganizationSwitchResponse)
     ),
-
   listMembers: async (
     organizationId: string,
     page = 1,
@@ -229,7 +281,7 @@ export const organizationApi = {
   },
 
   inviteMember: async (organizationId: string, data: InviteMemberDto) =>
-    apiFetch<any>(
+    apiFetch<ApiSuccessResponse>(
       `/api/organization/${organizationId}/invite`,
       {
         method: "POST",
@@ -242,14 +294,17 @@ export const organizationApi = {
     const session = await authClient.getSession();
     if (!session?.data?.user?.email) throw new Error("No session found");
 
-    return apiFetch<any>(`/api/organization/accept-invite/${token}`, {
-      method: "POST",
-      body: JSON.stringify({ email: session.data.user.email }),
-    });
+    return apiFetch<ApiSuccessResponse>(
+      `/api/organization/accept-invite/${token}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ email: session.data.user.email }),
+      }
+    );
   },
 
   revokeMember: async (organizationId: string, targetMemberId: string) =>
-    apiFetch<{ message: string }>(
+    apiFetch<ApiSuccessResponse>(
       `/api/organization/${organizationId}/revoke`,
       {
         method: "POST",
