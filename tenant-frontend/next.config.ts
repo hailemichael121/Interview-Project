@@ -1,7 +1,7 @@
-// next.config.js - UPDATED
+// next.config.js - FIXED for Render
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+  output: "standalone", // Keep this for Render
 
   images: {
     remotePatterns: [
@@ -12,31 +12,28 @@ const nextConfig = {
     ],
   },
 
+  // Keep rewrites but update for production
   async rewrites() {
     const backendUrl =
       process.env.NEXT_PUBLIC_BACKEND_URL ||
       "https://tenant-backend-cz23.onrender.com";
 
     return [
-      // Auth routes
       {
         source: "/api/auth/:path*",
         destination: `${backendUrl}/api/auth/:path*`,
       },
-      // Organization routes (with /api/)
       {
         source: "/api/organization/:path*",
         destination: `${backendUrl}/api/organization/:path*`,
       },
-      // Outline routes (with /api/)
       {
         source: "/api/outlines/:path*",
         destination: `${backendUrl}/api/outlines/:path*`,
       },
-      // User routes (NO /api/ prefix)
       {
-        source: "/users/:path*",
-        destination: `${backendUrl}/users/:path*`,
+        source: "/api/users/:path*",
+        destination: `${backendUrl}/api/users/:path*`,
       },
     ];
   },
@@ -44,7 +41,7 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: "/:path*",
+        source: "/api/:path*",
         headers: [
           {
             key: "Access-Control-Allow-Credentials",
@@ -63,6 +60,7 @@ const nextConfig = {
             value:
               "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Organization-Id, Cookie, Authorization, Origin",
           },
+          // ✅ ADD THIS: Allows Set-Cookie to be exposed to frontend
           {
             key: "Access-Control-Expose-Headers",
             value: "Set-Cookie",

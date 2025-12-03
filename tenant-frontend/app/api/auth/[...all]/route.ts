@@ -1,3 +1,4 @@
+// app/api/auth/[...all]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL =

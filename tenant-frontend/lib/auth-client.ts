@@ -1,10 +1,10 @@
-// lib/auth-client.ts - UPDATED
-import { createAuthClient } from "better-auth/react";
-// import { admin } from "better-auth/plugins";
+"use client";
 
-export const authClient = createAuthClient({
-  baseURL: "https://tenant-backend-cz23.onrender.com", // Keep backend URL
-  basePath: "/api/auth", // This is correct
+import { createAuthClient } from "better-auth/react";
+
+const authClient = createAuthClient({
+  baseURL: "",
+  basePath: "/api/auth",
   fetchOptions: {
     credentials: "include",
   },

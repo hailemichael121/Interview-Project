@@ -1,3 +1,4 @@
+// app/api/outlines/[...all]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL =
@@ -18,7 +19,6 @@ async function proxyRequest(
   const headers: Record<string, string> = {
     Origin: requestOrigin,
     Cookie: requestCookies,
-    Accept: "application/json",
   };
 
   if (method !== "GET") {
@@ -34,7 +34,9 @@ async function proxyRequest(
     try {
       const body = await request.json();
       init.body = JSON.stringify(body);
-    } catch {}
+    } catch {
+      // No body
+    }
   }
 
   const response = await fetch(url, init);
