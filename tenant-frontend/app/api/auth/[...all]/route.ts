@@ -1,4 +1,3 @@
-// app/api/auth/[...all]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL =
@@ -14,34 +13,41 @@ export async function POST(
     const path = resolvedParams.all.join("/");
     const url = `${BACKEND_URL}/api/auth/${path}`;
 
-    const body = await request.json();
-    const requestCookies = request.cookies.toString();
+    // Get ALL cookies from the incoming request
+    const cookies = request.cookies;
+    const cookieHeader = cookies.toString();
 
+    // Get request body
+    const body = await request.json();
+
+    // Forward the request to backend
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Cookie: requestCookies,
+        Cookie: cookieHeader,
+        Origin:
+          request.headers.get("origin") || "https://tenanncy.onrender.com",
       },
       body: JSON.stringify(body),
-      credentials: "include",
     });
 
     const data = await response.json();
 
-    const responseHeaders = new Headers();
-    const backendCookies = response.headers.getSetCookie();
+    // Create response with backend data
+    const nextResponse = NextResponse.json(data, {
+      status: response.status,
+    });
 
-    if (backendCookies && backendCookies.length > 0) {
-      backendCookies.forEach((cookie) => {
-        responseHeaders.append("Set-Cookie", cookie);
+    // Forward Set-Cookie headers from backend
+    const setCookieHeaders = response.headers.getSetCookie();
+    if (setCookieHeaders && setCookieHeaders.length > 0) {
+      setCookieHeaders.forEach((cookie) => {
+        nextResponse.headers.append("Set-Cookie", cookie);
       });
     }
 
-    return new NextResponse(JSON.stringify(data), {
-      status: response.status,
-      headers: responseHeaders,
-    });
+    return nextResponse;
   } catch (error) {
     console.error("Auth proxy POST error:", error);
     return NextResponse.json(
@@ -50,6 +56,7 @@ export async function POST(
     );
   }
 }
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ all: string[] }> }
@@ -59,34 +66,36 @@ export async function GET(
     const path = resolvedParams.all.join("/");
     const url = `${BACKEND_URL}/api/auth/${path}`;
 
-    const requestCookies = request.cookies.toString();
+    // Get ALL cookies from the incoming request
+    const cookies = request.cookies;
+    const cookieHeader = cookies.toString();
 
-    const requestOrigin =
-      request.headers.get("origin") || "https://tenanncy.onrender.com";
-
+    // Forward the request to backend
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        Origin: requestOrigin,
-        Cookie: requestCookies,
+        Cookie: cookieHeader,
+        Origin:
+          request.headers.get("origin") || "https://tenanncy.onrender.com",
       },
     });
 
     const data = await response.json();
 
-    const responseHeaders = new Headers();
-    const setCookieHeaders = response.headers.getSetCookie();
+    // Create response with backend data
+    const nextResponse = NextResponse.json(data, {
+      status: response.status,
+    });
 
+    // Forward Set-Cookie headers from backend
+    const setCookieHeaders = response.headers.getSetCookie();
     if (setCookieHeaders && setCookieHeaders.length > 0) {
       setCookieHeaders.forEach((cookie) => {
-        responseHeaders.append("Set-Cookie", cookie);
+        nextResponse.headers.append("Set-Cookie", cookie);
       });
     }
 
-    return new NextResponse(JSON.stringify(data), {
-      status: response.status,
-      headers: responseHeaders,
-    });
+    return nextResponse;
   } catch (error) {
     console.error("Auth proxy GET error:", error);
     return NextResponse.json(

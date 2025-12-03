@@ -1,4 +1,3 @@
-// app/api/outlines/[...all]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL =
@@ -10,18 +9,20 @@ async function proxyRequest(
   path: string,
   method: string
 ) {
+  // Construct the full backend URL
   const url = `${BACKEND_URL}/api/outlines/${path}`;
 
-  const requestCookies = request.cookies.toString();
-  const requestOrigin =
-    request.headers.get("origin") || "https://tenanncy.onrender.com";
+  // ✅ Get ALL cookies from the incoming request
+  const cookieHeader = request.cookies.toString();
 
+  // Prepare headers to forward to the backend
   const headers: Record<string, string> = {
-    Origin: requestOrigin,
-    Cookie: requestCookies,
+    Cookie: cookieHeader,
+    Origin: request.headers.get("origin") || "https://tenanncy.onrender.com",
   };
 
-  if (method !== "GET") {
+  // Add Content-Type for non-GET requests
+  if (method !== "GET" && method !== "HEAD") {
     headers["Content-Type"] = "application/json";
   }
 
@@ -30,33 +31,37 @@ async function proxyRequest(
     headers,
   };
 
+  // Add body for non-GET/HEAD requests
   if (method !== "GET" && method !== "HEAD") {
     try {
       const body = await request.json();
       init.body = JSON.stringify(body);
     } catch {
-      // No body
+      // If there's no JSON body, continue without it
     }
   }
 
+  // Forward the request to the backend
   const response = await fetch(url, init);
   const data = await response.json();
 
-  const responseHeaders = new Headers();
-  const setCookieHeaders = response.headers.getSetCookie();
+  // Create a Next.js response with the backend's data
+  const nextResponse = NextResponse.json(data, {
+    status: response.status,
+  });
 
+  // ✅ CRITICAL: Forward Set-Cookie headers from backend
+  const setCookieHeaders = response.headers.getSetCookie();
   if (setCookieHeaders && setCookieHeaders.length > 0) {
     setCookieHeaders.forEach((cookie) => {
-      responseHeaders.append("Set-Cookie", cookie);
+      nextResponse.headers.append("Set-Cookie", cookie);
     });
   }
 
-  return new NextResponse(JSON.stringify(data), {
-    status: response.status,
-    headers: responseHeaders,
-  });
+  return nextResponse;
 }
 
+// Handler for each HTTP method
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ all: string[] }> }

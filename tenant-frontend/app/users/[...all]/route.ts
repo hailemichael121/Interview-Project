@@ -1,4 +1,3 @@
-// app/api/users/[...all]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL =
@@ -12,13 +11,13 @@ async function proxyRequest(
 ) {
   const url = `${BACKEND_URL}/users/${path}`;
 
-  const requestCookies = request.cookies.toString();
-  const requestOrigin =
-    request.headers.get("origin") || "https://tenanncy.onrender.com";
+  // Get ALL cookies from the incoming request
+  const cookies = request.cookies;
+  const cookieHeader = cookies.toString();
 
   const headers: Record<string, string> = {
-    Origin: requestOrigin,
-    Cookie: requestCookies,
+    Cookie: cookieHeader,
+    Origin: request.headers.get("origin") || "https://tenanncy.onrender.com",
   };
 
   if (method !== "GET") {
@@ -42,19 +41,20 @@ async function proxyRequest(
   const response = await fetch(url, init);
   const data = await response.json();
 
-  const responseHeaders = new Headers();
-  const setCookieHeaders = response.headers.getSetCookie();
+  // Create response with backend data
+  const nextResponse = NextResponse.json(data, {
+    status: response.status,
+  });
 
+  // Forward Set-Cookie headers from backend
+  const setCookieHeaders = response.headers.getSetCookie();
   if (setCookieHeaders && setCookieHeaders.length > 0) {
     setCookieHeaders.forEach((cookie) => {
-      responseHeaders.append("Set-Cookie", cookie);
+      nextResponse.headers.append("Set-Cookie", cookie);
     });
   }
 
-  return new NextResponse(JSON.stringify(data), {
-    status: response.status,
-    headers: responseHeaders,
-  });
+  return nextResponse;
 }
 
 export async function GET(

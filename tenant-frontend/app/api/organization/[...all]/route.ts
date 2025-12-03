@@ -1,4 +1,3 @@
-// app/api/organization/[...all]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL =
@@ -8,24 +7,22 @@ const BACKEND_URL =
 async function proxyRequest(
   request: NextRequest,
   path: string,
-  method: string = "GET"
+  method: string
 ) {
+  // Construct the full backend URL
   const url = `${BACKEND_URL}/api/organization/${path}`;
 
-  // ✅ Get ALL cookies from client
-  const requestCookies = request.cookies.toString();
+  // ✅ Get ALL cookies from the incoming request and convert to a string header
+  const cookieHeader = request.cookies.toString();
 
-  // ✅ Add Origin header
-  const requestOrigin =
-    request.headers.get("origin") || "https://tenanncy.onrender.com";
-
+  // Prepare headers to forward to the backend
   const headers: Record<string, string> = {
-    Origin: requestOrigin,
-    Cookie: requestCookies,
+    Cookie: cookieHeader,
+    Origin: request.headers.get("origin") || "https://tenanncy.onrender.com",
   };
 
   // Add Content-Type for non-GET requests
-  if (method !== "GET") {
+  if (method !== "GET" && method !== "HEAD") {
     headers["Content-Type"] = "application/json";
   }
 
@@ -34,29 +31,45 @@ async function proxyRequest(
     headers,
   };
 
-  // Add body for non-GET requests
-  if (method !== "GET") {
-    const body = await request.json();
-    init.body = JSON.stringify(body);
+  // Add body for non-GET/HEAD requests
+  if (method !== "GET" && method !== "HEAD") {
+    try {
+      const body = await request.json();
+      init.body = JSON.stringify(body);
+    } catch {
+      // If there's no JSON body, continue without it
+    }
   }
 
+  // Forward the request to the backend
   const response = await fetch(url, init);
   const data = await response.json();
 
-  // ✅ Forward Set-Cookie headers if any
-  const responseHeaders = new Headers();
-  const setCookieHeaders = response.headers.getSetCookie();
+  // Create a Next.js response with the backend's data
+  const nextResponse = NextResponse.json(data, {
+    status: response.status,
+  });
 
+  // ✅ CRITICAL: Forward any Set-Cookie headers from the backend
+  // This ensures authentication cookies are passed back to the browser
+  const setCookieHeaders = response.headers.getSetCookie();
   if (setCookieHeaders && setCookieHeaders.length > 0) {
     setCookieHeaders.forEach((cookie) => {
-      responseHeaders.append("Set-Cookie", cookie);
+      nextResponse.headers.append("Set-Cookie", cookie);
     });
   }
 
-  return new NextResponse(JSON.stringify(data), {
-    status: response.status,
-    headers: responseHeaders,
-  });
+  return nextResponse;
+}
+
+// Handler for each HTTP method
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ all: string[] }> }
+) {
+  const resolvedParams = await params;
+  const path = resolvedParams.all.join("/");
+  return proxyRequest(request, path, "GET");
 }
 
 export async function POST(
@@ -66,15 +79,6 @@ export async function POST(
   const resolvedParams = await params;
   const path = resolvedParams.all.join("/");
   return proxyRequest(request, path, "POST");
-}
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ all: string[] }> }
-) {
-  const resolvedParams = await params;
-  const path = resolvedParams.all.join("/");
-  return proxyRequest(request, path, "GET");
 }
 
 export async function PUT(

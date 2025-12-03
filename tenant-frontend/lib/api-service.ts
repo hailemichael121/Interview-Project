@@ -36,10 +36,10 @@ async function apiFetch<T>(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
-    Origin: window.location.origin,
     ...(options.headers as Record<string, string>),
   };
 
+  // Add organization header when provided
   if (organizationId) {
     headers["X-Organization-Id"] = organizationId;
   }
@@ -47,7 +47,7 @@ async function apiFetch<T>(
   const response = await fetch(endpoint, {
     ...options,
     headers,
-    credentials: "include",
+    credentials: "include", // Let browser handle cookies automatically
   });
 
   if (!response.ok) {
