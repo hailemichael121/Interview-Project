@@ -1,4 +1,3 @@
-// app/api/users/[...all]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL =
@@ -10,7 +9,7 @@ async function proxyRequest(
   path: string,
   method: string
 ) {
-  const url = `${BACKEND_URL}/api/users/${path}`;
+  const url = `${BACKEND_URL}/users/${path}`;
 
   const requestCookies = request.cookies.toString();
   const requestOrigin =
@@ -19,6 +18,7 @@ async function proxyRequest(
   const headers: Record<string, string> = {
     Origin: requestOrigin,
     Cookie: requestCookies,
+    Accept: "application/json",
   };
 
   if (method !== "GET") {
@@ -35,7 +35,7 @@ async function proxyRequest(
       const body = await request.json();
       init.body = JSON.stringify(body);
     } catch {
-      // No body
+      // No body for this request
     }
   }
 

@@ -1,4 +1,4 @@
-// lib/api-service.ts
+// lib/api-service.ts - UPDATED WITH CORRECT ENDPOINTS
 import authClient from "./auth-client";
 
 import {
@@ -35,6 +35,7 @@ async function apiFetch<T>(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
+    Origin: "https://tenanncy.onrender.com", // ADD THIS
     ...(options.headers as Record<string, string>),
   };
 
@@ -42,18 +43,39 @@ async function apiFetch<T>(
     headers["X-Organization-Id"] = organizationId;
   }
 
-  const response = await fetch(endpoint, {
-    ...options,
-    headers,
-    credentials: "include",
-  });
+  try {
+    const response = await fetch(endpoint, {
+      ...options,
+      headers,
+      credentials: "include",
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `API error: ${response.status}`);
+    // Debug logging
+    console.log(`API Fetch: ${endpoint}`, {
+      status: response.status,
+      ok: response.ok,
+    });
+
+    if (response.status === 404) {
+      throw new Error(`API endpoint not found: ${endpoint}`);
+    }
+
+    if (response.status === 401) {
+      throw new Error("Authentication required");
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({
+        message: `API error: ${response.status} ${response.statusText}`,
+      }));
+      throw new Error(errorData.message || `API error: ${response.status}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error(`API fetch error for ${endpoint}:`, error);
+    throw error;
   }
-
-  return response.json();
 }
 
 export const authApi = {
@@ -72,25 +94,26 @@ export const authApi = {
 };
 
 export const userApi = {
+  // ✅ FIXED: Remove /api/ from user endpoints
   getProfile: async (): Promise<UserProfileResponse> =>
-    apiFetch<UserProfile>("/api/users/profile", { method: "GET" }),
+    apiFetch<UserProfile>("/users/profile", { method: "GET" }),
 
   getCurrentUser: async (): Promise<ApiResponse<CurrentUserResponse>> =>
-    apiFetch<CurrentUserResponse>("/api/users/me", { method: "GET" }),
+    apiFetch<CurrentUserResponse>("/users/me", { method: "GET" }),
 
   updateProfile: async (data: UpdateUserDto): Promise<UserProfileResponse> =>
-    apiFetch<UserProfile>("/api/users/profile", {
+    apiFetch<UserProfile>("/users/profile", {
       method: "PUT",
       body: JSON.stringify(data),
     }),
 
   getUserById: async (userId: string): Promise<UserProfileResponse> =>
-    apiFetch<UserProfile>(`/api/users/${userId}`, { method: "GET" }),
+    apiFetch<UserProfile>(`/users/${userId}`, { method: "GET" }),
 
   listUsers: async (page = 1, perPage = 10): Promise<UserListResponse> => {
     const res = await apiFetch<
       Array<UserProfile & { organizationCount: number }>
-    >(`/api/users?page=${page}&perPage=${perPage}`, { method: "GET" });
+    >(`/users?page=${page}&perPage=${perPage}`, { method: "GET" });
     return {
       ...res,
       page: res.page ?? page,
@@ -107,7 +130,7 @@ export const userApi = {
     const res = await apiFetch<
       Array<UserProfile & { organizationCount: number }>
     >(
-      `/api/users/search/${encodeURIComponent(
+      `/users/search/${encodeURIComponent(
         query
       )}?page=${page}&perPage=${perPage}`,
       { method: "GET" }
@@ -122,23 +145,24 @@ export const userApi = {
 
   getUserOrganizations: async (userId: string, page = 1, perPage = 10) =>
     apiFetch<any>(
-      `/api/users/${userId}/organizations?page=${page}&perPage=${perPage}`,
+      `/users/${userId}/organizations?page=${page}&perPage=${perPage}`,
       { method: "GET" }
     ),
 
   deleteUser: async (userId: string) =>
-    apiFetch<any>(`/api/users/${userId}`, { method: "DELETE" }),
+    apiFetch<any>(`/users/${userId}`, { method: "DELETE" }),
 };
 
 export const invitationApi = {
+  // ✅ FIXED: Remove /api/ from invitation endpoints
   getPendingInvitations: async (): Promise<InvitationListResponse> =>
-    apiFetch<ApiInvitation[]>("/api/users/invitations", { method: "GET" }),
+    apiFetch<ApiInvitation[]>("/users/invitations", { method: "GET" }),
 
   acceptInvitation: async (invitationId: string) => {
     const session = await authClient.getSession();
     if (!session?.data?.user?.email) throw new Error("No session found");
 
-    return apiFetch<any>(`/api/users/invitations/${invitationId}/accept`, {
+    return apiFetch<any>(`/users/invitations/${invitationId}/accept`, {
       method: "POST",
       body: JSON.stringify({ email: session.data.user.email }),
     });
@@ -149,7 +173,7 @@ export const invitationApi = {
     if (!session?.data?.user?.email) throw new Error("No session found");
 
     return apiFetch<{ message: string }>(
-      `/api/users/invitations/${invitationId}/decline`,
+      `/users/invitations/${invitationId}/decline`,
       {
         method: "POST",
         body: JSON.stringify({ email: session.data.user.email }),
@@ -159,6 +183,7 @@ export const invitationApi = {
 };
 
 export const organizationApi = {
+  // ✅ KEEP /api/ for organization endpoints
   createOrganization: async (data: CreateOrganizationDto) =>
     apiFetch<any>("/api/organization/create", {
       method: "POST",
@@ -260,6 +285,7 @@ export const organizationApi = {
 };
 
 export const outlineApi = {
+  // ✅ KEEP /api/ for outline endpoints
   createOutline: async (
     data: CreateOutlineDto,
     organizationId?: string
