@@ -10,7 +10,7 @@ async function proxyRequest(
   path: string,
   method: string
 ) {
-  const url = `${BACKEND_URL}/api/users/${path}`;
+  const url = `${BACKEND_URL}/users/${path}`;
 
   const requestCookies = request.cookies.toString();
   const requestOrigin =
