@@ -1,4 +1,3 @@
-// src/auth/auth.config.ts
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { admin } from 'better-auth/plugins/admin';
@@ -42,10 +41,9 @@ export const auth = betterAuth({
     cookie: {
       name: 'better-auth.session_token',
       httpOnly: true,
-      sameSite: 'none',
+      sameSite: 'lax',
       secure: true,
       path: '/',
-      domain: '.cz23.onrender.com',
     },
     expiresIn: 60 * 60 * 24 * 7,
   },
@@ -81,4 +79,4 @@ export const auth = betterAuth({
   plugins: [admin()],
 });
 
-console.log('✅ Better Auth configured with Prisma adapter');
+console.log('✅ Better Auth configured');
