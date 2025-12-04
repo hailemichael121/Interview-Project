@@ -1,17 +1,29 @@
+// app/outlines/page.tsx - FINAL BEAUTIFUL VERSION
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
- import { useOrganizationContext } from "@/hooks/use-session";
+import DashboardLayout from "@/components/layout/dashboard-layout";
+import { useOrganizationContext, useSession } from "@/hooks/use-session";
 import { apiService } from "@/lib/api-service";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw, FileText } from "lucide-react";
 import Link from "next/link";
-import { Outline } from "@/types/types";
-import { OutlineTableSimple } from "@/components/outlines/outline-table-compact";
+import { Outline, OrganizationMember } from "@/types/types";
+import { OutlineTableCompact } from "@/components/outlines/outline-table-compact";
+import { CreateOutlineForm } from "@/components/outlines/create-outline-form";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useTheme } from "next-themes";
+
+type ScopeType = "all" | "assigned" | "my";
+type StatusType = "all" | "IN_PROGRESS" | "COMPLETED" | "PENDING";
 
 export default function OutlinesPage() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const bgColor = isDark ? "bg-[#141414]" : "bg-[#DEDEDE]";
+
+
   const {
     currentOrganizationId,
     currentMemberRole,
@@ -21,142 +33,159 @@ export default function OutlinesPage() {
 
   const [outlines, setOutlines] = useState<Outline[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [organizationMembers, setOrganizationMembers] = useState<OrganizationMember[]>([]);
 
-  // Fetch outlines from API
+  const [scopeFilter, setScopeFilter] = useState<ScopeType>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusType>("all");
+
+  const [stats, setStats] = useState({
+    totalOutlines: 0,
+    completedOutlines: 0,
+    inProgressOutlines: 0,
+    pendingOutlines: 0,
+  });
+
+  const fetchMembers = async () => {
+    if (!currentOrganizationId) return;
+    try {
+      const res = await apiService.organization.listMembers(currentOrganizationId);
+      if (res.success) setOrganizationMembers(res.data);
+    } catch { }
+  };
+
+  const fetchStats = async () => {
+    if (!currentOrganizationId) return;
+    try {
+      const res = await apiService.outline.getOrganizationOutlineStats(currentOrganizationId);
+      if (res.success && res.data) {
+        setStats({
+          totalOutlines: res.data.totalOutlines || 0,
+          completedOutlines: res.data.completedOutlines || 0,
+          inProgressOutlines: res.data.inProgressOutlines || 0,
+          pendingOutlines: res.data.pendingOutlines || 0,
+        });
+      }
+    } catch { }
+  };
+
   const fetchOutlines = useCallback(async () => {
     if (!currentOrganizationId) {
       setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
     try {
-      setRefreshing(true);
-      const response = await apiService.outline.listOutlines(
-        currentOrganizationId,
-        page,
-        10
-      );
-
-      if (response.success) {
-        setOutlines(response.data);
-        setTotalPages(
-          Math.ceil((response.total || 0) / (response.perPage || 10))
-        );
+      let res;
+      if (scopeFilter === "assigned") {
+        res = await apiService.outline.getAssignedOutlines(currentOrganizationId);
+      } else if (scopeFilter === "my") {
+        res = await apiService.outline.getMyOutlines(currentOrganizationId);
       } else {
-        toast.error(response.message || "Failed to fetch outlines");
+        res = await apiService.outline.listOutlines(currentOrganizationId);
       }
-    } catch (error: unknown) {
-      console.error("Error fetching outlines:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to load outlines";
-      toast.error(errorMessage);
+
+      if (res.success) {
+        let data = res.data || [];
+        if (statusFilter !== "all") {
+          data = data.filter((o: Outline) => o.status === statusFilter);
+        }
+        setOutlines(data);
+      } else {
+        toast.error(res.message || "Failed to load outlines");
+      }
+    } catch {
+      toast.error("Failed to load outlines");
     } finally {
       setIsLoading(false);
       setRefreshing(false);
     }
-  }, [currentOrganizationId, page]);
+  }, [currentOrganizationId, scopeFilter, statusFilter]);
 
-  // Update outline
-  const handleUpdateOutline = async (outlineId: string, updateData: Partial<Outline>) => {
-    if (!currentOrganizationId) {
-      toast.error("No organization selected");
-      return;
-    }
-
-    try {
-      const response = await apiService.outline.updateOutline(
-        outlineId,
-        updateData,
-        currentOrganizationId
-      );
-
-      if (response.success) {
-        // Update local state
-        setOutlines((prev) =>
-          prev.map((outline) =>
-            outline.id === outlineId ? { ...outline, ...updateData } : outline
-          )
-        );
-        toast.success("Outline updated successfully");
-        return response.data;
-      } else {
-        throw new Error(response.message || "Update failed");
-      }
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to update outline";
-      toast.error(errorMessage);
-    }
-  };
-
-  // Delete outline
-  const handleDeleteOutline = async (outlineId: string) => {
-    if (!currentOrganizationId) {
-      toast.error("No organization selected");
-      return;
-    }
-
-    try {
-      const response = await apiService.outline.deleteOutline(
-        outlineId,
-        currentOrganizationId
-      );
-
-      if (response.success) {
-        // Remove from local state
-        setOutlines((prev) =>
-          prev.filter((outline) => outline.id !== outlineId)
-        );
-        toast.success("Outline deleted successfully");
-      } else {
-        throw new Error(response.message || "Delete failed");
-      }
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to delete outline";
-      toast.error(errorMessage);
-    }
-  };
-
-  // Handle status update
-  const handleStatusUpdate = async (
-    outlineId: string,
-    newStatus: Outline["status"]
-  ) => {
-    try {
-      await handleUpdateOutline(outlineId, { status: newStatus });
-    } catch {
-      // Error already handled in handleUpdateOutline
-    }
-  };
-
-  // Initial fetch
-  useEffect(() => {
-    fetchOutlines();
-  }, [fetchOutlines]);
-
-  // Refresh handler
   const handleRefresh = () => {
+    setRefreshing(true);
     fetchOutlines();
-    toast.success("Outlines refreshed");
+    fetchStats();
+    fetchMembers();
+    toast.success("Refreshed");
   };
 
-  // No organization selected
+  useEffect(() => {
+    if (currentOrganizationId) {
+      fetchOutlines();
+      fetchStats();
+      fetchMembers();
+    }
+  }, [currentOrganizationId, scopeFilter, statusFilter]);
+
+  const handleUpdateOutline = async (id: string, data: Partial<Outline>) => {
+    try {
+      const res = await apiService.outline.updateOutline(id, data, currentOrganizationId!);
+      if (res.success) {
+        toast.success("Updated");
+        fetchOutlines();
+        fetchStats();
+      } else toast.error("Update failed");
+    } catch {
+      toast.error("Update failed");
+    }
+  };
+  const { session } = useSession();
+  const handleAssignReviewer = async (id: string, reviewerId: string | null) => {
+    try {
+      const res = await apiService.outline.updateOutline(id, { reviewerId }, currentOrganizationId!);
+      if (res.success) {
+        toast.success("Reviewer assigned");
+        fetchOutlines();
+      } else toast.error("Failed");
+    } catch {
+      toast.error("Failed");
+    }
+  };
+
+  const handleDeleteOutline = async (id: string) => {
+    if (!window.confirm("Delete this outline?")) return;
+    try {
+      const res = await apiService.outline.deleteOutline(id, currentOrganizationId!);
+      if (res.success) {
+        toast.success("Deleted");
+        fetchOutlines();
+        fetchStats();
+      } else toast.error("Delete failed");
+    } catch {
+      toast.error("Delete failed");
+    }
+  };
+
+  const LoadingSkeleton = () => (
+    <div className="space-y-4">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="flex items-center gap-6 p-5 border rounded-xl bg-card/50">
+          <Skeleton className="h-12 w-12 rounded-lg" />
+          <div className="flex-1 space-y-3">
+            <Skeleton className="h-6 w-80" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <div className="flex gap-4">
+            <Skeleton className="h-9 w-28 rounded-md" />
+            <Skeleton className="h-9 w-9 rounded-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   if (!hasOrganization && !orgLoading) {
     return (
       <DashboardLayout>
-        <div className="flex h-screen items-center justify-center bg-background">
-          <div className="text-center">
-            <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-lg text-muted-foreground">
-              Please select an organization to view outlines
-            </p>
+        <div className="flex h-screen items-center justify-center">
+          <div className="text-center space-y-4">
+            <FileText className="h-16 w-16 text-muted-foreground mx-auto" />
+            <p className="text-lg text-muted-foreground">Select an organization to view outlines</p>
             <Link href="/dashboard">
-              <Button variant="outline" className="mt-4">
-                Go to Dashboard
-              </Button>
+              <Button variant="outline">Go to Dashboard</Button>
             </Link>
           </div>
         </div>
@@ -164,18 +193,12 @@ export default function OutlinesPage() {
     );
   }
 
-  if (orgLoading || isLoading) {
+  if (orgLoading) {
     return (
       <DashboardLayout>
-        <div className="container mx-auto max-w-7xl px-4 py-8 lg:px-8">
-          <div className="flex items-center justify-center h-96">
-            <div className="flex flex-col items-center gap-4">
-              <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-muted-foreground">
-                Loading outlines...
-              </p>
-            </div>
-          </div>
+        <div className="container mx-auto p-12 text-center">
+          <RefreshCw className="h-10 w-10 animate-spin mx-auto text-primary" />
+          <p className="mt-6 text-muted-foreground">Loading organization...</p>
         </div>
       </DashboardLayout>
     );
@@ -183,119 +206,155 @@ export default function OutlinesPage() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto max-w-7xl px-4 py-8 lg:px-8">
-        {/* Page Header */}
-        <div className="mb-10">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-4xl font-bold text-foreground">
-                Outlines
-              </h1>
-              <p className="mt-3 text-lg text-muted-foreground">
-                Manage and organize your project outlines
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="gap-2"
-              >
-                <RefreshCw
-                  className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-                />
-                Refresh
-              </Button>
-              <Link href="/outlines/create">
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Create Outline
+      <div className={`min-h-screen ${bgColor} ${isDark ? "text-white" : "text-gray-900"}`}>
+        <div className="container mx-auto max-w-7xl px-6 py-10">
+
+          {/* Header */}
+          <div className="mb-10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+              <div>
+                <h1 className="text-5xl font-bold">Outlines</h1>
+                <p className="text-xl opacity-80 mt-3">Manage and track all project outlines</p>
+              </div>
+              <div className="flex gap-4">
+                <Button variant="outline" size="lg" onClick={handleRefresh} disabled={refreshing}>
+                  <RefreshCw className={`h-5 w-5 mr-2 ${refreshing ? "animate-spin" : ""}`} />
+                  Refresh
                 </Button>
-              </Link>
+                <Button
+                  size="lg"
+                  className="font-semibold shadow-lg hover:shadow-xl transition-all bg-primary hover:bg-primary/90 text-primary-foreground"
+                  onClick={() => setShowCreateForm(!showCreateForm)}
+                >
+                  <Plus className="h-6 w-6 mr-3" />
+                  {showCreateForm ? "Hide Form" : "Create Outline"}
+                </Button>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12">
+              {[
+                { label: "Total", value: stats.totalOutlines, color: "text-white" },
+                { label: "Completed", value: stats.completedOutlines, color: "text-green-400" },
+                { label: "In Progress", value: stats.inProgressOutlines, color: "text-blue-400" },
+                { label: "Pending", value: stats.pendingOutlines, color: "text-yellow-400" },
+              ].map((stat) => (
+                <div key={stat.label} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center shadow-xl">
+                  <div className={`text-4xl font-bold ${stat.color}`}>{stat.value}</div>
+                  <div className="text-sm opacity-70 mt-2">{stat.label}</div>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Stats Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-card border rounded-lg p-4">
-              <div className="text-2xl font-bold text-foreground">
-                {outlines.length}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Total Outlines
+          {/* Create Form */}
+          {showCreateForm && currentOrganizationId && (
+            <div className="mb-12 bg-card/80 backdrop-blur border rounded-2xl p-8 shadow-xl">
+              <CreateOutlineForm
+                organizationId={currentOrganizationId}
+                organizationMembers={organizationMembers}
+                onSuccess={() => {
+                  setShowCreateForm(false);
+                  fetchOutlines();
+                  fetchStats();
+                  toast.success("Outline created!");
+                }}
+                onCancel={() => setShowCreateForm(false)}
+              />
+            </div>
+          )}
+
+          {/* Filters - Beautifully Styled */}
+          <div className="mb-12 grid md:grid-cols-2 gap-8">
+            {/* Scope Filter */}
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-xl">
+              <h3 className="text-lg font-semibold mb-5 opacity-90">Filter by Scope</h3>
+              <div className="flex flex-wrap gap-3">
+                {(["all", "assigned", "my"] as const).map((s) => (
+                  <Button
+                    key={s}
+                    variant={scopeFilter === s ? "default" : "outline"}
+                    size="lg"
+                    onClick={() => setScopeFilter(s)}
+                    className={`
+                      font-medium transition-all duration-300
+                      ${scopeFilter === s
+                        ? "ring-4 ring-white/30 shadow-2xl scale-105 bg-primary text-primary-foreground"
+                        : "hover:scale-105"
+                      }
+                    `}
+                  >
+                    {s === "all" ? "All Outlines" : s === "my" ? "My Outlines" : "Assigned to Me"}
+                  </Button>
+                ))}
               </div>
             </div>
-            <div className="bg-card border rounded-lg p-4">
-              <div className="text-2xl font-bold text-green-600">
-                {outlines.filter((o) => o.status === "COMPLETED").length}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Completed
-              </div>
-            </div>
-            <div className="bg-card border rounded-lg p-4">
-              <div className="text-2xl font-bold text-blue-600">
-                {outlines.filter((o) => o.status === "IN_PROGRESS").length}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                In Progress
-              </div>
-            </div>
-            <div className="bg-card border rounded-lg p-4">
-              <div className="text-2xl font-bold text-yellow-600">
-                {outlines.filter((o) => o.status === "PENDING").length}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Pending
+
+            {/* Status Filter */}
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-xl">
+              <h3 className="text-lg font-semibold mb-5 opacity-90">Filter by Status</h3>
+              <div className="flex flex-4 gap-2">
+                {(["all", "IN_PROGRESS", "COMPLETED", "PENDING"] as const).map((s) => (
+                  <Button
+                    key={s}
+                    variant={statusFilter === s ? "default" : "outline"}
+                    size="lg"
+                    onClick={() => setStatusFilter(s)}
+                    className={`
+                      font-medium transition-all duration-300
+                      ${statusFilter === s
+                        ? "ring-2 ring-white/30 shadow-2xl scale-105 text-white"
+                        : "hover:scale-105"
+                      }
+                      ${s === "IN_PROGRESS" && statusFilter === s && "bg-blue-600"}
+                      ${s === "COMPLETED" && statusFilter === s && "bg-green-600"}
+                      ${s === "PENDING" && statusFilter === s && "bg-yellow-600"}
+                    `}
+                  >
+                    {s === "all" ? "All Status" : s.replace("_", " ")}
+                  </Button>
+                ))}
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Table Container */}
-        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-          <OutlineTableSimple
-            data={outlines}
-            onDelete={handleDeleteOutline}
-            onStatusChange={handleStatusUpdate}
-            isLoading={isLoading}
-            currentUserRole={currentMemberRole || ""}
-          />
-        </div>
+          {/* Loading */}
+          {isLoading && <LoadingSkeleton />}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-8">
-            <div className="text-sm text-muted-foreground">
-              Showing {outlines.length} outlines
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                disabled={page === 1}
-              >
-                Previous
+          {/* Empty State */}
+          {!isLoading && outlines.length === 0 && (
+            <div className="rounded-2xl border-2 border-dashed border-white/30 bg-white/5 backdrop-blur p-20 text-center">
+              <FileText className="h-20 w-20 text-white/50 mx-auto mb-8" />
+              <h3 className="text-3xl font-bold mb-4">No outlines found</h3>
+              <p className="text-xl opacity-70 max-w-md mx-auto mb-10">
+                {scopeFilter === "all" && statusFilter === "all"
+                  ? "Start by creating your first outline"
+                  : "Try adjusting your filters"}
+              </p>
+              <Button size="lg" className="text-lg px-8 py-6" onClick={() => setShowCreateForm(true)}>
+                <Plus className="h-6 w-6 mr-3" />
+                Create Your First Outline
               </Button>
-              <span className="text-sm text-muted-foreground px-4">
-                Page {page} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setPage((prev) => Math.min(totalPages, prev + 1))
-                }
-                disabled={page === totalPages}
-              >
-                Next
-              </Button>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Table */}
+          {!isLoading && outlines.length > 0 && (
+            <div className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur shadow-2xl overflow-hidden">
+              <OutlineTableCompact
+                data={outlines}
+                onDelete={handleDeleteOutline}
+                onUpdateOutline={handleUpdateOutline}
+                onAssignReviewer={handleAssignReviewer}
+                isLoading={false}
+                currentUserRole={currentMemberRole || ""}
+                currentUserId={session?.user?.id || ""} organizationMembers={organizationMembers}
+                organizationId={currentOrganizationId || ""}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );

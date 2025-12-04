@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import DashboardLayout from "@/components/layout/dashboard-layout";
 import { Users, Loader2, RefreshCw } from "lucide-react";
 import { useOrganizationContext } from "@/hooks/use-session";
 import { apiService } from "@/lib/api-service";
@@ -64,7 +64,7 @@ export default function TeamPage() {
           // Extract properties from the invitation object
           const organizationId = inv.organization?.id || "";
           const email = inv.email || "";
-          
+
           return {
             id: inv.id,
             email: email,
@@ -95,15 +95,16 @@ export default function TeamPage() {
     fetchTeamData();
   }, [fetchTeamData]);
 
-  const handleInviteMember = async (email: string, role: "MEMBER" | "OWNER"): Promise<void> => {
+  const handleInvite = async (email: string, role: "MEMBER" | "REVIEWER") => {
     if (!currentOrganizationId) return;
 
     setIsInviting(true);
     try {
-      const res = await apiService.organization.inviteMember(
-        currentOrganizationId,
-        { email, role }
-      );
+      const res = await apiService.organization.inviteMember(currentOrganizationId, {
+        email,
+        role,
+        organizationId: currentOrganizationId,
+      });
 
       if (res.success) {
         toast.success(`Invitation sent to ${email}`);
@@ -217,7 +218,8 @@ export default function TeamPage() {
               <InviteMemberDialog
                 isOpen={isInviteDialogOpen}
                 onOpenChange={setIsInviteDialogOpen}
-                onInvite={handleInviteMember}
+                onInvite={handleInvite}
+                organizationId={currentOrganizationId!}
                 isLoading={isInviting}
                 trigger={
                   <Button>

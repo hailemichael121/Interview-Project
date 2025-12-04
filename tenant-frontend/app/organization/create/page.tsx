@@ -5,29 +5,26 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Building, ArrowRight, Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Building, ArrowRight, Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { apiService } from "@/lib/api-service";
 import authClient from "@/lib/auth-client";
 
+import Link from "next/link";
+import DashboardLayout from "@/components/layout/dashboard-layout";
+
 export default function CreateOrganizationPage() {
   const router = useRouter();
   const { data: session } = authClient.useSession();
+
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
   });
 
-  // Auto-generate slug from name
   const handleNameChange = (name: string) => {
     const slug = name
       .toLowerCase()
@@ -40,55 +37,32 @@ export default function CreateOrganizationPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!session?.user) {
-      toast.error("Please sign in to create an organization");
-      router.push("/auth/signin");
-      return;
-    }
-
     if (!formData.name.trim()) {
-      toast.error("Organization name is required");
+      toast.error("Workspace name is required");
       return;
     }
 
     setIsLoading(true);
-
     try {
-      // Use your backend API service
-      const result = await apiService.organization.createOrganization({
+      const res = await apiService.organization.createOrganization({
         name: formData.name.trim(),
-        slug: formData.slug || undefined, // Optional slug
+        slug: formData.slug || undefined,
       });
 
-      if (!result.success) {
-        throw new Error(result.message || "Failed to create organization");
-      }
-
-      toast.success("Organization created successfully!");
-
-      // Redirect to dashboard
-      router.push("/dashboard");
-    } catch (error: unknown) {
-      console.error("Organization creation error:", error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to create organization";
-
-      // Handle specific error cases
-      if (errorMessage.includes("already exists")) {
-        toast.error(
-          "An organization with this name or slug already exists. Please choose a different name."
-        );
-      } else if (errorMessage.includes("slug")) {
-        toast.error(
-          "The URL slug is already taken. Please try a different organization name."
-        );
+      if (res.success) {
+        toast.success("Workspace created successfully!");
+        router.push("/dashboard");
       } else {
-        toast.error(
-          errorMessage || "Failed to create organization. Please try again."
-        );
+        throw new Error(res.message || "Failed to create workspace");
+      }
+    } catch (err: any) {
+      const msg = err.message || "Failed to create workspace";
+      if (msg.includes("slug")) {
+        toast.error("This URL is already taken. Try a different name.");
+      } else if (msg.includes("exists")) {
+        toast.error("A workspace with this name already exists.");
+      } else {
+        toast.error(msg);
       }
     } finally {
       setIsLoading(false);
@@ -96,119 +70,105 @@ export default function CreateOrganizationPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md shadow-2xl border-gray-200 dark:border-gray-700">
-        <CardHeader className="space-y-3 text-center">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-linear-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
-              <Building className="h-8 w-8 text-white" />
-            </div>
-          </div>
-          <CardTitle className="text-3xl font-bold text-gray-900 dark:text-white">
-            Create Workspace
-          </CardTitle>
-          <CardDescription className="text-lg text-gray-600 dark:text-gray-300">
-            Start collaborating with your team in a new workspace
-          </CardDescription>
-        </CardHeader>
+    <DashboardLayout>
+      <div className="max-w-2xl mx-auto">
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-3">
+
+        <Card className="border-0 shadow-2xl rounded-2xl overflow-hidden bg-card/95 backdrop-blur">
+          <CardHeader className="text-center space-y-4 pb-8 pt-10 bg-gradient-to-b from-primary/5 to-transparent">
+            <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-500 to-white-600 flex items-center justify-center shadow-xl">
+              <Building className="h-10 w-10 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-3xl font-bold">Create New Workspace</CardTitle>
+              <p className="text-muted-foreground mt-2 text-lg">
+                Start collaborating with your team
+              </p>
+            </div>
+          </CardHeader>
+
+          <CardContent className="px-10 pb-10">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Name */}
               <div className="space-y-2">
-                <Label
-                  htmlFor="name"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Workspace Name *
-                </Label>
+                <Label className="text-base font-medium">Workspace Name *</Label>
                 <Input
-                  id="name"
-                  type="text"
-                  placeholder="e.g., Acme Inc, Marketing Team"
+                  placeholder="Acme Inc, Design Team, etc."
                   value={formData.name}
                   onChange={(e) => handleNameChange(e.target.value)}
+                  className="h-14 text-lg"
                   required
-                  minLength={2}
-                  maxLength={100}
-                  className="h-12 text-base border-gray-300 dark:border-gray-600 focus:border-primary dark:focus:border-primary"
                   disabled={isLoading}
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  This will be displayed to your team members
+                <p className="text-xs text-muted-foreground">
+                  This will be your team’s home
                 </p>
               </div>
 
+              {/* Slug */}
               <div className="space-y-2">
-                <Label
-                  htmlFor="slug"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  URL Slug
-                </Label>
-                <Input
-                  id="slug"
-                  type="text"
-                  placeholder={formData.slug || "auto-generated-slug"}
-                  value={formData.slug}
-                  onChange={(e) =>
-                    setFormData({ ...formData, slug: e.target.value })
-                  }
-                  className="h-12 text-base border-gray-300 dark:border-gray-600 focus:border-primary dark:focus:border-primary font-mono"
-                  disabled={isLoading}
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Used in URLs: your-workspace.workspace.com/
-                  <span className="font-semibold">
-                    {formData.slug || "auto-generated-slug"}
+                <Label className="text-base font-medium">URL Slug</Label>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">
+                    your-workspace.com/
                   </span>
+                  <Input
+                    value={formData.slug}
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })}
+                    placeholder="acme-inc"
+                    className="h-14 text-lg font-mono"
+                    disabled={isLoading}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Auto-generated from name · can be edited
                 </p>
               </div>
-            </div>
 
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <p className="text-sm text-blue-800 dark:text-blue-300">
-                <span className="font-semibold">Note:</span> As the creator,
-                you&apos;ll be the <span className="font-bold">Owner</span> of
-                this workspace with full administrative privileges.
-              </p>
-            </div>
+              {/* Owner Note */}
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 flex gap-4">
+                <Shield className="h-6 w-6 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">You’ll be the Owner</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Full admin access · invite team members · manage settings
+                  </p>
+                </div>
+              </div>
 
-            <Button
-              type="submit"
-              className="w-full h-12 text-base font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
-              disabled={isLoading || !formData.name.trim()}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Creating Workspace...
-                </>
-              ) : (
-                <>
-                  Create Workspace
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </>
-              )}
-            </Button>
+              {/* Submit */}
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full h-14 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+                disabled={isLoading || !formData.name.trim()}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                    Creating Workspace...
+                  </>
+                ) : (
+                  <>
+                    Create Workspace
+                    <ArrowRight className="ml-3 h-6 w-6" />
+                  </>
+                )}
+              </Button>
+            </form>
 
-            <div className="text-center pt-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+            {/* Alternative */}
+            <div className="mt-10 text-center">
+              <p className="text-sm text-muted-foreground">
                 Already have a workspace?{" "}
-                <Button
-                  type="button"
-                  variant="link"
-                  className="p-0 h-auto font-semibold text-primary"
-                  onClick={() => router.push("/dashboard")}
-                  disabled={isLoading}
-                >
-                  Go to Dashboard
-                </Button>
+                <Link href="/organization/join" className="font-medium text-primary hover:underline">
+                  Join with an invite
+                </Link>
               </p>
             </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
   );
 }

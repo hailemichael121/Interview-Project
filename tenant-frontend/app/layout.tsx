@@ -1,4 +1,4 @@
-// app/layout.tsx
+// app/layout.tsx - UPDATED
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
@@ -6,9 +6,9 @@ import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { OrgProvider } from "@/lib/org-context";
 import { ThemeToggler } from "@/components/theme-toggler";
+import { QueryProvider } from "@/lib/query-client";
 
 const geist = Geist({
-  // New font configuration
   variable: "--font-geist",
   subsets: ["latin"],
 });
@@ -34,18 +34,20 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={geist.variable}>
       <body
         suppressHydrationWarning={true}
-        className={`antialiased font-sans`} // Changed 'font-serif' to 'font-sans'
+        className={`antialiased font-sans`}
       >
-        <ThemeProvider>
-          <OrgProvider>
-            <PaperOverlay />
-            {children}
-            <div className="fixed bottom-4 right-4 z-50">
-              <ThemeToggler compact />
-            </div>
-            <Toaster />
-          </OrgProvider>
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider>
+            <OrgProvider>
+              <PaperOverlay />
+              {children}
+              <div className="fixed bottom-4 right-4 z-50">
+                <ThemeToggler compact />
+              </div>
+              <Toaster />
+            </OrgProvider>
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );

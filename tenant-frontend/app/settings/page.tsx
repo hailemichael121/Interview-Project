@@ -17,7 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggler } from "@/components/theme-toggler";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import DashboardLayout from "@/components/layout/dashboard-layout";
 import {
   Bell,
   Globe,
@@ -101,11 +101,11 @@ export default function SettingsPage() {
   const getInitials = (name: string | null) =>
     name
       ? name
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase()
-          .slice(0, 2)
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
       : "U";
 
   const formatDate = (d: string) =>

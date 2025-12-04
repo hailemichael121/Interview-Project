@@ -315,7 +315,8 @@ export interface UpdateUserDto {
 
 export interface InviteMemberDto {
   email: string;
-  role: "MEMBER" | "OWNER";
+  role: "MEMBER" | "OWNER" | "REVIEWER";
+  organizationId: string;
 }
 
 export interface ApiSuccessResponse {

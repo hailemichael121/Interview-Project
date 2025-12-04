@@ -2,212 +2,140 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Users, Mail, Key, Loader2, ArrowRight, Shield } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, Key, Mail, Shield, ArrowRight, Users, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { apiService } from "@/lib/api-service";
 import authClient from "@/lib/auth-client";
 
+import Link from "next/link";
+import DashboardLayout from "@/components/layout/dashboard-layout";
+
 function JoinOrganizationContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { data: session } = authClient.useSession();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [inviteToken, setInviteToken] = useState(
-    searchParams.get("token") || ""
-  );
-  const [email, setEmail] = useState(session?.user?.email || "");
+  const [token, setToken] = useState("");
 
-  const handleJoinOrganization = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!session?.user) {
-      toast.error("Please sign in to join an organization");
-      router.push("/auth/signin");
-      return;
-    }
-
-    if (!inviteToken.trim()) {
-      toast.error("Please enter an invite token");
+    if (!token.trim()) {
+      toast.error("Please enter your invite token");
       return;
     }
 
     setIsLoading(true);
-
     try {
-      // Accept invitation using your backend API
-      const result = await apiService.organization.acceptInvite(
-        inviteToken.trim()
-      );
-
-      if (!result.success) {
-        throw new Error(result.message || "Failed to join organization");
-      }
-
-      toast.success("Successfully joined the organization!");
-
-      // Refresh the page to update organization context
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 1500);
-    } catch (error: unknown) {
-      console.error("Organization creation error:", error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to create organization";
-
-      // Handle specific error cases
-      if (errorMessage?.includes("already exists")) {
-        toast.error(
-          "An organization with this name or slug already exists. Please choose a different name."
-        );
-      } else if (errorMessage?.includes("slug")) {
-        toast.error(
-          "The URL slug is already taken. Please try a different organization name."
-        );
+      const res = await apiService.organization.acceptInvite(token.trim());
+      if (res.success) {
+        toast.success("Welcome! You've joined the workspace");
+        router.push("/dashboard");
       } else {
-        toast.error(
-          errorMessage || "Failed to create organization. Please try again."
-        );
+        toast.error(res.message || "Invalid or expired invitation");
       }
+    } catch {
+      toast.error("Failed to join workspace. Please check your token.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md shadow-2xl border-gray-200 dark:border-gray-700">
-        <CardHeader className="space-y-3 text-center">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-linear-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Users className="h-8 w-8 text-white" />
-            </div>
+    <div className="max-w-2xl mx-auto">
+
+
+      <Card className="border-0 shadow-2xl rounded-2xl overflow-hidden bg-card/95 backdrop-blur">
+        <CardHeader className="text-center space-y-4 pb-8 pt-10">
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-500 to-white-600 flex items-center justify-center shadow-xl">
+            <Users className="h-10 w-10 text-white" />
           </div>
-          <CardTitle className="text-3xl font-bold text-gray-900 dark:text-white">
-            Join Workspace
-          </CardTitle>
-          <CardDescription className="text-lg text-gray-600 dark:text-gray-300">
-            Enter your invite token to join a workspace
-          </CardDescription>
+          <div>
+            <CardTitle className="text-3xl font-bold">Join a Workspace</CardTitle>
+            <p className="text-muted-foreground mt-2 text-lg">
+              Enter the invite token sent to your email
+            </p>
+          </div>
         </CardHeader>
 
-        <CardContent>
-          <form onSubmit={handleJoinOrganization} className="space-y-6">
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="email"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2"
-                >
-                  <Mail className="h-4 w-4" />
-                  Your Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your.email@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 text-base border-gray-300 dark:border-gray-600"
-                  disabled={true} // Email comes from auth session
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Invitations are sent to this email address
-                </p>
+        <CardContent className="px-10 pb-10">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Email (read-only) */}
+            <div className="space-y-2">
+              <Label className="text-base flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                Your Email
+              </Label>
+              <div className="p-4 bg-muted/50 rounded-lg border text-sm font-medium">
+                {session?.user?.email || "Not signed in"}
               </div>
+              <p className="text-xs text-muted-foreground">
+                The invitation must be sent to this email address
+              </p>
+            </div>
 
-              <div className="space-y-2">
-                <Label
-                  htmlFor="inviteToken"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2"
-                >
-                  <Key className="h-4 w-4" />
-                  Invite Token *
-                </Label>
-                <Input
-                  id="inviteToken"
-                  type="text"
-                  placeholder="Enter the invite token..."
-                  value={inviteToken}
-                  onChange={(e) => setInviteToken(e.target.value)}
-                  required
-                  className="h-12 text-base border-gray-300 dark:border-gray-600 font-mono"
-                  disabled={isLoading}
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  This is provided in your invitation email
+            {/* Token Input */}
+            <div className="space-y-2">
+              <Label htmlFor="token" className="text-base flex items-center gap-2">
+                <Key className="h-4 w-4" />
+                Invite Token
+              </Label>
+              <Input
+                id="token"
+                placeholder="Paste your token here..."
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                className="h-14 text-lg font-mono tracking-wider"
+                disabled={isLoading}
+                required
+              />
+            </div>
+
+            {/* Security Note */}
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 flex gap-4">
+              <Shield className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium">Secure & Private</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Invite tokens are encrypted and can only be used once by the intended recipient.
                 </p>
               </div>
             </div>
 
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <Shield className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-green-800 dark:text-green-300">
-                    Secure Invitation
-                  </p>
-                  <p className="text-xs text-green-700 dark:text-green-400 mt-1">
-                    Invitations are encrypted and can only be used by the
-                    intended recipient.
-                  </p>
-                </div>
-              </div>
-            </div>
-
+            {/* Submit */}
             <Button
               type="submit"
-              className="w-full h-12 text-base font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 bg-green-600 hover:bg-green-700"
-              disabled={isLoading || !inviteToken.trim()}
+              size="lg"
+              className="w-full h-14 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+              disabled={isLoading || !token.trim()}
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <Loader2 className="mr-3 h-5 w-5 animate-spin" />
                   Joining Workspace...
                 </>
               ) : (
                 <>
                   Join Workspace
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-3 h-5 w-5" />
                 </>
               )}
             </Button>
-
-            <div className="text-center space-y-4 pt-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Don&apos;t have an invite?{" "}
-                <Button
-                  type="button"
-                  variant="link"
-                  className="p-0 h-auto font-semibold text-primary"
-                  onClick={() => router.push("/organization/create")}
-                  disabled={isLoading}
-                >
-                  Create your own workspace
-                </Button>
-              </p>
-
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Need help? Contact the workspace owner or administrator for a
-                  new invitation.
-                </p>
-              </div>
-            </div>
           </form>
+
+          {/* Alternative */}
+          <div className="mt-10 text-center">
+            <p className="text-sm text-muted-foreground">
+              Don&apos;t have an invite?{" "}
+              <Link href="/organization/create" className="font-medium text-primary hover:underline">
+                Create your own workspace
+              </Link>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -216,19 +144,19 @@ function JoinOrganizationContent() {
 
 export default function JoinOrganizationPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-          <div className="flex flex-col items-center gap-3">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Loading invitation...
-            </p>
+    <DashboardLayout>
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+              <p className="text-lg text-muted-foreground">Loading invitation...</p>
+            </div>
           </div>
-        </div>
-      }
-    >
-      <JoinOrganizationContent />
-    </Suspense>
+        }
+      >
+        <JoinOrganizationContent />
+      </Suspense>
+    </DashboardLayout>
   );
 }

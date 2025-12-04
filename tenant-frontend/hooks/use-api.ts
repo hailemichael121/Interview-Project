@@ -381,11 +381,11 @@ export const useApi = () => {
       [organizationId]
     );
 
-    const getOrganizationStats = useCallback(async () => {
+    const getOrganizationOutlineStats = useCallback(async () => {
       if (!organizationId) return null;
       setState((prev) => ({ ...prev, loading: true }));
       return callApi(
-        () => apiService.outline.getOrganizationStats(organizationId),
+        () => apiService.outline.getOrganizationOutlineStats(organizationId),
         (result) => setState({ data: result, loading: false, error: null }),
         (error) => setState({ data: null, loading: false, error })
       );
@@ -398,7 +398,7 @@ export const useApi = () => {
       getOutline,
       updateOutline,
       deleteOutline,
-      getOrganizationStats,
+      getOrganizationOutlineStats,
     };
   };
 

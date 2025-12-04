@@ -2,9 +2,9 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useOrganizationContext } from "@/hooks/use-session";
 import authClient from "@/lib/auth-client";
+import DashboardLayout from "@/components/layout/dashboard-layout";
 
 export default function DashboardRootLayout({
   children,

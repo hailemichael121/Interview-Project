@@ -1,16 +1,17 @@
+// components/protected-route.tsx - OPTIMIZED VERSION
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import authClient from "@/lib/auth-client";
-import { apiService } from "@/lib/api-service";
+import { useOrganizationContext } from "@/hooks/use-session";
+import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAuth?: boolean;
   requireOrganization?: boolean;
   redirectTo?: string;
-  organizationId?: string;
 }
 
 export function ProtectedRoute({
@@ -19,21 +20,30 @@ export function ProtectedRoute({
   requireOrganization = false,
   redirectTo = "/auth/signin",
 }: ProtectedRouteProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [hasOrganization, setHasOrganization] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+  const [authStatus, setAuthStatus] = useState<{
+    isAuthenticated: boolean;
+    hasSession: boolean;
+  }>({ isAuthenticated: false, hasSession: false });
+
+  const { hasOrganization, isLoading: orgLoading } = useOrganizationContext();
   const router = useRouter();
   const pathname = usePathname();
 
+  // Check authentication (lightweight check)
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        setIsLoading(true);
-
+        setIsChecking(true);
         const session = await authClient.getSession();
-        const user = session?.data?.user;
+        const hasSession = !!session?.data?.user;
 
-        if (!user && requireAuth) {
+        setAuthStatus({
+          isAuthenticated: hasSession,
+          hasSession
+        });
+
+        if (!hasSession && requireAuth) {
           if (pathname !== redirectTo) {
             sessionStorage.setItem("redirectAfterAuth", pathname);
           }
@@ -41,82 +51,53 @@ export function ProtectedRoute({
           return;
         }
 
-        setIsAuthenticated(!!user);
-
-        if (
-          user &&
-          (pathname === "/auth/signin" || pathname === "/auth/signup")
-        ) {
-          const redirectTo =
-            sessionStorage.getItem("redirectAfterAuth") || "/dashboard";
+        if (hasSession && (pathname === "/auth/signin" || pathname === "/auth/signup")) {
+          const redirectTo = sessionStorage.getItem("redirectAfterAuth") || "/dashboard";
           sessionStorage.removeItem("redirectAfterAuth");
           router.replace(redirectTo);
           return;
         }
 
-        if (requireOrganization && user) {
-          try {
-            const profileRes = await apiService.user.getProfile();
-
-            if (profileRes.success && profileRes.data) {
-              const memberships = profileRes.data.memberships || [];
-              const hasOrg = memberships.length > 0;
-
-              setHasOrganization(hasOrg);
-
-              // if (!hasOrg && !pathname.includes("/organization/create")) {
-              //   router.replace("/organization/create");
-              //   return;
-              // }
-            } else {
-              setHasOrganization(false);
-              // if (!pathname.includes("/organization/create")) {
-              //   router.replace("/organization/create");
-              //   return;
-              // }
-            }
-          } catch (profileError) {
-            console.error("Error fetching profile:", profileError);
-            // if (!pathname.includes("/organization/create")) {
-            //   router.replace("/organization/create");
-            //   return;
-            // }
-          }
-        }
-
-        setIsLoading(false);
       } catch (error) {
         console.error("Auth check failed:", error);
-        setIsLoading(false);
         if (requireAuth) {
           router.replace(redirectTo);
         }
+      } finally {
+        setIsChecking(false);
       }
     };
 
     checkAuth();
-  }, [requireAuth, requireOrganization, router, redirectTo, pathname]);
+  }, [requireAuth, router, redirectTo, pathname]);
 
-  if (isLoading) {
+  // Check organization requirement (only after auth is confirmed)
+  useEffect(() => {
+    if (isChecking || !authStatus.isAuthenticated || !requireOrganization) return;
+
+    if (!orgLoading && !hasOrganization && !pathname.includes("/organization/create")) {
+      router.replace("/organization/create");
+    }
+  }, [authStatus.isAuthenticated, requireOrganization, orgLoading, hasOrganization, pathname, router, isChecking]);
+
+  // Show loading state
+  if (isChecking || (requireAuth && authStatus.isAuthenticated && orgLoading)) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-          <p className="text-sm text-muted-foreground">Checking session...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Checking access...</p>
         </div>
       </div>
     );
   }
 
-  if (requireAuth && !isAuthenticated) {
+  // Final checks
+  if (requireAuth && !authStatus.isAuthenticated) {
     return null;
   }
 
-  if (
-    requireOrganization &&
-    !hasOrganization &&
-    !pathname.includes("/organization/create")
-  ) {
+  if (requireOrganization && !hasOrganization && !pathname.includes("/organization/create")) {
     return null;
   }
 

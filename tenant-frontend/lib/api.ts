@@ -1,13 +1,10 @@
 // lib/api.ts
-// Re-export everything from the new api-service
 export * from "./api-service";
 export { default as apiService } from "./api-service";
 export { default as useApi } from "@/hooks/use-api";
 
-// Keep backward compatibility with existing functions
 import apiService from "./api-service";
 
-// Re-export commonly used functions for backward compatibility
 export const getOrganizations = apiService.organization.listUserOrganizations;
 export const createOrganization = apiService.organization.createOrganization;
 export const getOrganizationMembers = apiService.organization.listMembers;

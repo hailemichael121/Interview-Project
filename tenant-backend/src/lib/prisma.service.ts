@@ -15,7 +15,8 @@ export class PrismaService
 
     super({
       adapter, // Add the adapter here
-      log: ['warn', 'error'],
+      log: ['query', 'warn', 'error'],
+      errorFormat: 'pretty',
     });
   }
 
