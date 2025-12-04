@@ -61,15 +61,15 @@ export default function HomePage() {
     }
     return isOverWave
       ? {
-          title: "text-gray-900",
-          subtitle: "text-gray-950",
-          description: "text-gray-800",
-        }
+        title: "text-gray-900",
+        subtitle: "text-gray-950",
+        description: "text-gray-800",
+      }
       : {
-          title: "text-white",
-          subtitle: "text-white",
-          description: "text-white",
-        };
+        title: "text-white",
+        subtitle: "text-white",
+        description: "text-white",
+      };
   };
 
   const textColors = getTextColors();

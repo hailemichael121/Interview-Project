@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Mail, ChevronDown, X, ArrowRight } from "lucide-react";
+import { Mail, X, ArrowRight } from "lucide-react";
 
 const EMAIL_DOMAINS = [
   "gmail.com",
@@ -21,10 +21,10 @@ interface EmailSuggestionsProps {
   disabled?: boolean;
 }
 
-export function EmailSuggestions({ 
-  email, 
-  onEmailChange, 
-  disabled = false 
+export function EmailSuggestions({
+  email,
+  onEmailChange,
+  disabled = false
 }: EmailSuggestionsProps) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -81,7 +81,13 @@ export function EmailSuggestions({
       {showSuggestions && suggestions.length > 0 && (
         <div
           ref={suggestionsRef}
-          className="absolute z-50 w-full mt-2 rounded-xl shadow-2xl bg-white/98 dark:bg-gray-900/98 backdrop-blur-xl border border-gray-200/80 dark:border-gray-700/80 overflow-hidden"
+          className="absolute z-50  bg-background/95 
+          supports-backdrop-filter:bg-background/80 border shadow-lg
+          w-full mt-2 rounded-xl 
+           bg-white/98 dark:bg-gray-900/98 
+           backdrop-blur border-gray-200/80
+        // className="
+
         >
           <div className="p-3 border-b border-gray-100/50 dark:border-gray-800/50 flex justify-between items-center bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-gray-800/50 dark:to-gray-800/30">
             <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">

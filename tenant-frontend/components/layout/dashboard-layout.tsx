@@ -2,15 +2,15 @@
 "use client";
 
 import { useState } from "react";
-import { AppSidebar } from "@/components/sidebar";
-import { ProtectedRoute } from "@/components/protected-route";
-import { Button } from "@/components/ui/button";
-import { Menu, Search, X, Home } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
 import {
   LogOut as LogOutIcon,
   Settings as SettingsIcon,
-  User as UserIcon,
+  User as UserIcon, Menu, Search, X, Home
 } from "lucide-react";
+import { AppSidebar } from "@/components/sidebar";
+import { ProtectedRoute } from "@/components/protected-route";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Breadcrumb,
@@ -30,8 +30,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-import { useRouter, usePathname } from "next/navigation";
 import authClient from "@/lib/auth-client";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -126,20 +124,22 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 </Breadcrumb>
               </div>
 
+
+
               {/* Right Actions */}
               <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSearchOpen(!searchOpen)}
-                >
-                  {searchOpen ? (
-                    <X className="h-5 w-5" />
-                  ) : (
-                    <Search className="h-5 w-5" />
-                  )}
-                </Button>
 
+                <div className="flex-1 max-w-2xl mx-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 icon-muted" />
+                      <Input
+                        placeholder="Search outlines, sections, or content..."
+                        className="pl-10 input-default border-0 focus-ring-visible"
+                      />
+                    </div>
+                  </div>
+                </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -148,13 +148,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     >
                       <Avatar className="h-9 w-9">
                         <AvatarImage src={session.user?.image || undefined} />
-                        <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white text-sm font-medium">
+                        <AvatarFallback className="bg-linear-to-br from-gray-600 to-gray-800 text-white text-sm font-medium">
                           {getInitials()}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuContent align="end" className="w-72 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 border shadow-lg"
+                  >
                     <DropdownMenuLabel>
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium">

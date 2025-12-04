@@ -5,6 +5,7 @@ import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
   FileText,
@@ -17,6 +18,7 @@ import {
   ChevronsUpDown,
   Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,11 +30,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { apiService } from "@/lib/api-service";
 import authClient from "@/lib/auth-client";
-import { toast } from "sonner";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -326,9 +326,9 @@ export function AppSidebar() {
                 <AvatarFallback>
                   {profile?.name
                     ? profile.name
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("")
                     : "U"}
                 </AvatarFallback>
               </Avatar>
