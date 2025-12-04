@@ -16,7 +16,9 @@ export class OrganizationGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<RequestWithAuth>();
     const handlerName = context.getHandler().name;
 
-    this.logger.debug(`Checking organization context for route: ${handlerName}`);
+    this.logger.debug(
+      `Checking organization context for route: ${handlerName}`,
+    );
 
     // If organizationContext is already set by middleware, we're good
     if (request.organizationContext) {
@@ -28,10 +30,11 @@ export class OrganizationGuard implements CanActivate {
 
     // Check if organization ID is in route params (e.g., /api/organization/:id)
     const organizationIdFromParams = request.params.id;
-    
+
     // Also check for other common param names
-    const orgIdFromParams = request.params.organizationId || request.params.orgId;
-    
+    const orgIdFromParams =
+      request.params.organizationId || request.params.orgId;
+
     const finalOrganizationId = organizationIdFromParams || orgIdFromParams;
 
     if (finalOrganizationId && request.user?.memberships) {

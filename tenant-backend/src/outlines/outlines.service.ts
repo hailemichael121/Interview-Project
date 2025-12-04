@@ -1,4 +1,4 @@
-// src/outlines/outlines.service.ts
+// src/outlines/outlines.service.ts - UPDATED with OWNER bypass
 import {
   Injectable,
   NotFoundException,
@@ -31,37 +31,42 @@ export class OutlinesService {
     createOutlineDto: CreateOutlineDto,
   ) {
     try {
-      // Validate organization membership
-      const membership = await this.prisma.organizationMember.findFirst({
-        where: {
-          userId,
+      // OWNERS bypass all membership checks
+      if (memberRole !== Role.OWNER) {
+        // Validate organization membership for non-owners
+        const membership = await this.prisma.organizationMember.findFirst({
+          where: {
+            userId,
+            organizationId,
+            deletedAt: null,
+          },
+        });
+
+        if (!membership) {
+          throw new ForbiddenException(
+            'You are not a member of this organization',
+          );
+        }
+
+        // Ensure the memberId from context matches the membership
+        if (membership.id !== memberId) {
+          throw new ForbiddenException('Invalid organization context');
+        }
+      }
+
+      // Check permissions using PermissionService (owners always have permission)
+      if (memberRole !== Role.OWNER) {
+        const canCreate = this.permissionService.canCreateOutline({
           organizationId,
-          deletedAt: null,
-        },
-      });
+          memberId,
+          memberRole,
+        });
 
-      if (!membership) {
-        throw new ForbiddenException(
-          'You are not a member of this organization',
-        );
-      }
-
-      // Ensure the memberId from context matches the membership
-      if (membership.id !== memberId) {
-        throw new ForbiddenException('Invalid organization context');
-      }
-
-      // Check permissions using PermissionService
-      const canCreate = this.permissionService.canCreateOutline({
-        organizationId,
-        memberId,
-        memberRole,
-      });
-
-      if (!canCreate) {
-        throw new ForbiddenException(
-          'You do not have permission to create outlines in this organization',
-        );
+        if (!canCreate) {
+          throw new ForbiddenException(
+            'You do not have permission to create outlines in this organization',
+          );
+        }
       }
 
       // Validate required fields
@@ -98,30 +103,33 @@ export class OutlinesService {
         );
       }
 
-      // Validate reviewer if provided
+      // Validate reviewer if provided (owners can assign any reviewer)
       if (createOutlineDto.reviewerId) {
         const reviewer = await this.prisma.reviewer.findUnique({
           where: { id: createOutlineDto.reviewerId },
         });
+
         if (!reviewer) {
           throw new NotFoundException('Reviewer not found');
         }
 
-        // Verify reviewer is in the same organization
-        const reviewerUserId = reviewer.userId ?? undefined; // Nullish coalescing
-        const reviewerMembership =
-          await this.prisma.organizationMember.findFirst({
-            where: {
-              userId: reviewerUserId, // Now it's either string or undefined
-              organizationId,
-              deletedAt: null,
-            },
-          });
+        // Owners bypass reviewer validation
+        if (memberRole !== Role.OWNER) {
+          const reviewerUserId = reviewer.userId ?? undefined;
+          const reviewerMembership =
+            await this.prisma.organizationMember.findFirst({
+              where: {
+                userId: reviewerUserId,
+                organizationId,
+                deletedAt: null,
+              },
+            });
 
-        if (!reviewerMembership) {
-          throw new BadRequestException(
-            'Reviewer is not a member of this organization',
-          );
+          if (!reviewerMembership) {
+            throw new BadRequestException(
+              'Reviewer is not a member of this organization',
+            );
+          }
         }
       }
 
@@ -153,7 +161,7 @@ export class OutlinesService {
       });
 
       this.logger.log(
-        `Outline created for user ${userId} in organization ${organizationId}`,
+        `Outline created by ${memberRole === Role.OWNER ? 'owner' : 'user'} ${userId} in organization ${organizationId}`,
       );
 
       return {
@@ -296,7 +304,116 @@ export class OutlinesService {
         );
       }
 
-      // Check permissions using PermissionService
+      // OWNERS bypass all membership and permission checks
+      if (memberRole === Role.OWNER) {
+        // Owners can do anything - skip all permission and validation checks
+        const updateData: any = {
+          ...updateOutlineDto,
+          updatedAt: new Date(),
+        };
+
+        // Trim header if provided
+        if (updateOutlineDto.header) {
+          updateData.header = updateOutlineDto.header.trim();
+        }
+
+        // Check for duplicate header if header is being updated
+        if (
+          updateOutlineDto.header &&
+          updateOutlineDto.header.trim() !== outline.header
+        ) {
+          const existingOutline = await this.prisma.outline.findFirst({
+            where: {
+              header: updateOutlineDto.header.trim(),
+              organizationId,
+              deletedAt: null,
+              id: { not: id },
+            },
+          });
+
+          if (existingOutline) {
+            throw new ConflictException(
+              'An outline with this header already exists in your organization',
+            );
+          }
+        }
+
+        // Validate section type if provided
+        if (updateOutlineDto.sectionType) {
+          const validSectionTypes = Object.values(SectionType);
+          if (
+            !validSectionTypes.includes(
+              updateOutlineDto.sectionType as SectionType,
+            )
+          ) {
+            throw new BadRequestException(
+              `Invalid section type. Must be one of: ${validSectionTypes.join(', ')}`,
+            );
+          }
+        }
+
+        // Owners bypass reviewer validation
+        // They can assign any reviewerId, even if invalid - let database handle it
+        // Or optionally, we could check if reviewer exists but not if they're a member
+        if (updateOutlineDto.reviewerId) {
+          const reviewerExists = await this.prisma.reviewer.findUnique({
+            where: { id: updateOutlineDto.reviewerId },
+          });
+
+          if (!reviewerExists) {
+            throw new NotFoundException('Reviewer not found');
+          }
+          // Owner can assign any reviewer, no need to check if they're a member
+        }
+
+        const updatedOutline = await this.prisma.outline.update({
+          where: { id },
+          data: updateData,
+          include: {
+            organization: true,
+            createdBy: {
+              include: {
+                user: { select: { id: true, name: true, email: true } },
+              },
+            },
+            reviewer: {
+              include: {
+                user: { select: { id: true, name: true, email: true } },
+              },
+            },
+          },
+        });
+
+        this.logger.log(`Outline ${id} updated by owner ${userId}`);
+
+        return {
+          success: true,
+          data: updatedOutline,
+          message: 'Outline updated successfully',
+        };
+      }
+
+      // For non-OWNER roles, check membership
+      const membership = await this.prisma.organizationMember.findFirst({
+        where: {
+          userId,
+          organizationId,
+          deletedAt: null,
+        },
+      });
+
+      if (!membership) {
+        throw new ForbiddenException(
+          'You are not a member of this organization',
+        );
+      }
+
+      // Ensure the memberId from context matches the membership
+      if (membership.id !== memberId) {
+        throw new ForbiddenException('Invalid organization context');
+      }
+
+      // Check permissions using PermissionService for non-owners
       const permission = this.permissionService.canUpdateOutline(
         { organizationId, memberId, memberRole },
         outline,
@@ -337,11 +454,10 @@ export class OutlinesService {
           throw new NotFoundException('Reviewer not found');
         }
 
-        // FIX: Handle null userId properly
         const reviewerMembership =
           await this.prisma.organizationMember.findFirst({
             where: {
-              userId: reviewer.userId || undefined, // Convert null to undefined
+              userId: reviewer.userId || undefined,
               organizationId,
               deletedAt: null,
             },
@@ -377,10 +493,6 @@ export class OutlinesService {
       } else {
         // Fallback logic
         switch (memberRole) {
-          case 'OWNER':
-            Object.assign(updateData, updateOutlineDto);
-            break;
-
           case 'REVIEWER':
             if (updateOutlineDto.status !== undefined) {
               updateData.status = updateOutlineDto.status;
@@ -466,7 +578,30 @@ export class OutlinesService {
         );
       }
 
-      // Check delete permissions using PermissionService
+      // OWNERS can delete anything without permission checks
+      if (memberRole === Role.OWNER) {
+        const deletedOutline = await this.prisma.outline.update({
+          where: { id },
+          data: { deletedAt: new Date() },
+          include: {
+            organization: true,
+            createdBy: {
+              include: {
+                user: { select: { id: true, name: true, email: true } },
+              },
+            },
+          },
+        });
+
+        this.logger.log(`Outline ${id} deleted by owner ${memberId}`);
+        return {
+          success: true,
+          data: deletedOutline,
+          message: 'Outline deleted successfully',
+        };
+      }
+
+      // For non-owners, check delete permissions
       const canDelete = this.permissionService.canDeleteOutline(
         { organizationId, memberId, memberRole },
         outline,
@@ -517,7 +652,7 @@ export class OutlinesService {
   /**
    * Get organization statistics for the current user's organization
    */
-  async getOrganizationStats(organizationId: string) {
+  async getOrganizationOutlineStats(organizationId: string) {
     try {
       const organization = await this.prisma.organization.findUnique({
         where: { id: organizationId },

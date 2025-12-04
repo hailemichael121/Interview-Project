@@ -92,7 +92,7 @@ export class OutlinesController {
     return await this.outlinesService.findOne(organizationId, id);
   }
 
-  // Update an outline (permissions checked in service)
+  // Update an outline
   @Put(':id')
   async update(
     @CurrentUser('id') userId: string,
@@ -142,7 +142,7 @@ export class OutlinesController {
 
   // Get organization statistics
   @Get('organization/stats')
-  async getOrganizationStats(
+  async getOrganizationOutlineStats(
     @CurrentUser('organizationId') organizationId: string,
   ) {
     if (!organizationId) {
@@ -151,10 +151,12 @@ export class OutlinesController {
       );
     }
 
-    return await this.outlinesService.getOrganizationStats(organizationId);
+    return await this.outlinesService.getOrganizationOutlineStats(
+      organizationId,
+    );
   }
 
-  // NEW: Get outlines assigned to current user as reviewer
+  //  Get outlines assigned to current user as reviewer
   @Get('reviewer/assigned')
   async getAssignedOutlines(
     @CurrentUser('organizationId') organizationId: string,
@@ -178,7 +180,7 @@ export class OutlinesController {
     );
   }
 
-  // NEW: Get outlines created by current user
+  //   Get outlines created by current user
   @Get('creator/my-outlines')
   async getMyOutlines(
     @CurrentUser('organizationId') organizationId: string,

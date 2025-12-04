@@ -1,4 +1,4 @@
-// src/users/users.service.ts
+// src/users/users.service.ts - Remove ADMIN references from error messages
 import {
   Injectable,
   NotFoundException,
@@ -141,11 +141,11 @@ export class UsersService {
           },
         },
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error(`Error fetching profile for user ${userId}`, error);
-      throw new BadRequestException(
-        error.message || 'Failed to fetch user profile',
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to fetch user profile';
+      throw new BadRequestException(errorMessage);
     }
   }
 
@@ -199,18 +199,20 @@ export class UsersService {
         data: updatedUser,
         message: 'User updated successfully',
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error(`Error updating user ${userId}`, error);
 
       if (error instanceof NotFoundException) {
         throw error;
       }
 
-      if (error.code === 'P2002') {
+      if ((error as any).code === 'P2002') {
         throw new ConflictException('User with this email already exists');
       }
 
-      throw new BadRequestException(error.message || 'Failed to update user');
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update user';
+      throw new BadRequestException(errorMessage);
     }
   }
 
@@ -257,9 +259,11 @@ export class UsersService {
         perPage,
         total,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error('Error listing users', error);
-      throw new BadRequestException(error.message || 'Failed to list users');
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to list users';
+      throw new BadRequestException(errorMessage);
     }
   }
 
@@ -278,7 +282,7 @@ export class UsersService {
       const ownedOrganizations = await this.prisma.organizationMember.findMany({
         where: {
           userId,
-          role: 'OWNER',
+          role: Role.OWNER,
           deletedAt: null,
         },
         include: {
@@ -286,7 +290,7 @@ export class UsersService {
             include: {
               members: {
                 where: {
-                  role: 'OWNER',
+                  role: Role.OWNER,
                   deletedAt: null,
                 },
               },
@@ -335,7 +339,7 @@ export class UsersService {
         message: 'User soft-deleted successfully',
         data: deletedUser,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error(`Error soft-deleting user ${userId}`, error);
 
       if (
@@ -345,7 +349,9 @@ export class UsersService {
         throw error;
       }
 
-      throw new BadRequestException(error.message || 'Failed to delete user');
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete user';
+      throw new BadRequestException(errorMessage);
     }
   }
 
@@ -393,11 +399,11 @@ export class UsersService {
             ? 'Invitations fetched successfully'
             : 'No pending invitations',
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error(`Error fetching invitations for user ${userId}`, error);
-      throw new BadRequestException(
-        error.message || 'Failed to fetch invitations',
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to fetch invitations';
+      throw new BadRequestException(errorMessage);
     }
   }
 
@@ -497,7 +503,7 @@ export class UsersService {
         },
         message: 'Invitation accepted successfully',
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error(
         `Error accepting invitation ${invitationId} for user ${userId}`,
         error,
@@ -511,9 +517,9 @@ export class UsersService {
         throw error;
       }
 
-      throw new BadRequestException(
-        error.message || 'Failed to accept invitation',
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to accept invitation';
+      throw new BadRequestException(errorMessage);
     }
   }
 
@@ -561,7 +567,7 @@ export class UsersService {
         success: true,
         message: 'Invitation declined successfully',
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error(
         `Error declining invitation ${invitationId} for user ${userId}`,
         error,
@@ -574,9 +580,9 @@ export class UsersService {
         throw error;
       }
 
-      throw new BadRequestException(
-        error.message || 'Failed to decline invitation',
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to decline invitation';
+      throw new BadRequestException(errorMessage);
     }
   }
 
@@ -607,9 +613,11 @@ export class UsersService {
         success: true,
         data: user,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error(`Error finding user by email: ${email}`, error);
-      throw new BadRequestException(error.message || 'Failed to find user');
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to find user';
+      throw new BadRequestException(errorMessage);
     }
   }
 
@@ -655,9 +663,11 @@ export class UsersService {
         success: true,
         data: user,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error(`Error finding user by ID: ${id}`, error);
-      throw new BadRequestException(error.message || 'Failed to find user');
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to find user';
+      throw new BadRequestException(errorMessage);
     }
   }
 
@@ -715,14 +725,16 @@ export class UsersService {
         total,
         message: 'Organizations fetched successfully',
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error(
         `Error fetching organizations for user ${userId}`,
         error,
       );
-      throw new BadRequestException(
-        error.message || 'Failed to fetch organizations',
-      );
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to fetch organizations';
+      throw new BadRequestException(errorMessage);
     }
   }
 
@@ -782,9 +794,11 @@ export class UsersService {
         total,
         message: users.length > 0 ? 'Users found' : 'No users found',
       };
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error(`Error searching users with query: ${query}`, error);
-      throw new BadRequestException(error.message || 'Failed to search users');
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to search users';
+      throw new BadRequestException(errorMessage);
     }
   }
 }

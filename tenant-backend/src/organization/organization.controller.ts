@@ -14,9 +14,7 @@ import { OrganizationService } from './organization.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { OrganizationGuard } from '../auth/guards/organization.guard';
 import { EnhancedAuthGuard } from '../auth/guards/enhanced-auth.guard';
-import { Role } from '@prisma/client';
 
 @Controller('api/organization')
 @UseGuards(EnhancedAuthGuard)
@@ -55,9 +53,11 @@ export class OrganizationController {
     @Body() dto: UpdateOrganizationDto,
   ) {
     // Find membership for this organization
-    const membership = memberships.find(m => m.organizationId === id);
+    const membership = memberships.find((m) => m.organizationId === id);
     if (!membership) {
-      throw new BadRequestException('You are not a member of this organization');
+      throw new BadRequestException(
+        'You are not a member of this organization',
+      );
     }
 
     return this.service.updateOrganization(id, dto, userId, membership.role);
@@ -73,9 +73,11 @@ export class OrganizationController {
     @Query('perPage') perPage = '10',
   ) {
     // Find membership for this organization
-    const membership = memberships.find(m => m.organizationId === id);
+    const membership = memberships.find((m) => m.organizationId === id);
     if (!membership) {
-      throw new BadRequestException('You are not a member of this organization');
+      throw new BadRequestException(
+        'You are not a member of this organization',
+      );
     }
 
     // Check if user has permission to view members
@@ -97,9 +99,11 @@ export class OrganizationController {
     @Body() body: { email: string; role: 'MEMBER' | 'OWNER' },
   ) {
     // Find membership for this organization
-    const membership = memberships.find(m => m.organizationId === id);
+    const membership = memberships.find((m) => m.organizationId === id);
     if (!membership) {
-      throw new BadRequestException('You are not a member of this organization');
+      throw new BadRequestException(
+        'You are not a member of this organization',
+      );
     }
 
     // Check if user has permission to invite members
@@ -136,9 +140,11 @@ export class OrganizationController {
     @Body('memberId') targetMemberId: string,
   ) {
     // Find membership for this organization
-    const membership = memberships.find(m => m.organizationId === id);
+    const membership = memberships.find((m) => m.organizationId === id);
     if (!membership) {
-      throw new BadRequestException('You are not a member of this organization');
+      throw new BadRequestException(
+        'You are not a member of this organization',
+      );
     }
 
     // Check if user has permission to revoke members
@@ -171,11 +177,13 @@ export class OrganizationController {
     @Param('id') id: string,
   ) {
     // Check if user is a member of this organization
-    const isMember = memberships.some(m => m.organizationId === id);
+    const isMember = memberships.some((m) => m.organizationId === id);
     if (!isMember) {
-      throw new BadRequestException('You are not a member of this organization');
+      throw new BadRequestException(
+        'You are not a member of this organization',
+      );
     }
-    
+
     return this.service.getOrganizationDetails(id);
   }
 }
