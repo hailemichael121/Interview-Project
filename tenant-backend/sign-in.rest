@@ -36,8 +36,8 @@ Content-Type: {{contentType}}
 Cookie: better-auth.session_token={{authToken}}
 
 {
-  "name": "Kano First Organization",
-  "slug": "kano-first-org"
+  "name": "Kano First Organizatireon",
+  "slug": "kano-first-organizatireon"
 }
 
  

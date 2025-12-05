@@ -35,7 +35,9 @@ export class EnhancedAuthGuard implements CanActivate {
     const secureCookieName = '__Secure-better-auth.session_token';
 
     const cookies = request.cookies as Record<string, string> | undefined;
-    const encodedToken = cookies?.[cookieName] || cookies?.[secureCookieName];
+
+    // FIXED: Prefer secure cookie over non-secure cookie
+    const encodedToken = cookies?.[secureCookieName] || cookies?.[cookieName];
 
     if (!encodedToken) {
       this.logger.warn(

@@ -33,7 +33,6 @@ export class UsersService {
           createdAt: true,
           updatedAt: true,
           deletedAt: true,
-          // Organization memberships with more details
           members: {
             where: { deletedAt: null },
             include: {
@@ -59,25 +58,6 @@ export class UsersService {
             },
             orderBy: { joinedAt: 'desc' },
           },
-          // Reviewer profile & outlines
-          reviewerProfile: {
-            select: {
-              id: true,
-              outlines: {
-                where: { deletedAt: null },
-                select: {
-                  id: true,
-                  header: true,
-                  status: true,
-                  sectionType: true,
-                  organizationId: true,
-                  createdAt: true,
-                },
-                orderBy: { createdAt: 'desc' },
-                take: 10, // Limit recent outlines
-              },
-            },
-          },
         },
       });
 
@@ -85,7 +65,6 @@ export class UsersService {
         throw new NotFoundException('User not found');
       }
 
-      // Fetch pending invitations with organization details
       const invitations = user.email
         ? await this.prisma.organizationInvite.findMany({
             where: {
@@ -115,8 +94,15 @@ export class UsersService {
             orderBy: { expires: 'asc' },
           })
         : [];
+      const assignedOutlines = await this.prisma.outline.count({
+        where: {
+          reviewerMemberId: {
+            in: user.members.map((member) => member.id),
+          },
+          deletedAt: null,
+        },
+      });
 
-      // Format the response
       return {
         success: true,
         data: {
@@ -137,7 +123,7 @@ export class UsersService {
           stats: {
             totalOrganizations: user.members.length,
             pendingInvitations: invitations.length,
-            assignedOutlines: user.reviewerProfile?.outlines.length || 0,
+            assignedOutlines: assignedOutlines,
           },
         },
       };
@@ -149,7 +135,6 @@ export class UsersService {
     }
   }
 
-  // Update user
   async updateUser(userId: string, updateUserDto: UpdateUserDto) {
     try {
       const existingUser = await this.prisma.user.findUnique({
@@ -160,10 +145,8 @@ export class UsersService {
         throw new NotFoundException('User not found');
       }
 
-      // Prepare update data
       const updateData: any = { updatedAt: new Date() };
 
-      // Only include provided fields
       if (updateUserDto.name !== undefined)
         updateData.name = updateUserDto.name;
       if (updateUserDto.role !== undefined)

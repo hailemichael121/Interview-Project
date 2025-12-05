@@ -25,7 +25,7 @@ export class CreateOutlineDto {
 
   @IsOptional()
   @IsString()
-  reviewerId?: string;
+  reviewerMemberId?: string;
 
   @IsOptional()
   @IsString() // Changed from @IsUUID() to @IsString()

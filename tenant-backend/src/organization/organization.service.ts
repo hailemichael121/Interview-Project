@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 // src/organization/organization.service.ts
 import {
   Injectable,
@@ -90,16 +94,23 @@ export class OrganizationService {
           })),
         },
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Error creating organization', error);
 
       if (error instanceof ConflictException) {
         throw error;
       }
 
-      if (error.code === 'P2002') {
-        const constraint = error.meta?.target || error.meta?.constraint?.fields;
-        if (constraint && constraint.includes('slug')) {
+      // Check if it's a Prisma error
+      if (error.code && error.code === 'P2002') {
+        const constraint =
+          (error.meta as any)?.target ||
+          (error.meta as any)?.constraint?.fields;
+        if (
+          constraint &&
+          Array.isArray(constraint) &&
+          constraint.includes('slug')
+        ) {
           throw new ConflictException(
             'Organization with this slug already exists. Please choose a different slug.',
           );
@@ -115,6 +126,7 @@ export class OrganizationService {
   // --------------------------
   // List organizations for a user (using pre-fetched memberships)
   // --------------------------
+  // In listUserOrganizations method, add proper typing:
   async listUserOrganizations(
     userId: string,
     memberships: any[],
@@ -128,7 +140,7 @@ export class OrganizationService {
 
       // Fetch complete organization details for paginated memberships
       const organizations = await Promise.all(
-        paginatedMemberships.map(async (membership) => {
+        paginatedMemberships.map(async (membership: any) => {
           const org = await this.prisma.organization.findUnique({
             where: { id: membership.organizationId },
             select: {
@@ -152,9 +164,9 @@ export class OrganizationService {
 
           return {
             ...org,
-            role: membership.role,
-            joinedAt: membership.joinedAt,
-            memberId: membership.id,
+            role: membership.role as Role,
+            joinedAt: membership.joinedAt as Date,
+            memberId: membership.id as string,
           };
         }),
       );
@@ -177,7 +189,6 @@ export class OrganizationService {
       );
     }
   }
-
   // --------------------------
   // Get organization details
   // --------------------------
@@ -311,6 +322,9 @@ export class OrganizationService {
     inviterMemberId: string,
   ) {
     try {
+      // NORMALIZE EMAIL TO LOWERCASE
+      const normalizedEmail = email.toLowerCase();
+
       // Get organization for invitation details
       const organization = await this.prisma.organization.findUnique({
         where: { id: orgId },
@@ -320,9 +334,9 @@ export class OrganizationService {
         throw new NotFoundException('Organization not found');
       }
 
-      // Check if user is already a member
+      // Check if user is already a member (use normalized email)
       const existingUser = await this.prisma.user.findUnique({
-        where: { email },
+        where: { email: normalizedEmail }, // Use normalized email
       });
 
       if (existingUser) {
@@ -340,11 +354,11 @@ export class OrganizationService {
         }
       }
 
-      // Check for existing pending invite
+      // Check for existing pending invite (use normalized email)
       const existingInvite = await this.prisma.organizationInvite.findFirst({
         where: {
           organizationId: orgId,
-          email,
+          email: normalizedEmail, // Use normalized email
           deletedAt: null,
           expires: { gt: new Date() },
         },
@@ -354,7 +368,6 @@ export class OrganizationService {
           'An active invitation already exists for this email',
         );
       }
-
       const token =
         Math.random().toString(36).substring(2) + Date.now().toString(36);
       const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);

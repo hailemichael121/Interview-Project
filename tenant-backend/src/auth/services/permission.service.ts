@@ -12,7 +12,7 @@ export interface OutlineWithCreator {
   id: string;
   organizationId: string;
   createdByMemberId: string;
-  reviewerId?: string | null;
+  reviewerMemberId?: string | null;
 }
 
 @Injectable()
@@ -61,7 +61,7 @@ export class PermissionService {
 
     // 3. Check by role
     const isCreator = outline.createdByMemberId === context.memberId;
-    const isAssignedReviewer = outline.reviewerId === context.memberId;
+    const isAssignedReviewer = outline.reviewerMemberId === context.memberId;
 
     this.logger.debug(
       `User role: ${context.memberRole}, isCreator: ${isCreator}, isAssignedReviewer: ${isAssignedReviewer}`,

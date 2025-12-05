@@ -1,4 +1,4 @@
-// src/users/users.controller.ts - UPDATED with only OWNER role checks
+// In users.controller.ts
 import {
   Controller,
   Get,
@@ -15,58 +15,48 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { EnhancedAuthGuard } from '../auth/guards/enhanced-auth.guard';
 import { UsersService } from './users.service';
-import { Role } from '../users/enums/role.enum';
 
 @Controller('users')
 @UseGuards(EnhancedAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // Get profile for logged-in user
   @Get('profile')
   async getProfile(@CurrentUser('id') userId: string) {
     return this.usersService.getProfile(userId);
   }
 
-  // Update profile for logged-in user
   @Put('profile')
   async updateProfile(
     @CurrentUser('id') userId: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    // Prevent users from changing their role to owner through profile update
-    if (updateUserDto.role && updateUserDto.role === Role.OWNER) {
-      throw new BadRequestException(
-        'Cannot change role to OWNER through profile update',
-      );
-    }
-
     return this.usersService.updateUser(userId, updateUserDto);
   }
 
-  // List all users with pagination (owner only)
   @Get()
   async findAll(
     @CurrentUser('id') currentUserId: string,
-    @CurrentUser('role') currentUserRole: Role,
+    @CurrentUser('role') currentUserRole: string,
     @Query('page') page?: number,
     @Query('perPage') perPage?: number,
   ) {
-    // Check if user is owner
-    if (currentUserRole !== Role.OWNER) {
-      throw new BadRequestException('Only owners can list all users');
+    const normalizedRole = currentUserRole?.toUpperCase();
+    if (normalizedRole !== 'OWNER') {
+      throw new BadRequestException(
+        'Only organization owners can list all users',
+      );
     }
 
     return this.usersService.findAll(page || 1, perPage || 10);
   }
 
-  // Return full session user object with context
   @Get('me')
   async getCurrentUser(
     @CurrentUser() user: any,
     @CurrentUser('memberships') memberships: any[],
     @CurrentUser('organizationId') organizationId: string,
-    @CurrentUser('memberRole') memberRole: Role,
+    @CurrentUser('memberRole') memberRole: string,
   ) {
     return {
       success: true,
@@ -98,13 +88,11 @@ export class UsersController {
     };
   }
 
-  // Get invitations for current user
   @Get('invitations')
   async getInvitations(@CurrentUser('id') userId: string) {
     return this.usersService.getUserInvitations(userId);
   }
 
-  // Accept an invitation
   @Post('invitations/:invitationId/accept')
   async acceptInvitation(
     @CurrentUser('id') userId: string,
@@ -114,7 +102,6 @@ export class UsersController {
     return this.usersService.acceptInvitation(userId, userEmail, invitationId);
   }
 
-  // Decline an invitation
   @Post('invitations/:invitationId/decline')
   async declineInvitation(
     @CurrentUser('id') userId: string,
@@ -124,78 +111,94 @@ export class UsersController {
     return this.usersService.declineInvitation(userId, userEmail, invitationId);
   }
 
-  // Get user by ID (owner only)
   @Get(':id')
   async getUserById(
-    @CurrentUser('role') currentUserRole: Role,
+    @CurrentUser('id') currentUserId: string,
+    @CurrentUser('role') currentUserRole: string,
     @Param('id') id: string,
   ) {
-    if (currentUserRole !== Role.OWNER) {
-      throw new BadRequestException('Only owners can view user details');
+    if (currentUserId === id) {
+      return this.usersService.findById(id);
+    }
+
+    const normalizedRole = currentUserRole?.toUpperCase();
+    if (normalizedRole !== 'OWNER') {
+      throw new BadRequestException('Only owners can view other user details');
     }
 
     return this.usersService.findById(id);
   }
 
-  // Update user by ID (owner only)
   @Put(':id')
   async updateUserById(
-    @CurrentUser('role') currentUserRole: Role,
+    @CurrentUser('id') currentUserId: string,
+    @CurrentUser('role') currentUserRole: string,
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    if (currentUserRole !== Role.OWNER) {
+    if (currentUserId === id) {
+      return this.usersService.updateUser(id, updateUserDto);
+    }
+
+    const normalizedRole = currentUserRole?.toUpperCase();
+    if (normalizedRole !== 'OWNER') {
       throw new BadRequestException('Only owners can update other users');
     }
 
     return this.usersService.updateUser(id, updateUserDto);
   }
 
-  // Soft delete user (owner only)
   @Delete(':id')
   async deleteUser(
-    @CurrentUser('role') currentUserRole: Role,
     @CurrentUser('id') currentUserId: string,
+    @CurrentUser('role') currentUserRole: string,
     @Param('id') id: string,
   ) {
-    if (currentUserRole !== Role.OWNER) {
-      throw new BadRequestException('Only owners can delete users');
-    }
-
-    // Prevent self-deletion
     if (currentUserId === id) {
       throw new BadRequestException('Cannot delete your own account');
+    }
+
+    const normalizedRole = currentUserRole?.toUpperCase();
+    if (normalizedRole !== 'OWNER') {
+      throw new BadRequestException('Only owners can delete users');
     }
 
     return this.usersService.softDelete(id);
   }
 
-  // Get user's organizations
   @Get(':id/organizations')
   async getUserOrganizations(
     @CurrentUser('id') currentUserId: string,
-    @CurrentUser('role') currentUserRole: Role,
+    @CurrentUser('role') currentUserRole: string,
     @Param('id') id: string,
     @Query('page') page?: number,
     @Query('perPage') perPage?: number,
   ) {
-    // Users can view their own organizations, owners can view anyone's
-    if (currentUserId !== id && currentUserRole !== Role.OWNER) {
+    if (currentUserId === id) {
+      return this.usersService.getUserOrganizations(
+        id,
+        page || 1,
+        perPage || 10,
+      );
+    }
+
+    const normalizedRole = currentUserRole?.toUpperCase();
+    if (normalizedRole !== 'OWNER') {
       throw new BadRequestException('You can only view your own organizations');
     }
 
     return this.usersService.getUserOrganizations(id, page || 1, perPage || 10);
   }
 
-  // Search users by email or name (owner only)
   @Get('search/:query')
   async searchUsers(
-    @CurrentUser('role') currentUserRole: Role,
+    @CurrentUser('role') currentUserRole: string,
     @Param('query') query: string,
     @Query('page') page?: number,
     @Query('perPage') perPage?: number,
   ) {
-    if (currentUserRole !== Role.OWNER) {
+    const normalizedRole = currentUserRole?.toUpperCase();
+    if (normalizedRole !== 'OWNER') {
       throw new BadRequestException('Only owners can search users');
     }
 

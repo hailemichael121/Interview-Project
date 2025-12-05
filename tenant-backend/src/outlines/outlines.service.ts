@@ -1,4 +1,7 @@
-// src/outlines/outlines.service.ts - UPDATED with OWNER bypass
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+// src/outlines/outlines.service.ts - UPDATED with OWNER bypass and proper reviewer assignment
 import {
   Injectable,
   NotFoundException,
@@ -31,9 +34,25 @@ export class OutlinesService {
     createOutlineDto: CreateOutlineDto,
   ) {
     try {
-      // OWNERS bypass all membership checks
+      // Validate required fields
+      if (!createOutlineDto.header?.trim()) {
+        throw new BadRequestException('Header is required');
+      }
+
+      if (!createOutlineDto.sectionType) {
+        throw new BadRequestException('Section type is required');
+      }
+
+      // Validate section type
+      const validSectionTypes = Object.values(SectionType) as string[];
+      if (!validSectionTypes.includes(createOutlineDto.sectionType)) {
+        throw new BadRequestException(
+          `Invalid section type. Must be one of: ${validSectionTypes.join(', ')}`,
+        );
+      }
+
+      // For non-OWNER roles, verify membership and permissions
       if (memberRole !== Role.OWNER) {
-        // Validate organization membership for non-owners
         const membership = await this.prisma.organizationMember.findFirst({
           where: {
             userId,
@@ -48,14 +67,10 @@ export class OutlinesService {
           );
         }
 
-        // Ensure the memberId from context matches the membership
         if (membership.id !== memberId) {
           throw new ForbiddenException('Invalid organization context');
         }
-      }
 
-      // Check permissions using PermissionService (owners always have permission)
-      if (memberRole !== Role.OWNER) {
         const canCreate = this.permissionService.canCreateOutline({
           organizationId,
           memberId,
@@ -67,25 +82,28 @@ export class OutlinesService {
             'You do not have permission to create outlines in this organization',
           );
         }
-      }
+      } else {
+        // For OWNER: ensure they're added as a member if not already
+        const ownerMembership = await this.prisma.organizationMember.findFirst({
+          where: {
+            userId,
+            organizationId,
+            deletedAt: null,
+          },
+        });
 
-      // Validate required fields
-      if (!createOutlineDto.header?.trim()) {
-        throw new BadRequestException('Header is required');
-      }
-
-      if (!createOutlineDto.sectionType) {
-        throw new BadRequestException('Section type is required');
-      }
-
-      // Validate section type
-      const validSectionTypes = Object.values(SectionType);
-      if (
-        !validSectionTypes.includes(createOutlineDto.sectionType as SectionType)
-      ) {
-        throw new BadRequestException(
-          `Invalid section type. Must be one of: ${validSectionTypes.join(', ')}`,
-        );
+        if (!ownerMembership) {
+          await this.prisma.organizationMember.create({
+            data: {
+              userId,
+              organizationId,
+              role: 'OWNER',
+            },
+          });
+          this.logger.log(
+            `Auto-added owner ${userId} as member of organization ${organizationId}`,
+          );
+        }
       }
 
       // Check duplicate header in current organization
@@ -103,31 +121,40 @@ export class OutlinesService {
         );
       }
 
-      // Validate reviewer if provided (owners can assign any reviewer)
-      if (createOutlineDto.reviewerId) {
-        const reviewer = await this.prisma.reviewer.findUnique({
-          where: { id: createOutlineDto.reviewerId },
+      // Validate reviewer if provided
+      if (createOutlineDto.reviewerMemberId) {
+        const reviewerMember = await this.prisma.organizationMember.findFirst({
+          where: {
+            id: createOutlineDto.reviewerMemberId,
+            organizationId,
+            deletedAt: null,
+          },
+          include: {
+            user: true,
+          },
         });
 
-        if (!reviewer) {
-          throw new NotFoundException('Reviewer not found');
+        if (!reviewerMember) {
+          throw new NotFoundException(
+            'Reviewer member not found in this organization',
+          );
         }
 
-        // Owners bypass reviewer validation
+        // For non-OWNER roles, prevent self-assignment
         if (memberRole !== Role.OWNER) {
-          const reviewerUserId = reviewer.userId ?? undefined;
-          const reviewerMembership =
-            await this.prisma.organizationMember.findFirst({
-              where: {
-                userId: reviewerUserId,
-                organizationId,
-                deletedAt: null,
-              },
-            });
-
-          if (!reviewerMembership) {
+          if (createOutlineDto.reviewerMemberId === memberId) {
             throw new BadRequestException(
-              'Reviewer is not a member of this organization',
+              'You cannot assign yourself as a reviewer',
+            );
+          }
+
+          // Optional: Restrict to REVIEWER/OWNER roles for non-owners
+          if (
+            reviewerMember.role !== 'REVIEWER' &&
+            reviewerMember.role !== 'OWNER'
+          ) {
+            throw new BadRequestException(
+              'Only REVIEWER or OWNER role members can be assigned as reviewers',
             );
           }
         }
@@ -137,13 +164,13 @@ export class OutlinesService {
       const outline = await this.prisma.outline.create({
         data: {
           header: createOutlineDto.header.trim(),
-          sectionType: createOutlineDto.sectionType as SectionType,
+          sectionType: createOutlineDto.sectionType,
           status: createOutlineDto.status || Status.PENDING,
           target: createOutlineDto.target || 0,
           limit: createOutlineDto.limit || 0,
           organizationId,
           createdByMemberId: memberId,
-          reviewerId: createOutlineDto.reviewerId || null,
+          reviewerMemberId: createOutlineDto.reviewerMemberId || null,
         },
         include: {
           organization: true,
@@ -152,7 +179,7 @@ export class OutlinesService {
               user: { select: { id: true, name: true, email: true } },
             },
           },
-          reviewer: {
+          reviewerMember: {
             include: {
               user: { select: { id: true, name: true, email: true } },
             },
@@ -201,7 +228,7 @@ export class OutlinesService {
                 user: { select: { id: true, name: true, email: true } },
               },
             },
-            reviewer: {
+            reviewerMember: {
               include: {
                 user: { select: { id: true, name: true, email: true } },
               },
@@ -247,7 +274,7 @@ export class OutlinesService {
               user: { select: { id: true, name: true, email: true } },
             },
           },
-          reviewer: {
+          reviewerMember: {
             include: {
               user: { select: { id: true, name: true, email: true } },
             },
@@ -294,7 +321,7 @@ export class OutlinesService {
         where: { id, organizationId, deletedAt: null },
         include: {
           createdBy: true,
-          reviewer: true,
+          reviewerMember: true,
         },
       });
 
@@ -306,15 +333,18 @@ export class OutlinesService {
 
       // OWNERS bypass all membership and permission checks
       if (memberRole === Role.OWNER) {
-        // Owners can do anything - skip all permission and validation checks
-        const updateData: any = {
-          ...updateOutlineDto,
-          updatedAt: new Date(),
-        };
-
-        // Trim header if provided
-        if (updateOutlineDto.header) {
-          updateData.header = updateOutlineDto.header.trim();
+        // Validate section type if provided
+        if (updateOutlineDto.sectionType) {
+          const validSectionTypes = Object.values(SectionType);
+          if (
+            !validSectionTypes.includes(
+              updateOutlineDto.sectionType as SectionType,
+            )
+          ) {
+            throw new BadRequestException(
+              `Invalid section type. Must be one of: ${validSectionTypes.join(', ')}`,
+            );
+          }
         }
 
         // Check for duplicate header if header is being updated
@@ -338,32 +368,33 @@ export class OutlinesService {
           }
         }
 
-        // Validate section type if provided
-        if (updateOutlineDto.sectionType) {
-          const validSectionTypes = Object.values(SectionType);
-          if (
-            !validSectionTypes.includes(
-              updateOutlineDto.sectionType as SectionType,
-            )
-          ) {
-            throw new BadRequestException(
-              `Invalid section type. Must be one of: ${validSectionTypes.join(', ')}`,
+        // Validate reviewer if provided
+        if (updateOutlineDto.reviewerMemberId) {
+          const reviewerMember = await this.prisma.organizationMember.findFirst(
+            {
+              where: {
+                id: updateOutlineDto.reviewerMemberId,
+                organizationId,
+                deletedAt: null,
+              },
+            },
+          );
+
+          if (!reviewerMember) {
+            throw new NotFoundException(
+              'Reviewer member not found in this organization',
             );
           }
         }
 
-        // Owners bypass reviewer validation
-        // They can assign any reviewerId, even if invalid - let database handle it
-        // Or optionally, we could check if reviewer exists but not if they're a member
-        if (updateOutlineDto.reviewerId) {
-          const reviewerExists = await this.prisma.reviewer.findUnique({
-            where: { id: updateOutlineDto.reviewerId },
-          });
+        const updateData: any = {
+          ...updateOutlineDto,
+          updatedAt: new Date(),
+        };
 
-          if (!reviewerExists) {
-            throw new NotFoundException('Reviewer not found');
-          }
-          // Owner can assign any reviewer, no need to check if they're a member
+        // Trim header if provided
+        if (updateOutlineDto.header) {
+          updateData.header = updateOutlineDto.header.trim();
         }
 
         const updatedOutline = await this.prisma.outline.update({
@@ -376,7 +407,7 @@ export class OutlinesService {
                 user: { select: { id: true, name: true, email: true } },
               },
             },
-            reviewer: {
+            reviewerMember: {
               include: {
                 user: { select: { id: true, name: true, email: true } },
               },
@@ -385,7 +416,6 @@ export class OutlinesService {
         });
 
         this.logger.log(`Outline ${id} updated by owner ${userId}`);
-
         return {
           success: true,
           data: updatedOutline,
@@ -408,15 +438,19 @@ export class OutlinesService {
         );
       }
 
-      // Ensure the memberId from context matches the membership
       if (membership.id !== memberId) {
         throw new ForbiddenException('Invalid organization context');
       }
 
-      // Check permissions using PermissionService for non-owners
+      // Check permissions using PermissionService
       const permission = this.permissionService.canUpdateOutline(
         { organizationId, memberId, memberRole },
-        outline,
+        {
+          id: outline.id,
+          organizationId: outline.organizationId,
+          createdByMemberId: outline.createdByMemberId,
+          reviewerMemberId: outline.reviewerMemberId,
+        },
         updateOutlineDto,
       );
 
@@ -445,68 +479,78 @@ export class OutlinesService {
         }
       }
 
-      // Validate reviewer exists if provided
-      if (updateOutlineDto.reviewerId) {
-        const reviewer = await this.prisma.reviewer.findUnique({
-          where: { id: updateOutlineDto.reviewerId },
-        });
-        if (!reviewer) {
-          throw new NotFoundException('Reviewer not found');
-        }
-
-        const reviewerMembership =
-          await this.prisma.organizationMember.findFirst({
-            where: {
-              userId: reviewer.userId || undefined,
-              organizationId,
-              deletedAt: null,
-            },
-          });
-
-        if (!reviewerMembership) {
-          throw new BadRequestException(
-            'Reviewer is not a member of this organization',
-          );
-        }
-      }
-
       // Validate section type if provided
       if (updateOutlineDto.sectionType) {
-        const validSectionTypes = Object.values(SectionType);
-        if (
-          !validSectionTypes.includes(
-            updateOutlineDto.sectionType as SectionType,
-          )
-        ) {
+        const validSectionTypes = Object.values(SectionType) as string[];
+        if (!validSectionTypes.includes(updateOutlineDto.sectionType)) {
           throw new BadRequestException(
             `Invalid section type. Must be one of: ${validSectionTypes.join(', ')}`,
           );
         }
       }
 
-      // Apply updates based on role (simplified with permission service)
+      // Validate reviewer if provided
+      if (updateOutlineDto.reviewerMemberId) {
+        const reviewerMember = await this.prisma.organizationMember.findFirst({
+          where: {
+            id: updateOutlineDto.reviewerMemberId,
+            organizationId,
+            deletedAt: null,
+          },
+        });
+
+        if (!reviewerMember) {
+          throw new NotFoundException(
+            'Reviewer member not found in this organization',
+          );
+        }
+
+        // Prevent self-assignment for non-owners
+        if (updateOutlineDto.reviewerMemberId === memberId) {
+          throw new BadRequestException(
+            'You cannot assign yourself as a reviewer',
+          );
+        }
+
+        // Optional: Restrict to REVIEWER/OWNER roles for non-owners
+        if (
+          reviewerMember.role !== 'REVIEWER' &&
+          reviewerMember.role !== 'OWNER'
+        ) {
+          throw new BadRequestException(
+            'Only REVIEWER or OWNER role members can be assigned as reviewers',
+          );
+        }
+      }
+
+      // Apply updates based on permission service result
       const updateData: any = { updatedAt: new Date() };
 
-      // Add allowed fields based on permission service result
       if (permission.allowedFields) {
         Object.assign(updateData, permission.allowedFields);
       } else {
         // Fallback logic
         switch (memberRole) {
-          case 'REVIEWER':
+          case Role.REVIEWER:
             if (updateOutlineDto.status !== undefined) {
               updateData.status = updateOutlineDto.status;
             }
             break;
 
-          case 'MEMBER':
+          case Role.MEMBER: {
             const { status, ...memberUpdates } = updateOutlineDto;
             Object.assign(updateData, memberUpdates);
             // Creator who is also assigned as reviewer can update status
-            if (memberId === outline.reviewerId && status !== undefined) {
+            if (
+              outline.reviewerMemberId &&
+              memberId === outline.reviewerMemberId &&
+              status !== undefined
+            ) {
               updateData.status = status;
             }
             break;
+          }
+          // No default case needed
         }
       }
 
@@ -525,7 +569,7 @@ export class OutlinesService {
               user: { select: { id: true, name: true, email: true } },
             },
           },
-          reviewer: {
+          reviewerMember: {
             include: {
               user: { select: { id: true, name: true, email: true } },
             },
@@ -534,7 +578,6 @@ export class OutlinesService {
       });
 
       this.logger.log(`Outline ${id} updated by user ${userId}`);
-
       return {
         success: true,
         data: updatedOutline,
@@ -590,6 +633,11 @@ export class OutlinesService {
                 user: { select: { id: true, name: true, email: true } },
               },
             },
+            reviewerMember: {
+              include: {
+                user: { select: { id: true, name: true, email: true } },
+              },
+            },
           },
         });
 
@@ -604,7 +652,12 @@ export class OutlinesService {
       // For non-owners, check delete permissions
       const canDelete = this.permissionService.canDeleteOutline(
         { organizationId, memberId, memberRole },
-        outline,
+        {
+          id: outline.id,
+          organizationId: outline.organizationId,
+          createdByMemberId: outline.createdByMemberId,
+          reviewerMemberId: outline.reviewerMemberId,
+        },
       );
 
       if (!canDelete) {
@@ -623,11 +676,15 @@ export class OutlinesService {
               user: { select: { id: true, name: true, email: true } },
             },
           },
+          reviewerMember: {
+            include: {
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
         },
       });
 
       this.logger.log(`Outline ${id} deleted by member ${memberId}`);
-
       return {
         success: true,
         data: deletedOutline,
@@ -728,7 +785,7 @@ export class OutlinesService {
         this.prisma.outline.findMany({
           where: {
             organizationId,
-            reviewerId: memberId,
+            reviewerMemberId: memberId,
             deletedAt: null,
           },
           skip,
@@ -740,7 +797,7 @@ export class OutlinesService {
                 user: { select: { id: true, name: true, email: true } },
               },
             },
-            reviewer: {
+            reviewerMember: {
               include: {
                 user: { select: { id: true, name: true, email: true } },
               },
@@ -751,7 +808,7 @@ export class OutlinesService {
         this.prisma.outline.count({
           where: {
             organizationId,
-            reviewerId: memberId,
+            reviewerMemberId: memberId,
             deletedAt: null,
           },
         }),
@@ -807,7 +864,7 @@ export class OutlinesService {
                 user: { select: { id: true, name: true, email: true } },
               },
             },
-            reviewer: {
+            reviewerMember: {
               include: {
                 user: { select: { id: true, name: true, email: true } },
               },
@@ -842,6 +899,58 @@ export class OutlinesService {
       );
       throw new BadRequestException(
         error.message || 'Failed to fetch your outlines',
+      );
+    }
+  }
+
+  /**
+   * Get organization members who can be assigned as reviewers
+   */
+  async getAvailableReviewers(
+    organizationId: string,
+    currentMemberId?: string,
+  ) {
+    try {
+      const members = await this.prisma.organizationMember.findMany({
+        where: {
+          organizationId,
+          deletedAt: null,
+          // Exclude the current user if provided
+          ...(currentMemberId ? { id: { not: currentMemberId } } : {}),
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: [
+          { role: 'desc' }, // Owners first, then reviewers, etc.
+          { user: { name: 'asc' } },
+        ],
+      });
+
+      return {
+        success: true,
+        data: members.map((member) => ({
+          id: member.id,
+          userId: member.userId,
+          role: member.role,
+          user: member.user,
+          joinedAt: member.joinedAt,
+        })),
+        message: 'Available reviewers fetched successfully',
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error fetching available reviewers for organization ${organizationId}`,
+        error,
+      );
+      throw new BadRequestException(
+        error.message || 'Failed to fetch available reviewers',
       );
     }
   }

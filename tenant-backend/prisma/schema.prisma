@@ -62,7 +62,6 @@ model User {
   accounts        Account[]
   sessions        Session[]
   members         OrganizationMember[]
-  reviewerProfile Reviewer?
 
   @@map("users")
 }
@@ -144,6 +143,7 @@ model OrganizationMember {
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdOutlines Outline[]       @relation("CreatedOutlines")
+  reviewerOutlines Outline[]      @relation("ReviewerOutlines")  
   invitationsSent InvitationLog[] @relation("Inviter")
 
   @@unique([organizationId, userId])
@@ -188,19 +188,6 @@ model InvitationLog {
   @@map("invitation_logs")
 }
 
-model Reviewer {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  deletedAt DateTime?
-
-  userId String? @unique
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  outlines Outline[]
-
-  @@map("reviewers")
-}
-
 model Outline {
   id                String      @id @default(cuid())
   header            String
@@ -208,16 +195,16 @@ model Outline {
   status            Status      @default(PENDING)
   target            Int
   limit             Int
-  reviewerId        String?
+  reviewerMemberId  String?
   organizationId    String
   createdByMemberId String
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
   deletedAt         DateTime?
 
-  createdBy    OrganizationMember @relation("CreatedOutlines", fields: [createdByMemberId], references: [id])
-  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  reviewer     Reviewer?          @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
+  createdBy      OrganizationMember @relation("CreatedOutlines", fields: [createdByMemberId], references: [id])
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reviewerMember OrganizationMember? @relation("ReviewerOutlines", fields: [reviewerMemberId], references: [id], onDelete: SetNull)
 
   @@map("outlines")
 }

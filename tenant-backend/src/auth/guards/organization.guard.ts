@@ -1,4 +1,4 @@
-// src/auth/guards/organization.guard.ts
+// In organization.guard.ts - FIXED VERSION
 import {
   Injectable,
   CanActivate,
@@ -28,6 +28,11 @@ export class OrganizationGuard implements CanActivate {
       return true;
     }
 
+    // Check headers FIRST (most common way)
+    const organizationIdFromHeader = request.headers[
+      'x-organization-id'
+    ] as string;
+
     // Check if organization ID is in route params (e.g., /api/organization/:id)
     const organizationIdFromParams = request.params.id;
 
@@ -35,7 +40,8 @@ export class OrganizationGuard implements CanActivate {
     const orgIdFromParams =
       request.params.organizationId || request.params.orgId;
 
-    const finalOrganizationId = organizationIdFromParams || orgIdFromParams;
+    const finalOrganizationId =
+      organizationIdFromHeader || organizationIdFromParams || orgIdFromParams;
 
     if (finalOrganizationId && request.user?.memberships) {
       // Check if user is a member of this organization
@@ -54,7 +60,7 @@ export class OrganizationGuard implements CanActivate {
         };
 
         this.logger.debug(
-          `Auto-set organization context from params: ${finalOrganizationId}`,
+          `Auto-set organization context: ${finalOrganizationId}`,
         );
         return true;
       } else {

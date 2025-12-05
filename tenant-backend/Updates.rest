@@ -1,0 +1,439 @@
+@baseUrl = http://localhost:3001
+# @baseUrl = https://tenant-backend-cz23.onrender.com
+
+@frontendUrl = https://tenanncy.vercel.app
+@contentType = application/json
+
+# ============================================
+# 0. TEST USER CREDENTIALS (Change these for each test run)
+# ============================================
+@testEmail = test.admin.17649198@example.com
+@testPassword = TestPassword123!
+@testName = Sharuk Argaw
+
+# ============================================
+# 1. AUTHENTICATION FLOW
+# ============================================
+
+###
+# 1.1 REGISTER NEW ADMIN USER
+# @name registerAdmin
+POST {{baseUrl}}/api/auth/sign-up/email
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+
+{
+  "name": "{{testName}}",
+  "email": "{{testEmail}}",
+  "password": "{{testPassword}}"
+}
+
+###
+# 1.2 SIGN IN (for manual testing if needed)
+# @name signIn
+POST {{baseUrl}}/api/auth/sign-in/email
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+
+{
+  "email": "{{testEmail}}",
+  "password": "{{testPassword}}"
+}
+###
+# ============================================
+# CAPTURE DYNAMIC VARIABLES FROM RESPONSES
+# ============================================
+
+# After sign-in, use this cookie format:
+ @newSessionCookie =  __Secure-better-auth.session_token=UIR8qxHiD1uNLXRjNaH37DEm8LR2LxZ7.NMXb402MUY162VcyS1BPJKZY6FNBM%2BDpESVxwFGgpCs%3D
+
+
+# User ID from the response
+@userId =  Z1kC8DArv63HsCQ20M9DeoyoBIniJ78r
+ 
+# ============================================
+# 2. ORGANIZATION CRUD FLOW
+# ============================================
+
+###
+# 2.1 CREATE ORGANIZATION
+# @name createOrganization
+POST {{baseUrl}}/api/organization/create
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Admin Test Organizatiocn {{$timestamp}}",
+  "slug": "admin-test-org-{{$timestamp}}"
+}
+###
+# After creation, update:
+@organizationId = cmisq7i8p00025g6x95u5fvpv
+
+###
+# 2.2 LIST USER ORGANIZATIONS
+GET {{baseUrl}}/api/organization
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+
+###
+# 2.3 GET ORGANIZATION DETAILS
+GET {{baseUrl}}/api/organization/{{organizationId}}
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+
+###
+# 2.4 UPDATE ORGANIZATION (OWNER ONLY)
+PUT {{baseUrl}}/api/organization/{{organizationId}}
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Updated Admin Test Organization",
+  "slug": "updated-admin-test-org"
+}
+
+###
+# 2.5 SWITCH ORGANIZATION CONTEXT
+POST {{baseUrl}}/api/organization/{{organizationId}}/switch
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+Content-Type: {{contentType}}
+
+# ============================================
+# 3. USER MANAGEMENT FLOW
+# ============================================
+
+###
+# 3.1 GET CURRENT USER PROFILE WITH MEMBERSHIPS
+GET {{baseUrl}}/users/me
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+
+###
+# 3.2 GET DETAILED USER PROFILE
+GET {{baseUrl}}/users/profile
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+
+###
+# 3.3 UPDATE USER PROFILE
+PUT {{baseUrl}}/users/profile
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+Content-Type: {{contentType}}
+
+{
+  "name": "{{testName}} Updated",
+  "image": "https://example.com/admin-avatar.jpg"
+}
+
+###
+# 3.4 GET USER BY ID
+GET {{baseUrl}}/users/{{userId}}
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+
+###
+# 3.5 LIST ALL USERS
+GET {{baseUrl}}/users
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+
+###
+# 3.6 SEARCH USERS
+GET {{baseUrl}}/users/search/admin
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+
+# ============================================
+# 4. ORGANIZATION MEMBER MANAGEMENT
+# ============================================
+
+# Create a test member user first
+@memberEmail = yihunaa@example.com
+@memberPassword = MemberPass123!
+@memberName = Test Member User
+
+###
+# 4.1 REGISTER TEST MEMBER USER
+# @name registerMember
+POST {{baseUrl}}/api/auth/sign-up/email
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+
+{
+  "name": "{{memberName}}",
+  "email": "{{memberEmail}}",
+  "password": "{{memberPassword}}"
+}
+###
+# 1.2 SIGN IN (for manual testing if needed)
+# @name signIn
+POST {{baseUrl}}/api/auth/sign-in/email
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+
+{
+  "email": "{{memberEmail}}",
+  "password": "{{memberPassword}}"
+}
+###
+# After member registration, you'll need to sign in as them to get their session
+# For now, we'll use the admin session to invite them
+@memberCookie= __Secure-better-auth.session_token=SxjKCWVEuZoBSkqnjPyg4vNTrorg7h0i.NOCkoHoLTYyEA7vLs%2FGVj9unfEXBGU0adT4iIyXW%2Bd0%3D
+@memberId = 4UOoL9trc4O6Fknnp4mEwMUzP3LnNgC3
+@invitationId = q546str4gdgmisqehzw
+ ###
+# 4.2 INVITE MEMBER TO ORGANIZATION
+# @name inviteMember
+POST {{baseUrl}}/api/organization/{{organizationId}}/invite
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+Content-Type: {{contentType}}
+
+{
+  "email": "{{memberEmail}}",
+  "role": "MEMBER"
+}
+###
+# Capture invite token from response
+@inviteToken = cmiskygg80003rs6xfh3fllgt
+
+###
+# 4.3 LIST ORGANIZATION MEMBERS
+GET {{baseUrl}}/api/organization/{{organizationId}}/members
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+
+# ============================================
+# 5. OUTLINE CRUD FLOW
+# ============================================
+
+###
+# 5.1 CREATE OUTLINE (with organization context)
+# @name createOutline
+POST {{baseUrl}}/api/outlines
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+Content-Type: {{contentType}}
+X-Organization-Id: {{organizationId}}
+
+{
+  "header": "Admin Test Outline {{$timestamp}}",
+  "sectionType": "TECHNICAL_APPROACH",
+  "status": "PENDING",
+  "target": 5000,
+  "limit": 6000,
+  "organizationId": "{{organizationId}}"
+}
+###
+# Capture outline ID
+@outlineId = cmisqf14200065g6xhamgjmj1
+
+###
+# 5.2 LIST ALL OUTLINES IN ORGANIZATION
+GET {{baseUrl}}/api/outlines
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+X-Organization-Id: {{organizationId}}
+
+###
+# 5.3 GET SINGLE OUTLINE
+GET {{baseUrl}}/api/outlines/{{outlineId}}
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+X-Organization-Id: {{organizationId}}
+
+###
+# 5.4 UPDATE OUTLINE
+PUT {{baseUrl}}/api/outlines/{{outlineId}}
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+Content-Type: {{contentType}}
+X-Organization-Id: {{organizationId}}
+
+{
+  "header": "Updated Admin Test Outline",
+  "sectionType": "DESIGN",
+  "status": "IN_PROGRESS",
+  "target": 5500,
+  "limit": 6500
+}
+
+###
+# 5.5 DELETE OUTLINE
+DELETE {{baseUrl}}/api/outlines/{{outlineId}}
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+X-Organization-Id: {{organizationId}}
+
+###
+# 5.6 CREATE ANOTHER OUTLINE FOR TESTING
+POST {{baseUrl}}/api/outlines
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+Content-Type: {{contentType}}
+X-Organization-Id: {{organizationId}}
+
+{
+  "header": "Second Test Outline {{$timestamp}}",
+  "sectionType": "EXECUTIVE_SUMMARY",
+  "target": 3000,
+  "limit": 4000,
+  "organizationId": "{{organizationId}}"
+}
+###
+@outlineId2 = cmisqg5hg00075g6x1uvkswr2
+
+# ============================================
+# 6. OUTLINE STATISTICS AND SPECIAL VIEWS
+# ============================================
+###
+# 5.4 UPDATE OUTLINE
+PUT {{baseUrl}}/api/outlines/cmisqv70800095g6x2tn5as85
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+Content-Type: {{contentType}}
+X-Organization-Id: {{organizationId}}
+
+{
+  
+  "reviewerMemberId": "cmisq7idd00035g6x3nxp3uzh"
+}
+
+###
+###
+# 6.1 GET ORGANIZATION STATISTICS
+GET {{baseUrl}}/api/outlines/organization/stats
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+X-Organization-Id: {{organizationId}}
+
+###
+# 6.2 GET ASSIGNED OUTLINES (as reviewer)
+GET {{baseUrl}}/api/outlines/reviewer/assigned
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+X-Organization-Id: {{organizationId}}
+
+###
+# 6.3 GET MY CREATED OUTLINES
+GET {{baseUrl}}/api/outlines/creator/my-outlines
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+X-Organization-Id: {{organizationId}}
+
+# ============================================
+# 7. TEST ACCEPTING INVITATION (as member)
+# ============================================
+
+# First sign in as the member to get their session
+# This requires a separate request - you'll need to:
+# 1. POST to /api/auth/sign-in/email with member credentials
+# 2. Get the cookie from the response
+# 3. Use that cookie for the accept invite request
+
+
+###
+# 1.2 SIGN IN (for manual testing if needed)
+# @name signIn
+POST {{baseUrl}}/api/auth/sign-in/email
+Origin: {{frontendUrl}}
+Content-Type: {{contentType}}
+
+{
+  "email": "{{memberEmail}}",
+  "password": "{{memberPassword}}"
+}
+###
+
+@membernewSessionCookie = __Secure-better-auth.session_token=grwdSraary4pTFtz3tAYHz9K8CLM4cRF.cQ1y70cuG4jZQyFk%2FruoSpXWh6h3reUsxB9JqpjCoqc%3D
+GET {{baseUrl}}/users/invitations
+Origin: {{frontendUrl}} 
+Cookie: {{membernewSessionCookie}}
+
+###
+###
+# 7.1 ACCEPT INVITATION (as member user)
+POST {{baseUrl}}/api/organization/accept-invite/{{invitationId}}
+Origin: {{frontendUrl}}
+Cookie: {{membernewSessionCookie}}
+Content-Type: {{contentType}}
+
+{
+  "email": "{{memberEmail}}"
+}
+
+# ============================================
+# 8. TEST ROLE PERMISSIONS
+# ============================================
+
+###
+# 8.1 MEMBER: Try to create outline (should succeed)
+POST {{baseUrl}}/api/outlines
+Origin: {{frontendUrl}}
+Cookie: {{membernewSessionCookie}}
+Content-Type: {{contentType}}
+X-Organization-Id: {{organizationId}}
+
+{
+  "header": "Member Created Outline {{$timestamp}}",
+  "sectionType": "NARRATIVE",
+  "target": 2000,
+  "limit": 3000,
+  "organizationId": "{{organizationId}}"
+}
+
+###
+# 8.2 OWNER: Revoke member access
+POST {{baseUrl}}/api/organization/{{organizationId}}/revoke
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+Content-Type: {{contentType}}
+
+{
+  "memberId": "cmismpgdg00023k6x63ajowm7"  
+}
+
+# ============================================
+# 9. ERROR SCENARIO TESTS
+# ============================================
+
+###
+# 9.1 CREATE OUTLINE WITHOUT ORGANIZATION CONTEXT (should fail)
+POST {{baseUrl}}/api/outlines
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+Content-Type: {{contentType}}
+
+{
+  "header": "Outline Without Org Context",
+  "sectionType": "EXECUTIVE_SUMMARY",
+  "target": 1000,
+  "limit": 1200
+}
+
+###
+# 9.2 CREATE OUTLINE IN DIFFERENT ORGANIZATION (not a member - should fail)
+POST {{baseUrl}}/api/outlines
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}
+Content-Type: {{contentType}}
+X-Organization-Id: some-other-org-id
+
+{
+  "header": "Outline in Different Org",
+  "sectionType": "EXECUTIVE_SUMMARY",
+  "target": 1000,
+  "limit": 1200,
+  "organizationId": "some-other-org-id"
+}
+
+###
+# 9.3 GET SESSION INFO (debugging)
+GET {{baseUrl}}/api/auth/session
+Origin: {{frontendUrl}}
+Cookie: {{newSessionCookie}}

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 // src/auth/middleware/organization-context.middleware.ts
 import {
   Injectable,
@@ -8,6 +10,7 @@ import {
 import { Request, Response, NextFunction } from 'express';
 import { PrismaService } from '../../lib/prisma.service';
 import { RequestWithAuth } from '../types/request.types';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class OrganizationContextMiddleware implements NestMiddleware {
@@ -16,18 +19,12 @@ export class OrganizationContextMiddleware implements NestMiddleware {
   constructor(private readonly prisma: PrismaService) {}
 
   async use(req: RequestWithAuth, res: Response, next: NextFunction) {
-    // Skip if no user
     if (!req.user) {
       this.logger.debug('No user in request, skipping organization context');
       return next();
     }
 
-    // Get organization from (in order of priority):
-    // 1. Header: X-Organization-Id
-    // 2. Query param: organizationId
-    // 3. Body: organizationId
-    // 4. Default: first membership
-    let organizationId =
+    let organizationId: string | undefined =
       (req.headers['x-organization-id'] as string) ||
       (req.query.organizationId as string) ||
       req.body?.organizationId;
@@ -36,13 +33,84 @@ export class OrganizationContextMiddleware implements NestMiddleware {
       `Organization ID from request: ${organizationId || 'not specified'}`,
     );
 
-    // If no organization specified, use default
     if (!organizationId && req.user.memberships.length > 0) {
       organizationId = req.user.memberships[0].organizationId;
       this.logger.debug(`Using default organization: ${organizationId}`);
     }
 
-    // Validate organization membership
+    if (req.user && req.user.role?.toUpperCase() === 'OWNER') {
+      if (organizationId && req.user.memberships.length === 0) {
+        const ownedOrg = await this.prisma.organization.findFirst({
+          where: {
+            id: organizationId,
+            members: {
+              some: {
+                userId: req.user.id,
+                role: 'OWNER' as Role,
+                deletedAt: null,
+              },
+            },
+          },
+          include: {
+            members: {
+              where: {
+                userId: req.user.id,
+                deletedAt: null,
+              },
+            },
+          },
+        });
+
+        if (ownedOrg) {
+          const membership = ownedOrg.members[0];
+
+          if (membership) {
+            const fullMembership =
+              await this.prisma.organizationMember.findUnique({
+                where: { id: membership.id },
+                include: {
+                  organization: true,
+                },
+              });
+
+            if (fullMembership) {
+              req.organizationContext = {
+                organizationId,
+                organization: ownedOrg,
+                memberId: fullMembership.id,
+                memberRole: fullMembership.role,
+                membership: fullMembership,
+              };
+            }
+          } else {
+            const newMembership = await this.prisma.organizationMember.create({
+              data: {
+                organizationId,
+                userId: req.user.id,
+                role: 'OWNER' as Role,
+              },
+              include: {
+                organization: true,
+              },
+            });
+
+            req.organizationContext = {
+              organizationId,
+              organization: ownedOrg,
+              memberId: newMembership.id,
+              memberRole: newMembership.role,
+              membership: newMembership,
+            };
+          }
+
+          this.logger.debug(
+            `Owner context auto-created for organization ${organizationId}`,
+          );
+          return next();
+        }
+      }
+    }
+
     if (organizationId) {
       const membership = req.user.memberships.find(
         (m) => m.organizationId === organizationId,
@@ -57,7 +125,6 @@ export class OrganizationContextMiddleware implements NestMiddleware {
         );
       }
 
-      // Set organization context
       req.organizationContext = {
         organizationId,
         organization: membership.organization,
@@ -70,7 +137,6 @@ export class OrganizationContextMiddleware implements NestMiddleware {
         `Organization context set: ${organizationId}, role: ${membership.role}`,
       );
     } else if (req.user.memberships.length === 0) {
-      // No memberships - user needs to create/join an organization
       req.organizationContext = null;
       this.logger.debug('User has no organization memberships');
     } else {

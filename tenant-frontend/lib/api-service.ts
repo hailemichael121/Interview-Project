@@ -326,20 +326,19 @@ export const outlineApi = {
   },
 
   listOutlines: async (
-    organizationId?: string,
+    organizationId: string,
     page = 1,
     perPage = 10
   ): Promise<OutlineListResponse> => {
-    let finalOrgId = organizationId;
-    if (!finalOrgId && typeof window !== "undefined") {
-      finalOrgId = localStorage.getItem("currentOrganizationId") || undefined;
-    }
+    if (!organizationId) throw new Error("Organization context is required");
 
-    if (!finalOrgId) throw new Error("Organization context is required");
+    const url = `/api/outlines?page=${page}&perPage=${perPage}&organizationId=${organizationId}`;
 
-    const url = `/api/outlines?page=${page}&perPage=${perPage}&organizationId=${finalOrgId}`;
-
-    const res = await apiFetch<Outline[]>(url, { method: "GET" }, finalOrgId);
+    const res = await apiFetch<Outline[]>(
+      url,
+      { method: "GET" },
+      organizationId
+    );
     return {
       ...res,
       page: res.page ?? page,
@@ -350,35 +349,26 @@ export const outlineApi = {
 
   getOutline: async (
     outlineId: string,
-    organizationId?: string
+    organizationId: string
   ): Promise<ApiResponse<Outline>> => {
-    let finalOrgId = organizationId;
-    if (!finalOrgId && typeof window !== "undefined") {
-      finalOrgId = localStorage.getItem("currentOrganizationId") || undefined;
-    }
-
-    if (!finalOrgId) throw new Error("Organization context is required");
-
-    const url = `/api/outlines/${outlineId}?organizationId=${finalOrgId}`;
-
-    return apiFetch<Outline>(url, { method: "GET" }, finalOrgId);
+    if (!organizationId) throw new Error("Organization context is required");
+    return apiFetch<Outline>(
+      `/api/outlines/${outlineId}`,
+      { method: "GET" },
+      organizationId
+    );
   },
 
   updateOutline: async (
     outlineId: string,
     data: UpdateOutlineDto,
-    organizationId?: string
+    organizationId: string
   ): Promise<ApiResponse<Outline>> => {
-    let finalOrgId = organizationId;
-    if (!finalOrgId && typeof window !== "undefined") {
-      finalOrgId = localStorage.getItem("currentOrganizationId") || undefined;
-    }
-
-    if (!finalOrgId) throw new Error("Organization context is required");
+    if (!organizationId) throw new Error("Organization context is required");
 
     const requestData = {
       ...data,
-      organizationId: finalOrgId,
+      organizationId,
     };
 
     return apiFetch<Outline>(
@@ -387,39 +377,29 @@ export const outlineApi = {
         method: "PUT",
         body: JSON.stringify(requestData),
       },
-      finalOrgId
+      organizationId
     );
   },
 
   deleteOutline: async (
     outlineId: string,
-    organizationId?: string
+    organizationId: string
   ): Promise<ApiResponse<Outline>> => {
-    let finalOrgId = organizationId;
-    if (!finalOrgId && typeof window !== "undefined") {
-      finalOrgId = localStorage.getItem("currentOrganizationId") || undefined;
-    }
+    if (!organizationId) throw new Error("Organization context is required");
 
-    if (!finalOrgId) throw new Error("Organization context is required");
+    const url = `/api/outlines/${outlineId}?organizationId=${organizationId}`;
 
-    const url = `/api/outlines/${outlineId}?organizationId=${finalOrgId}`;
-
-    return apiFetch<Outline>(url, { method: "DELETE" }, finalOrgId);
+    return apiFetch<Outline>(url, { method: "DELETE" }, organizationId);
   },
 
   getOrganizationOutlineStats: async (
-    organizationId?: string
+    organizationId: string
   ): Promise<OutlineStatsResponse> => {
-    let finalOrgId = organizationId;
-    if (!finalOrgId && typeof window !== "undefined") {
-      finalOrgId = localStorage.getItem("currentOrganizationId") || undefined;
-    }
+    if (!organizationId) throw new Error("Organization context is required");
 
-    if (!finalOrgId) throw new Error("Organization context is required");
+    const url = `/api/outlines/organization/stats?organizationId=${organizationId}`;
 
-    const url = `/api/outlines/organization/stats?organizationId=${finalOrgId}`;
-
-    return apiFetch<OutlineStats>(url, { method: "GET" }, finalOrgId);
+    return apiFetch<OutlineStats>(url, { method: "GET" }, organizationId);
   },
 
   getAssignedOutlines: async (
