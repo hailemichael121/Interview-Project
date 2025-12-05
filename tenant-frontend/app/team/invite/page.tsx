@@ -1,7 +1,6 @@
-// app/team/invite/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +15,56 @@ import DashboardLayout from "@/components/layout/dashboard-layout";
 import { useTheme } from "next-themes";
 import { EmailSuggestions } from "@/components/auth/email-suggestions";
 
-export default function InviteMemberPage() {
+// Loading component for Suspense fallback
+function InviteFormSkeleton() {
+    return (
+        <DashboardLayout>
+            <div className="max-w-2xl mx-auto">
+                <Card className="border-0 shadow-2xl rounded-2xl overflow-hidden bg-card">
+                    <CardHeader className="text-center space-y-4 pb-8 pt-10 bg-linear-to-b from-primary/5 to-transparent">
+                        <div className="mx-auto w-20 h-20 rounded-2xl bg-linear-to-br from-white-500 to-white-600 flex items-center justify-center shadow-xl">
+                            <UserPlus className="h-10 w-10 text-white" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-3xl font-bold">Invite Team Member</CardTitle>
+                            <p className="text-muted-foreground mt-2 text-lg">
+                                Send an invitation to join an organization
+                            </p>
+                        </div>
+                    </CardHeader>
+
+                    <CardContent className="px-10 pb-10">
+                        <div className="space-y-8">
+                            {/* Email skeleton */}
+                            <div className="space-y-2">
+                                <Label className="text-base font-medium flex items-center gap-2">
+                                    <Mail className="h-4 w-4" />
+                                    Email Address
+                                </Label>
+                                <div className="h-14 bg-gray-200 dark:bg-gray-800 rounded-md animate-pulse"></div>
+                            </div>
+
+                            {/* Role skeleton */}
+                            <div className="space-y-2">
+                                <Label className="text-base font-medium flex items-center gap-2">
+                                    <Shield className="h-4 w-4" />
+                                    Role
+                                </Label>
+                                <div className="h-14 bg-gray-200 dark:bg-gray-800 rounded-md animate-pulse"></div>
+                            </div>
+
+                            {/* Button skeleton */}
+                            <div className="h-14 bg-gray-200 dark:bg-gray-800 rounded-md animate-pulse"></div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </DashboardLayout>
+    );
+}
+
+// Main component wrapped in Suspense
+function InviteMemberContent() {
     const searchParams = useSearchParams();
     const orgId = searchParams.get("org");
     const { currentOrganization, currentMemberRole } = useOrganizationContext();
@@ -161,5 +209,14 @@ export default function InviteMemberPage() {
                 </Card>
             </div>
         </DashboardLayout>
+    );
+}
+
+// Main page component with Suspense boundary
+export default function InviteMemberPage() {
+    return (
+        <Suspense fallback={<InviteFormSkeleton />}>
+            <InviteMemberContent />
+        </Suspense>
     );
 }
