@@ -1,4 +1,3 @@
-// lib/api.ts
 export * from "./api-service";
 export { default as apiService } from "./api-service";
 export { default as useApi } from "@/hooks/use-api";

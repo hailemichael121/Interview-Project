@@ -1,15 +1,13 @@
-// components/team/invitations-table.tsx
 "use client";
 
 import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Mail, XCircle, RefreshCw } from "lucide-react";
- import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { createTextColumn, createDateColumn, createBadgeColumn } from "@/components/ui/table-columns";
 
-// Define a type for invitations in the table
 export interface TableInvitation {
   id: string;
   email: string;
@@ -47,7 +45,6 @@ export function InvitationsTable({
         setResendingId(invitationId);
         await onResend(invitationId, email);
       } catch {
-        // Error handled by parent
       } finally {
         setResendingId(null);
       }
@@ -60,7 +57,6 @@ export function InvitationsTable({
         setCancellingId(invitationId);
         await onCancel(invitationId, invitation);
       } catch {
-        // Error handled by parent
       } finally {
         setCancellingId(null);
       }
@@ -81,8 +77,8 @@ export function InvitationsTable({
               status === "PENDING"
                 ? "outline"
                 : status === "ACCEPTED"
-                ? "default"
-                : "destructive"
+                  ? "default"
+                  : "destructive"
             }
           >
             {status}

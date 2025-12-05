@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-// src/outlines/outlines.service.ts - UPDATED with OWNER bypass and proper reviewer assignment
 import {
   Injectable,
   NotFoundException,
@@ -34,7 +33,6 @@ export class OutlinesService {
     createOutlineDto: CreateOutlineDto,
   ) {
     try {
-      // Validate required fields
       if (!createOutlineDto.header?.trim()) {
         throw new BadRequestException('Header is required');
       }
@@ -43,7 +41,6 @@ export class OutlinesService {
         throw new BadRequestException('Section type is required');
       }
 
-      // Validate section type
       const validSectionTypes = Object.values(SectionType) as string[];
       if (!validSectionTypes.includes(createOutlineDto.sectionType)) {
         throw new BadRequestException(
@@ -51,7 +48,6 @@ export class OutlinesService {
         );
       }
 
-      // For non-OWNER roles, verify membership and permissions
       if (memberRole !== Role.OWNER) {
         const membership = await this.prisma.organizationMember.findFirst({
           where: {
@@ -83,7 +79,6 @@ export class OutlinesService {
           );
         }
       } else {
-        // For OWNER: ensure they're added as a member if not already
         const ownerMembership = await this.prisma.organizationMember.findFirst({
           where: {
             userId,
@@ -106,7 +101,6 @@ export class OutlinesService {
         }
       }
 
-      // Check duplicate header in current organization
       const existingOutline = await this.prisma.outline.findFirst({
         where: {
           header: createOutlineDto.header.trim(),
@@ -121,7 +115,6 @@ export class OutlinesService {
         );
       }
 
-      // Validate reviewer if provided
       if (createOutlineDto.reviewerMemberId) {
         const reviewerMember = await this.prisma.organizationMember.findFirst({
           where: {
@@ -140,7 +133,6 @@ export class OutlinesService {
           );
         }
 
-        // For non-OWNER roles, prevent self-assignment
         if (memberRole !== Role.OWNER) {
           if (createOutlineDto.reviewerMemberId === memberId) {
             throw new BadRequestException(
@@ -160,7 +152,6 @@ export class OutlinesService {
         }
       }
 
-      // Create outline
       const outline = await this.prisma.outline.create({
         data: {
           header: createOutlineDto.header.trim(),
@@ -368,7 +359,6 @@ export class OutlinesService {
           }
         }
 
-        // Validate reviewer if provided
         if (updateOutlineDto.reviewerMemberId) {
           const reviewerMember = await this.prisma.organizationMember.findFirst(
             {
@@ -392,7 +382,6 @@ export class OutlinesService {
           updatedAt: new Date(),
         };
 
-        // Trim header if provided
         if (updateOutlineDto.header) {
           updateData.header = updateOutlineDto.header.trim();
         }
@@ -423,7 +412,6 @@ export class OutlinesService {
         };
       }
 
-      // For non-OWNER roles, check membership
       const membership = await this.prisma.organizationMember.findFirst({
         where: {
           userId,
@@ -442,7 +430,6 @@ export class OutlinesService {
         throw new ForbiddenException('Invalid organization context');
       }
 
-      // Check permissions using PermissionService
       const permission = this.permissionService.canUpdateOutline(
         { organizationId, memberId, memberRole },
         {
@@ -458,7 +445,6 @@ export class OutlinesService {
         throw new ForbiddenException(permission.reason);
       }
 
-      // Check for duplicate header if header is being updated
       if (
         updateOutlineDto.header &&
         updateOutlineDto.header.trim() !== outline.header
@@ -479,7 +465,6 @@ export class OutlinesService {
         }
       }
 
-      // Validate section type if provided
       if (updateOutlineDto.sectionType) {
         const validSectionTypes = Object.values(SectionType) as string[];
         if (!validSectionTypes.includes(updateOutlineDto.sectionType)) {
@@ -489,7 +474,6 @@ export class OutlinesService {
         }
       }
 
-      // Validate reviewer if provided
       if (updateOutlineDto.reviewerMemberId) {
         const reviewerMember = await this.prisma.organizationMember.findFirst({
           where: {
@@ -505,14 +489,12 @@ export class OutlinesService {
           );
         }
 
-        // Prevent self-assignment for non-owners
         if (updateOutlineDto.reviewerMemberId === memberId) {
           throw new BadRequestException(
             'You cannot assign yourself as a reviewer',
           );
         }
 
-        // Optional: Restrict to REVIEWER/OWNER roles for non-owners
         if (
           reviewerMember.role !== 'REVIEWER' &&
           reviewerMember.role !== 'OWNER'
@@ -523,13 +505,11 @@ export class OutlinesService {
         }
       }
 
-      // Apply updates based on permission service result
       const updateData: any = { updatedAt: new Date() };
 
       if (permission.allowedFields) {
         Object.assign(updateData, permission.allowedFields);
       } else {
-        // Fallback logic
         switch (memberRole) {
           case Role.REVIEWER:
             if (updateOutlineDto.status !== undefined) {
@@ -540,7 +520,6 @@ export class OutlinesService {
           case Role.MEMBER: {
             const { status, ...memberUpdates } = updateOutlineDto;
             Object.assign(updateData, memberUpdates);
-            // Creator who is also assigned as reviewer can update status
             if (
               outline.reviewerMemberId &&
               memberId === outline.reviewerMemberId &&
@@ -550,11 +529,9 @@ export class OutlinesService {
             }
             break;
           }
-          // No default case needed
         }
       }
 
-      // Trim header if provided
       if (updateOutlineDto.header) {
         updateData.header = updateOutlineDto.header.trim();
       }
@@ -621,7 +598,6 @@ export class OutlinesService {
         );
       }
 
-      // OWNERS can delete anything without permission checks
       if (memberRole === Role.OWNER) {
         const deletedOutline = await this.prisma.outline.update({
           where: { id },
@@ -649,7 +625,6 @@ export class OutlinesService {
         };
       }
 
-      // For non-owners, check delete permissions
       const canDelete = this.permissionService.canDeleteOutline(
         { organizationId, memberId, memberRole },
         {
@@ -706,9 +681,6 @@ export class OutlinesService {
     }
   }
 
-  /**
-   * Get organization statistics for the current user's organization
-   */
   async getOrganizationOutlineStats(organizationId: string) {
     try {
       const organization = await this.prisma.organization.findUnique({
@@ -769,9 +741,6 @@ export class OutlinesService {
     }
   }
 
-  /**
-   * Get outlines assigned to current user as reviewer
-   */
   async getAssignedOutlines(
     organizationId: string,
     memberId: string,
@@ -836,9 +805,6 @@ export class OutlinesService {
     }
   }
 
-  /**
-   * Get outlines created by current user
-   */
   async getMyOutlines(
     organizationId: string,
     memberId: string,
@@ -903,9 +869,6 @@ export class OutlinesService {
     }
   }
 
-  /**
-   * Get organization members who can be assigned as reviewers
-   */
   async getAvailableReviewers(
     organizationId: string,
     currentMemberId?: string,
@@ -915,7 +878,6 @@ export class OutlinesService {
         where: {
           organizationId,
           deletedAt: null,
-          // Exclude the current user if provided
           ...(currentMemberId ? { id: { not: currentMemberId } } : {}),
         },
         include: {
@@ -927,10 +889,7 @@ export class OutlinesService {
             },
           },
         },
-        orderBy: [
-          { role: 'desc' }, // Owners first, then reviewers, etc.
-          { user: { name: 'asc' } },
-        ],
+        orderBy: [{ role: 'desc' }, { user: { name: 'asc' } }],
       });
 
       return {

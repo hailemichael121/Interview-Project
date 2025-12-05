@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-// src/organization/organization.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -27,9 +26,7 @@ export class OrganizationService {
     private permissionService: PermissionService,
   ) {}
 
-  // --------------------------
   // Create organization
-  // --------------------------
   async createOrganization(dto: CreateOrganizationDto, ownerId: string) {
     try {
       this.logger.log(`Creating organization "${dto.name}" by user ${ownerId}`);
@@ -40,7 +37,6 @@ export class OrganizationService {
         finalSlug = this.generateSlug(dto.name);
       }
 
-      // Check for existing organization with the same slug
       const existingOrg = await this.prisma.organization.findUnique({
         where: { slug: finalSlug },
       });
@@ -102,7 +98,6 @@ export class OrganizationService {
         throw error;
       }
 
-      // Check if it's a Prisma error
       if (error.code && error.code === 'P2002') {
         const constraint =
           (error.meta as any)?.target ||
@@ -124,9 +119,6 @@ export class OrganizationService {
     }
   }
 
-  // --------------------------
-  // List organizations for a user (using pre-fetched memberships)
-  // --------------------------
   async listUserOrganizations(
     userId: string,
     memberships: any[],
@@ -134,11 +126,9 @@ export class OrganizationService {
     perPage = 10,
   ) {
     try {
-      // Use pagination on the pre-fetched memberships
       const skip = (page - 1) * perPage;
       const paginatedMemberships = memberships.slice(skip, skip + perPage);
 
-      // Fetch complete organization details for paginated memberships
       const organizations = await Promise.all(
         paginatedMemberships.map(async (membership: any) => {
           const org = await this.prisma.organization.findUnique({
@@ -190,9 +180,6 @@ export class OrganizationService {
     }
   }
 
-  // --------------------------
-  // Get organization details
-  // --------------------------
   async getOrganizationDetails(organizationId: string) {
     try {
       const organization = await this.prisma.organization.findUnique({
@@ -244,9 +231,6 @@ export class OrganizationService {
     }
   }
 
-  // --------------------------
-  // Update organization
-  // --------------------------
   async updateOrganization(
     orgId: string,
     dto: UpdateOrganizationDto,
@@ -254,14 +238,12 @@ export class OrganizationService {
     userRole: string,
   ) {
     try {
-      // Verify user is OWNER of this organization
       if (userRole !== 'OWNER') {
         throw new ForbiddenException(
           'Only organization owners can update organization details',
         );
       }
 
-      // Check for duplicate slug if slug is being updated
       if (dto.slug) {
         const existingOrg = await this.prisma.organization.findFirst({
           where: {
@@ -312,9 +294,6 @@ export class OrganizationService {
     }
   }
 
-  // --------------------------
-  // Invite member
-  // --------------------------
   async inviteMember(
     orgId: string,
     email: string,
@@ -323,10 +302,8 @@ export class OrganizationService {
     inviterMemberId: string,
   ) {
     try {
-      // NORMALIZE EMAIL TO LOWERCASE
       const normalizedEmail = email.toLowerCase();
 
-      // Get organization for invitation details
       const organization = await this.prisma.organization.findUnique({
         where: { id: orgId },
       });
@@ -335,13 +312,11 @@ export class OrganizationService {
         throw new NotFoundException('Organization not found');
       }
 
-      // Get inviter details for email
       const inviterUser = await this.prisma.user.findUnique({
         where: { id: inviterUserId },
         select: { name: true, email: true },
       });
 
-      // Check if user is already a member (use normalized email)
       const existingUser = await this.prisma.user.findUnique({
         where: { email: normalizedEmail },
       });
@@ -361,7 +336,6 @@ export class OrganizationService {
         }
       }
 
-      // Check for existing pending invite (use normalized email)
       const existingInvite = await this.prisma.organizationInvite.findFirst({
         where: {
           organizationId: orgId,
@@ -376,12 +350,10 @@ export class OrganizationService {
         );
       }
 
-      // Generate invitation token
       const token =
         Math.random().toString(36).substring(2) + Date.now().toString(36);
       const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-      // Create invitation in database
       const invite = await this.prisma.organizationInvite.create({
         data: {
           organizationId: orgId,
@@ -393,7 +365,6 @@ export class OrganizationService {
         },
       });
 
-      // Log invitation
       await this.prisma.invitationLog.create({
         data: {
           inviteToken: token,
@@ -405,7 +376,6 @@ export class OrganizationService {
         },
       });
 
-      // Send invitation email
       await this.sendInvitationEmail(
         email,
         token,
@@ -446,9 +416,6 @@ export class OrganizationService {
     }
   }
 
-  // --------------------------
-  // Send invitation email
-  // --------------------------
   private async sendInvitationEmail(
     toEmail: string,
     token: string,
@@ -456,15 +423,12 @@ export class OrganizationService {
     inviterName?: string,
   ) {
     try {
-      // Construct invitation URL
       const baseUrl =
         process.env.FRONTEND_URL || 'https://tenanncy.onrender.com';
       const invitationUrl = `${baseUrl}/api/organization/accept-invite/${token}`;
 
-      // Email subject
       const subject = `You've been invited to join ${organizationName} on Tenanncy`;
 
-      // HTML email template
       const html = `
         <!DOCTYPE html>
         <html>
@@ -519,7 +483,6 @@ export class OrganizationService {
         </html>
       `;
 
-      // Plain text version
       const text = `
 Organization Invitation - Tenanncy
 ===================================
@@ -538,7 +501,6 @@ If you don't have a Tenanncy account yet, you'll be prompted to create one.
 © ${new Date().getFullYear()} Tenanncy. All rights reserved.
       `;
 
-      // Send email using nodemailer
       await sendEmail(toEmail, subject, html, text);
 
       this.logger.log(`Invitation email sent to ${toEmail}`);
@@ -547,13 +509,9 @@ If you don't have a Tenanncy account yet, you'll be prompted to create one.
         `Failed to send invitation email to ${toEmail}:`,
         emailError,
       );
-      // Don't throw - log error but don't fail the invitation
     }
   }
 
-  // --------------------------
-  // Accept invitation
-  // --------------------------
   async acceptInvitation(token: string, userId: string, userEmail: string) {
     try {
       const invite = await this.prisma.organizationInvite.findFirst({
@@ -571,14 +529,12 @@ If you don't have a Tenanncy account yet, you'll be prompted to create one.
         throw new NotFoundException('Invalid or expired invitation');
       }
 
-      // Verify invitation email matches user email
       if (userEmail !== invite.email) {
         throw new ForbiddenException(
           'This invitation was sent to a different email address',
         );
       }
 
-      // Check if user is already a member
       const existingMember = await this.prisma.organizationMember.findFirst({
         where: {
           organizationId: invite.organizationId,
@@ -593,7 +549,6 @@ If you don't have a Tenanncy account yet, you'll be prompted to create one.
         );
       }
 
-      // Create membership
       const member = await this.prisma.organizationMember.create({
         data: {
           organizationId: invite.organizationId,
@@ -611,7 +566,6 @@ If you don't have a Tenanncy account yet, you'll be prompted to create one.
         },
       });
 
-      // Update invitation log
       if (invite.logs.length > 0) {
         await this.prisma.invitationLog.update({
           where: { id: invite.logs[0].id },
@@ -623,7 +577,6 @@ If you don't have a Tenanncy account yet, you'll be prompted to create one.
         });
       }
 
-      // Mark invitation as used
       await this.prisma.organizationInvite.update({
         where: { id: invite.id },
         data: { deletedAt: new Date() },
@@ -669,9 +622,6 @@ If you don't have a Tenanncy account yet, you'll be prompted to create one.
     }
   }
 
-  // --------------------------
-  // List members (paginated)
-  // --------------------------
   async listMembers(orgId: string, page = 1, perPage = 10) {
     try {
       const skip = (page - 1) * perPage;
@@ -722,9 +672,6 @@ If you don't have a Tenanncy account yet, you'll be prompted to create one.
     }
   }
 
-  // --------------------------
-  // Revoke member
-  // --------------------------
   async revokeMember(
     orgId: string,
     targetMemberId: string,
@@ -732,7 +679,6 @@ If you don't have a Tenanncy account yet, you'll be prompted to create one.
     ownerRole: string,
   ) {
     try {
-      // Verify owner role
       if (ownerRole !== 'OWNER') {
         throw new ForbiddenException(
           'Only organization owners can revoke member access',
@@ -751,19 +697,16 @@ If you don't have a Tenanncy account yet, you'll be prompted to create one.
         throw new NotFoundException('Member not found');
       }
 
-      // Verify target member belongs to the same organization
       if (targetMember.organizationId !== orgId) {
         throw new BadRequestException(
           'Member does not belong to this organization',
         );
       }
 
-      // Prevent owners from revoking themselves
       if (targetMember.userId === ownerId) {
         throw new ForbiddenException('Cannot revoke your own access as owner');
       }
 
-      // Prevent revoking other owners
       if (targetMember.role === 'OWNER') {
         throw new ForbiddenException('Cannot revoke another owner');
       }
@@ -801,9 +744,6 @@ If you don't have a Tenanncy account yet, you'll be prompted to create one.
     }
   }
 
-  // --------------------------
-  // Validate and switch organization
-  // --------------------------
   async validateAndSwitchOrganization(userId: string, organizationId: string) {
     try {
       const membership = await this.prisma.organizationMember.findFirst({
@@ -850,9 +790,6 @@ If you don't have a Tenanncy account yet, you'll be prompted to create one.
     }
   }
 
-  // --------------------------
-  // Create default organization for user (used when none exists)
-  // --------------------------
   async createDefaultOrganization(userId: string, userEmail: string) {
     try {
       const userName = userEmail.split('@')[0];
@@ -862,7 +799,6 @@ If you don't have a Tenanncy account yet, you'll be prompted to create one.
       let slug = baseSlug;
       let counter = 1;
 
-      // Ensure unique slug
       while (await this.prisma.organization.findUnique({ where: { slug } })) {
         slug = `${baseSlug}-${counter}`;
         counter++;
@@ -901,7 +837,6 @@ If you don't have a Tenanncy account yet, you'll be prompted to create one.
     }
   }
 
-  // Helper method to generate slug from name
   private generateSlug(name: string): string {
     return name
       .toLowerCase()

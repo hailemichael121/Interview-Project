@@ -1,4 +1,3 @@
-// app/outlines/create/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -17,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {  Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
@@ -35,7 +34,7 @@ export default function CreateOutlinePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!currentOrganizationId) {
       toast.error("Please select an organization");
       return;
@@ -62,18 +61,17 @@ export default function CreateOutlinePage() {
         router.push("/outlines");
       }
     } catch (error: unknown) {
-  console.error("Organization creation error:", error);
-  const errorMessage = error instanceof Error ? error.message : "Failed to create organization";
-  
-  // Handle specific error cases
-  if (errorMessage?.includes("already exists")) {
-    toast.error("An organization with this name or slug already exists. Please choose a different name.");
-  } else if (errorMessage?.includes("slug")) {
-    toast.error("The URL slug is already taken. Please try a different organization name.");
-  } else {
-    toast.error(errorMessage || "Failed to create organization. Please try again.");
-  }
-}finally {
+      console.error("Organization creation error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to create organization";
+
+      if (errorMessage?.includes("already exists")) {
+        toast.error("An organization with this name or slug already exists. Please choose a different name.");
+      } else if (errorMessage?.includes("slug")) {
+        toast.error("The URL slug is already taken. Please try a different organization name.");
+      } else {
+        toast.error(errorMessage || "Failed to create organization. Please try again.");
+      }
+    } finally {
       setIsLoading(false);
     }
   };
@@ -119,7 +117,7 @@ export default function CreateOutlinePage() {
                   id="header"
                   placeholder="e.g., Executive Summary, Technical Approach"
                   value={formData.header}
-                  onChange={(e) => setFormData({...formData, header: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, header: e.target.value })}
                   required
                 />
               </div>
@@ -128,7 +126,7 @@ export default function CreateOutlinePage() {
                 <Label htmlFor="sectionType">Section Type *</Label>
                 <Select
                   value={formData.sectionType}
-                  onValueChange={(value: any) => setFormData({...formData, sectionType: value})}
+                  onValueChange={(value: any) => setFormData({ ...formData, sectionType: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select section type" />
@@ -153,7 +151,7 @@ export default function CreateOutlinePage() {
                     type="number"
                     placeholder="1500"
                     value={formData.target}
-                    onChange={(e) => setFormData({...formData, target: parseInt(e.target.value) || 0})}
+                    onChange={(e) => setFormData({ ...formData, target: parseInt(e.target.value) || 0 })}
                   />
                 </div>
                 <div>
@@ -163,7 +161,7 @@ export default function CreateOutlinePage() {
                     type="number"
                     placeholder="2000"
                     value={formData.limit}
-                    onChange={(e) => setFormData({...formData, limit: parseInt(e.target.value) || 0})}
+                    onChange={(e) => setFormData({ ...formData, limit: parseInt(e.target.value) || 0 })}
                   />
                 </div>
               </div>
@@ -172,14 +170,13 @@ export default function CreateOutlinePage() {
                 <Label htmlFor="reviewerId">Reviewer (Optional)</Label>
                 <Select
                   value={formData.reviewerId}
-                  onValueChange={(value) => setFormData({...formData, reviewerId: value})}
+                  onValueChange={(value) => setFormData({ ...formData, reviewerId: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select reviewer" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Unassigned</SelectItem>
-                    {/* You would fetch reviewers from API here */}
                     <SelectItem value="reviewer-1">John Doe</SelectItem>
                     <SelectItem value="reviewer-2">Jane Smith</SelectItem>
                   </SelectContent>

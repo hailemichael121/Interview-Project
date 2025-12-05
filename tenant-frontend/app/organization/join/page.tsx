@@ -1,4 +1,3 @@
-// app/organization/join/page.tsx
 "use client";
 
 import { useState, Suspense } from "react";
@@ -49,7 +48,7 @@ function JoinOrganizationContent() {
     <div className="max-w-2xl mx-auto">
       <Card className="border-0 shadow-2xl rounded-2xl overflow-hidden bg-card/95 backdrop-blur">
         <CardHeader className="text-center space-y-4 pb-8 pt-10">
-          <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center shadow-xl">
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-linear-to-br from-gray-500 to-gray-600 flex items-center justify-center shadow-xl">
             <Users className="h-10 w-10 text-white" />
           </div>
           <div>
@@ -62,7 +61,6 @@ function JoinOrganizationContent() {
 
         <CardContent className="px-10 pb-10">
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Email (read-only) */}
             <div className="space-y-2">
               <Label className="text-base flex items-center gap-2">
                 <Mail className="h-4 w-4" />
@@ -76,7 +74,6 @@ function JoinOrganizationContent() {
               </p>
             </div>
 
-            {/* Token Input */}
             <div className="space-y-2">
               <Label htmlFor="token" className="text-base flex items-center gap-2">
                 <Key className="h-4 w-4" />
@@ -93,9 +90,8 @@ function JoinOrganizationContent() {
               />
             </div>
 
-            {/* Security Note */}
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 flex gap-4">
-              <Shield className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
+              <Shield className="h-6 w-6 text-primary shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium">Secure & Private</p>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -104,7 +100,6 @@ function JoinOrganizationContent() {
               </div>
             </div>
 
-            {/* Submit */}
             <Button
               type="submit"
               size="lg"
@@ -125,7 +120,6 @@ function JoinOrganizationContent() {
             </Button>
           </form>
 
-          {/* Alternative */}
           <div className="mt-10 text-center">
             <p className="text-sm text-muted-foreground">
               Don&apos;t have an invite?{" "}

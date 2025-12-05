@@ -47,7 +47,6 @@ export class OrganizationController {
     );
   }
 
-  // FIXED: Removed OrganizationGuard since we're checking params manually
   @Put(':id')
   async updateOrg(
     @CurrentUser('id') userId: string,
@@ -55,7 +54,6 @@ export class OrganizationController {
     @Param('id') id: string,
     @Body() dto: UpdateOrganizationDto,
   ) {
-    // Find membership for this organization
     const membership = memberships.find((m) => m.organizationId === id);
     if (!membership) {
       throw new BadRequestException(
@@ -66,7 +64,6 @@ export class OrganizationController {
     return this.service.updateOrganization(id, dto, userId, membership.role);
   }
 
-  // FIXED: Simplified - no OrganizationGuard
   @Get(':id/members')
   async listMembers(
     @CurrentUser('id') userId: string,
@@ -75,7 +72,6 @@ export class OrganizationController {
     @Query('page') page = '1',
     @Query('perPage') perPage = '10',
   ) {
-    // Find membership for this organization
     const membership = memberships.find((m) => m.organizationId === id);
     if (!membership) {
       throw new BadRequestException(
@@ -83,7 +79,6 @@ export class OrganizationController {
       );
     }
 
-    // Check if user has permission to view members
     if (!['OWNER', 'REVIEWER'].includes(membership.role)) {
       throw new BadRequestException(
         'You do not have permission to view organization members',
@@ -93,7 +88,6 @@ export class OrganizationController {
     return this.service.listMembers(id, Number(page), Number(perPage));
   }
 
-  // FIXED: Simplified - no OrganizationGuard
   @Post(':id/invite')
   async inviteMember(
     @CurrentUser('id') userId: string,
@@ -101,7 +95,6 @@ export class OrganizationController {
     @Param('id') id: string,
     @Body() body: { email: string; role: 'MEMBER' | 'OWNER' },
   ) {
-    // Find membership for this organization
     const membership = memberships.find((m) => m.organizationId === id);
     if (!membership) {
       throw new BadRequestException(
@@ -109,7 +102,6 @@ export class OrganizationController {
       );
     }
 
-    // Check if user has permission to invite members
     if (membership.role !== 'OWNER') {
       throw new BadRequestException(
         'Only organization owners can invite members',
@@ -134,7 +126,6 @@ export class OrganizationController {
     return this.service.acceptInvitation(token, userId, userEmail);
   }
 
-  // FIXED: Simplified - no OrganizationGuard
   @Post(':id/revoke')
   async revokeMember(
     @CurrentUser('id') userId: string,
@@ -142,7 +133,6 @@ export class OrganizationController {
     @Param('id') id: string,
     @Body('memberId') targetMemberId: string,
   ) {
-    // Find membership for this organization
     const membership = memberships.find((m) => m.organizationId === id);
     if (!membership) {
       throw new BadRequestException(
@@ -150,7 +140,6 @@ export class OrganizationController {
       );
     }
 
-    // Check if user has permission to revoke members
     if (membership.role !== 'OWNER') {
       throw new BadRequestException(
         'Only organization owners can revoke members',
@@ -173,13 +162,11 @@ export class OrganizationController {
     return this.service.validateAndSwitchOrganization(userId, organizationId);
   }
 
-  // FIXED: Simplified - no OrganizationGuard
   @Get(':id')
   async getOrganization(
     @CurrentUser('memberships') memberships: any[],
     @Param('id') id: string,
   ) {
-    // Check if user is a member of this organization
     const isMember = memberships.some((m) => m.organizationId === id);
     if (!isMember) {
       throw new BadRequestException(

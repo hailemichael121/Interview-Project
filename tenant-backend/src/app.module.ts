@@ -1,4 +1,3 @@
-// src/app.module.ts
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
@@ -28,14 +27,13 @@ import { auth } from './auth/auth.config';
     EnhancedAuthGuard,
     {
       provide: APP_GUARD,
-      useClass: EnhancedAuthGuard, // Use enhanced guard globally
+      useClass: EnhancedAuthGuard,
     },
   ],
   exports: [PermissionService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // Apply OrganizationContextMiddleware to ALL routes
     consumer.apply(OrganizationContextMiddleware).forRoutes('*');
   }
 }

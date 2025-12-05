@@ -1,4 +1,3 @@
-// hooks/use-session.ts - FIXED ESLint issues
 "use client";
 
 import authClient from "@/lib/auth-client";
@@ -19,14 +18,12 @@ export function useSession() {
     string | null
   >(null);
 
-  // Load organization context - FIXED: use useCallback to avoid setting state synchronously in effect
   const loadOrganizationContext = useCallback(() => {
     if (!profile) {
       setCurrentOrganizationId(null);
       return;
     }
 
-    // Load organization context from localStorage or use first membership
     const savedOrgId = localStorage.getItem("currentOrganizationId");
     const memberships = profile.memberships || [];
 
@@ -61,12 +58,10 @@ export function useSession() {
 
         toast.success("Organization switched successfully");
 
-        // Refresh profile to get updated context
         await refetchProfile();
 
         return true;
       } catch (error: unknown) {
-        // FIXED: Changed from 'any' to 'unknown'
         const errorMessage =
           error instanceof Error
             ? error.message
@@ -104,12 +99,10 @@ export function useOrganizationContext() {
   );
 
   return {
-    // Current organization context
     currentOrganizationId,
     currentMemberRole: currentMembership?.role || null,
     currentOrganization: currentMembership?.organization || null,
 
-    // All memberships
     organizationMemberships: memberships.map((m) => ({
       organizationId: m.organization.id,
       organization: m.organization,
@@ -118,18 +111,15 @@ export function useOrganizationContext() {
       joinedAt: m.joinedAt,
     })),
 
-    // Other data
     invitations: profile?.invitations || [],
     stats: profile?.stats || {},
     hasOrganization: memberships.length > 0,
     isOwner: currentMembership?.role === "OWNER",
     isLoading,
 
-    // Actions
     switchOrganization,
     refreshProfile,
 
-    // Helper methods
     getCurrentOrganization: () => currentMembership?.organization || null,
     getCurrentRole: () => currentMembership?.role || null,
   };

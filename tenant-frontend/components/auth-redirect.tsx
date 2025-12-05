@@ -1,4 +1,3 @@
-// components/auth-redirect.tsx
 "use client";
 
 import { useEffect } from "react";

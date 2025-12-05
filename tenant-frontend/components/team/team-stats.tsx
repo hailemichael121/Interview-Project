@@ -1,4 +1,3 @@
-// components/team/team-stats.tsx
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Crown, Mail } from "lucide-react";
 import { OrganizationMember } from "@/types/types";

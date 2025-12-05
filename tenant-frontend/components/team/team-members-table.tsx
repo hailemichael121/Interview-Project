@@ -41,7 +41,6 @@ export function TeamMembersTable({
     }
   };
 
-  // Format member name and email for display
   const getMemberDisplay = (member: OrganizationMember) => {
     const user = member.user;
     return {
@@ -59,7 +58,6 @@ export function TeamMembersTable({
     };
   };
 
-  // Role badge configuration
   const roleConfig: Record<string, { color: string; icon: React.ElementType }> = {
     OWNER: {
       color: "bg-amber-500/20 text-amber-700 dark:text-amber-400",
@@ -125,7 +123,6 @@ export function TeamMembersTable({
             const member = row.original;
             const display = getMemberDisplay(member);
 
-            // Don't show delete button for owners
             if (member.role === "OWNER") {
               return <span className="text-muted-foreground text-sm">Cannot remove owners</span>;
             }

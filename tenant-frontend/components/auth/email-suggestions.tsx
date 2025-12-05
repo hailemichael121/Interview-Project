@@ -1,4 +1,3 @@
-// components/ui/email-suggestions.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -42,7 +41,6 @@ export function EmailSuggestions({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Click outside to close
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
@@ -53,7 +51,6 @@ export function EmailSuggestions({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Generate suggestions
   useEffect(() => {
     const value = email.trim();
     if (!value.includes("@") || value.endsWith("@")) {
@@ -81,10 +78,9 @@ export function EmailSuggestions({
     }
   }, [email]);
 
-  // Click suggestion → update email + close immediately
   const selectSuggestion = (suggestion: string) => {
     onEmailChange(suggestion);
-    setShowSuggestions(false); // This closes it instantly
+    setShowSuggestions(false);
   };
 
   if (!showSuggestions || suggestions.length === 0 || disabled) return null;
@@ -94,7 +90,6 @@ export function EmailSuggestions({
       ref={suggestionsRef}
       className={`absolute z-50 w-full mt-2 rounded-2xl border ${borderColor} ${bgColor} ${textColor} shadow-2xl overflow-hidden`}
     >
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
         <span className="text-xs font-semibold flex items-center gap-2">
           <Mail className="h-3.5 w-3.5" />
@@ -108,7 +103,6 @@ export function EmailSuggestions({
         </button>
       </div>
 
-      {/* Suggestions */}
       <div className="max-h-64 overflow-y-auto">
         {suggestions.map((suggestion, i) => (
           <button
@@ -117,7 +111,7 @@ export function EmailSuggestions({
             onClick={() => selectSuggestion(suggestion)}
             className={`w-full flex items-center gap-3 px-4 py-3.5 text-left ${hoverBg} transition-all duration-200 group`}
           >
-            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="shrink-0 w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Mail className="h-4.5 w-4.5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
@@ -128,7 +122,6 @@ export function EmailSuggestions({
         ))}
       </div>
 
-      {/* Footer */}
       <div className="px-4 py-2.5 text-center border-t border-white/10 bg-white/5">
         <span className={`text-xs ${mutedText}`}>
           {suggestions.length} suggestion{suggestions.length > 1 ? "s" : ""}

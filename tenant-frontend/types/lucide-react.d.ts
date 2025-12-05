@@ -1,12 +1,11 @@
-// types/lucide-react.d.ts
 declare module "lucide-react" {
   import * as React from "react";
 
   type Icon = React.FC<React.SVGProps<SVGSVGElement>>;
 
-  // Export individual icons (alphabetical order)
   export const AlertCircle: Icon;
   export const Send: Icon;
+  export const Copy: Icon;
   export const ArrowRight: Icon;
   export const AudioWaveform: Icon;
   export const BadgeCheck: Icon;

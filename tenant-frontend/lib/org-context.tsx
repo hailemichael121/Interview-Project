@@ -1,4 +1,4 @@
-// lib/org-context.tsx
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
@@ -25,12 +25,10 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load org from localStorage on mount
     const savedOrg = localStorage.getItem("currentOrg");
     if (savedOrg) {
       try {
         const parsedOrg = JSON.parse(savedOrg);
-        // Use setTimeout to avoid setting state during render
         setTimeout(() => {
           setCurrentOrg(parsedOrg);
           setIsLoading(false);

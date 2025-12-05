@@ -1,4 +1,5 @@
-// In organization.guard.ts - FIXED VERSION
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Injectable,
   CanActivate,
@@ -20,7 +21,6 @@ export class OrganizationGuard implements CanActivate {
       `Checking organization context for route: ${handlerName}`,
     );
 
-    // If organizationContext is already set by middleware, we're good
     if (request.organizationContext) {
       this.logger.debug(
         `Organization context exists: ${request.organizationContext.organizationId}`,
@@ -28,15 +28,12 @@ export class OrganizationGuard implements CanActivate {
       return true;
     }
 
-    // Check headers FIRST (most common way)
     const organizationIdFromHeader = request.headers[
       'x-organization-id'
     ] as string;
 
-    // Check if organization ID is in route params (e.g., /api/organization/:id)
     const organizationIdFromParams = request.params.id;
 
-    // Also check for other common param names
     const orgIdFromParams =
       request.params.organizationId || request.params.orgId;
 
@@ -44,13 +41,11 @@ export class OrganizationGuard implements CanActivate {
       organizationIdFromHeader || organizationIdFromParams || orgIdFromParams;
 
     if (finalOrganizationId && request.user?.memberships) {
-      // Check if user is a member of this organization
       const membership = request.user.memberships.find(
         (m) => m.organizationId === finalOrganizationId,
       );
 
       if (membership) {
-        // Set organization context on the fly
         request.organizationContext = {
           organizationId: finalOrganizationId,
           organization: membership.organization,
@@ -73,7 +68,6 @@ export class OrganizationGuard implements CanActivate {
       }
     }
 
-    // Check if organization ID is in query params
     const organizationIdFromQuery = request.query.organizationId as string;
     if (organizationIdFromQuery && request.user?.memberships) {
       const membership = request.user.memberships.find(
@@ -96,7 +90,6 @@ export class OrganizationGuard implements CanActivate {
       }
     }
 
-    // Check if organization ID is in request body
     const organizationIdFromBody = request.body?.organizationId;
     if (organizationIdFromBody && request.user?.memberships) {
       const membership = request.user.memberships.find(

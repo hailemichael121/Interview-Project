@@ -1,4 +1,3 @@
-// app/api/outlines/create/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { apiService } from "@/lib/api-service";
 

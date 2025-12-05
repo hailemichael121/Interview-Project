@@ -1,20 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import nodemailer, {
   Transporter,
   SendMailOptions,
   SentMessageInfo,
 } from 'nodemailer';
 
-// Environment detection
 const isDev = process.env.NODE_ENV !== 'production';
 const isProd = process.env.NODE_ENV === 'production';
 
-// ------------------------------------------------------------
-// Email Transporter Factory
-// ------------------------------------------------------------
 function createTransporter(): Transporter | null {
-  // Production: Use Gmail (primary choice)
   if (isProd && process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-    console.log('📧 Production: Using Gmail SMTP');
     return nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -24,69 +19,13 @@ function createTransporter(): Transporter | null {
     });
   }
 
-  // Alternative SMTP (Render/Production fallback)
-  if (
-    isProd &&
-    process.env.SMTP_HOST &&
-    process.env.SMTP_USER &&
-    process.env.SMTP_PASS
-  ) {
-    console.log('📧 Production: Using custom SMTP');
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-  }
-
-  // Development: Ethereal test emails
-  if (isDev) {
-    console.log('📧 Development: Using Ethereal test emails');
-    return nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.ETHEREAL_USER || 'placeholder',
-        pass: process.env.ETHEREAL_PASS || 'placeholder',
-      },
-    });
-  }
-
-  console.error('❌ No email configuration found');
   return null;
 }
 
 // Initialize transporter
 const transporter: Transporter | null = createTransporter();
 
-// Development: Setup Ethereal on startup
-if (isDev && transporter) {
-  (async () => {
-    try {
-      // Test connection
-      await transporter.verify();
-      console.log('✅ Email transporter ready');
-
-      // If using placeholder credentials, create test account
-      if (process.env.ETHEREAL_USER === 'placeholder') {
-        const testAccount = await nodemailer.createTestAccount();
-        console.log(`📧 Test account: ${testAccount.user}`);
-        console.log(`🔗 View emails at: https://ethereal.email`);
-      }
-    } catch (error) {
-      console.error('❌ Email setup failed:', error);
-    }
-  })();
-}
-
-// ------------------------------------------------------------
 // Core Email Sending Function
-// ------------------------------------------------------------
 export async function sendEmail(
   to: string,
   subject: string,
@@ -114,7 +53,6 @@ export async function sendEmail(
   try {
     const info = await transporter.sendMail(mailOptions);
 
-    // Development: Show preview URL
     if (isDev) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
@@ -131,11 +69,6 @@ export async function sendEmail(
   }
 }
 
-// ------------------------------------------------------------
-// Email Templates
-// ------------------------------------------------------------
-
-// Password Reset Email
 export async function sendPasswordResetEmail(
   to: string,
   userName: string,
@@ -215,7 +148,6 @@ If you didn't request this, please ignore this email.
   return sendEmail(to, subject, html, text);
 }
 
-// Invitation Email
 export async function sendInvitationEmail(
   to: string,
   invitationUrl: string,

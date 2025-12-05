@@ -1,4 +1,3 @@
-// app/outlines/page.tsx - FINAL BEAUTIFUL VERSION
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -213,7 +212,6 @@ export default function OutlinesPage() {
       <div className={`min-h-screen ${bgColor} ${isDark ? "text-white" : "text-gray-900"}`}>
         <div className="container mx-auto max-w-7xl px-6 py-10">
 
-          {/* Header */}
           <div className="mb-10">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
               <div>
@@ -236,7 +234,6 @@ export default function OutlinesPage() {
               </div>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12">
               {[
                 { label: "Total", value: stats.totalOutlines, color: "text-white" },
@@ -252,7 +249,6 @@ export default function OutlinesPage() {
             </div>
           </div>
 
-          {/* Create Form */}
           {showCreateForm && currentOrganizationId && (
             <div className="mb-12 bg-card/80 backdrop-blur border rounded-2xl p-8 shadow-xl">
               <CreateOutlineForm
@@ -269,9 +265,7 @@ export default function OutlinesPage() {
             </div>
           )}
 
-          {/* Filters - Beautifully Styled */}
           <div className="mb-12 grid md:grid-cols-2 gap-8">
-            {/* Scope Filter */}
             <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-xl">
               <h3 className="text-lg font-semibold mb-5 opacity-90">Filter by Scope</h3>
               <div className="flex flex-wrap gap-3">
@@ -295,7 +289,6 @@ export default function OutlinesPage() {
               </div>
             </div>
 
-            {/* Status Filter */}
             <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-xl">
               <h3 className="text-lg font-semibold mb-5 opacity-90">Filter by Status</h3>
               <div className="flex flex-4 gap-2">
@@ -323,10 +316,8 @@ export default function OutlinesPage() {
             </div>
           </div>
 
-          {/* Loading */}
           {isLoading && <LoadingSkeleton />}
 
-          {/* Empty State */}
           {!isLoading && outlines.length === 0 && (
             <div className="rounded-2xl border-2 border-dashed border-white/30 bg-white/5 backdrop-blur p-20 text-center">
               <FileText className="h-20 w-20 text-white/50 mx-auto mb-8" />
@@ -343,7 +334,6 @@ export default function OutlinesPage() {
             </div>
           )}
 
-          {/* Table */}
           {!isLoading && outlines.length > 0 && (
             <div className="rounded-2xl border border-white/20 bg-white/5 backdrop-blur shadow-2xl overflow-hidden">
               <OutlineTableCompact

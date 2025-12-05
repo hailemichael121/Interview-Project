@@ -1,5 +1,3 @@
-// src/users/entities/user.entity.ts
-
 import { Role } from '../enums/role.enum';
 
 export class User {
@@ -15,7 +13,6 @@ export class User {
   updatedAt: Date;
   deletedAt?: Date;
 
-  // Relations (optional, for type safety)
   members?: Array<{
     id: string;
     role: Role;

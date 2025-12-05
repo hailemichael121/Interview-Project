@@ -1,10 +1,10 @@
 generator client {
   provider   = "prisma-client-js"
-  engineType = "binary"    
+  engineType = "binary"
 }
 
 datasource db {
-  provider  = "postgresql" 
+  provider = "postgresql"
 }
 
 // ========================================================
@@ -19,6 +19,12 @@ enum SectionType {
   CAPABILITIES
   FOCUS_DOCUMENT
   NARRATIVE
+}
+
+enum ResetTokenStatus {
+  ACTIVE
+  USED
+  EXPIRED
 }
 
 enum Status {
@@ -41,9 +47,33 @@ enum InvitationStatus {
   EXPIRED
 }
 
+enum EmailStatus {
+  SENT
+  FAILED
+  DELIVERED
+  OPENED
+}
+
 // ========================================================
 // AUTH MODELS
 // ========================================================
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String    @unique
+  expires   DateTime
+  used      Boolean   @default(false)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expires])
+  @@map("password_resets")
+}
 
 model User {
   id            String   @id @default(cuid())
@@ -59,10 +89,14 @@ model User {
   tenantId  String?
   deletedAt DateTime?
 
-  accounts        Account[]
-  sessions        Session[]
-  members         OrganizationMember[]
+  accounts       Account[]
+  sessions       Session[]
+  members        OrganizationMember[]
+  passwordResets PasswordReset[]  
 
+  @@index([email])
+  @@index([deletedAt])
+  @@index([createdAt])
   @@map("users")
 }
 
@@ -128,6 +162,8 @@ model Organization {
   outlines Outline[]
   logs     InvitationLog[]
 
+  @@index([slug])
+  @@index([deletedAt])
   @@map("organizations")
 }
 
@@ -142,9 +178,10 @@ model OrganizationMember {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdOutlines Outline[]       @relation("CreatedOutlines")
-  reviewerOutlines Outline[]      @relation("ReviewerOutlines")  
-  invitationsSent InvitationLog[] @relation("Inviter")
+  createdOutlines  Outline[]            @relation("CreatedOutlines")
+  reviewerOutlines Outline[]            @relation("ReviewerOutlines")
+  invitationsSent  InvitationLog[]      @relation("Inviter")
+  invitesSent      OrganizationInvite[]  
 
   @@unique([organizationId, userId])
   @@map("organization_members")
@@ -160,7 +197,8 @@ model OrganizationInvite {
   invitedById    String?
   deletedAt      DateTime?
 
-  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    OrganizationMember? @relation(fields: [invitedById], references: [id], onDelete: SetNull)
   logs         InvitationLog[]
 
   @@map("organization_invites")
@@ -202,9 +240,25 @@ model Outline {
   updatedAt         DateTime    @updatedAt
   deletedAt         DateTime?
 
-  createdBy      OrganizationMember @relation("CreatedOutlines", fields: [createdByMemberId], references: [id])
-  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy      OrganizationMember  @relation("CreatedOutlines", fields: [createdByMemberId], references: [id])
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   reviewerMember OrganizationMember? @relation("ReviewerOutlines", fields: [reviewerMemberId], references: [id], onDelete: SetNull)
 
   @@map("outlines")
+}
+
+model EmailLog {
+  id       String      @id @default(cuid())
+  type     String  
+  to       String
+  subject  String
+  status   EmailStatus @default(SENT)
+  sentAt   DateTime    @default(now())
+  openedAt DateTime?
+  error    String?
+
+  @@index([to])
+  @@index([type])
+  @@index([sentAt])
+  @@map("email_logs")
 }

@@ -43,7 +43,6 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) {
       toast.error("Please enter your email address");
@@ -71,7 +70,6 @@ export default function ForgotPasswordPage() {
       }
 
       setEmailSent(true);
-      // Start countdown timer (60 seconds)
       setCountdown(60);
       const timer = setInterval(() => {
         setCountdown((prev) => {
@@ -108,17 +106,13 @@ export default function ForgotPasswordPage() {
       return;
     }
 
-    // Call handleSubmit without passing an event
-    // Since we're not in a form submission context, we can just call the logic directly
     await handleSubmit(new Event('submit') as unknown as React.FormEvent);
   };
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 relative overflow-hidden ${bgColor}`}>
-      {/* Background Elements */}
       <div className={`absolute inset-0 ${isDark ? "bg-grid-slate-900" : "bg-grid-slate-100"} mask-linear-to-0 dark:mask-linear-to-0-dark`} />
 
-      {/* Animated blobs */}
       {isDark ? (
         <>
           <div className="absolute top-1/4 -left-20 w-72 h-72 bg-gray-800 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob" />
@@ -141,11 +135,11 @@ export default function ForgotPasswordPage() {
               <ChevronLeft className={`h-5 w-5 ${isDark ? "text-gray-400 group-hover:text-white" : "text-gray-600 group-hover:text-gray-900"} transition-colors`} />
             </Link>
             <div className="flex items-center gap-3 flex-1">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 dark:from-gray-500 dark:to-gray-600 flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 rounded-full bg-linear-to-br from-gray-600 to-gray-700 dark:from-gray-500 dark:to-gray-600 flex items-center justify-center shadow-lg">
                 <Shield className="h-6 w-6 text-white" />
               </div>
               <div className="flex-1">
-                <CardTitle className={`text-2xl font-bold ${isDark ? "bg-gradient-to-r from-white via-gray-200 to-gray-300" : "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700"} bg-clip-text text-transparent`}>
+                <CardTitle className={`text-2xl font-bold ${isDark ? "bg-linear-to-r from-white via-gray-200 to-gray-300" : "bg-linear-to-r from-gray-900 via-gray-800 to-gray-700"} bg-clip-text text-transparent`}>
                   Reset Password
                 </CardTitle>
                 <CardDescription className={isDark ? "text-gray-400" : "text-gray-600"}>
@@ -159,7 +153,6 @@ export default function ForgotPasswordPage() {
         <CardContent className="pt-6">
           {emailSent ? (
             <div className="space-y-6">
-              {/* Success State */}
               <div className="text-center space-y-4">
                 <div className={`mx-auto w-20 h-20 rounded-full ${successBg} flex items-center justify-center`}>
                   <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
@@ -177,7 +170,6 @@ export default function ForgotPasswordPage() {
                 </div>
               </div>
 
-              {/* Instructions */}
               <div className={`space-y-4 rounded-xl border ${isDark ? "border-gray-800/50" : "border-gray-200/50"} ${isDark ? "bg-gray-800/20" : "bg-gray-50/50"} p-4`}>
                 <div className="flex items-start gap-3">
                   <Mail className={`h-5 w-5 ${isDark ? "text-gray-400" : "text-gray-600"} mt-0.5`} />
@@ -208,12 +200,11 @@ export default function ForgotPasswordPage() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="space-y-3 pt-2">
                 <Button
                   onClick={handleResendEmail}
                   disabled={countdown > 0 || isLoading}
-                  className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg shadow-gray-500/25 dark:shadow-gray-900/25 transition-all duration-300"
+                  className="w-full bg-linear-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg shadow-gray-500/25 dark:shadow-gray-900/25 transition-all duration-300"
                 >
                   {isLoading ? (
                     <>
@@ -250,7 +241,6 @@ export default function ForgotPasswordPage() {
               </div>
             </div>
           ) : (
-            // Reset Form
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -277,7 +267,6 @@ export default function ForgotPasswordPage() {
                   </p>
                 </div>
 
-                {/* Security Note */}
                 <div className={`rounded-lg border ${isDark ? "border-gray-800" : "border-gray-200"} ${isDark ? "bg-gray-800/30" : "bg-gray-50/50"} p-4`}>
                   <div className="flex items-start gap-3">
                     <Shield className={`h-5 w-5 ${isDark ? "text-gray-400" : "text-gray-600"} mt-0.5`} />
@@ -293,11 +282,10 @@ export default function ForgotPasswordPage() {
                 </div>
               </div>
 
-              {/* Submit Button */}
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-11 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg shadow-gray-500/25 dark:shadow-gray-900/25 hover:shadow-xl hover:shadow-gray-500/40 dark:hover:shadow-gray-900/40 transition-all duration-300"
+                className="w-full h-11 bg-linear-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg shadow-gray-500/25 dark:shadow-gray-900/25 hover:shadow-xl hover:shadow-gray-500/40 dark:hover:shadow-gray-900/40 transition-all duration-300"
               >
                 {isLoading ? (
                   <span className="flex items-center gap-2">
@@ -311,7 +299,6 @@ export default function ForgotPasswordPage() {
                 )}
               </Button>
 
-              {/* Bottom Links */}
               <div className={`pt-4 border-t ${isDark ? "border-gray-800" : "border-gray-200"}`}>
                 <div className="text-center">
                   <Link
@@ -328,7 +315,6 @@ export default function ForgotPasswordPage() {
         </CardContent>
       </Card>
 
-      {/* Add CSS for blob animation and masks */}
       <style jsx>{`
         @keyframes blob {
           0% {

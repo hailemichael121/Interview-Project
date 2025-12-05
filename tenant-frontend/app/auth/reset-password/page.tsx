@@ -53,7 +53,6 @@ function ResetPasswordContent() {
     checkPasswordStrength(value);
   };
 
-  // If no token, show error message
   if (!token) {
     return (
       <div className={`min-h-screen flex items-center justify-center p-4 ${bgColor}`}>
@@ -77,7 +76,7 @@ function ResetPasswordContent() {
               </p>
             </div>
             <div className="space-y-3">
-              <Button asChild className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/25 dark:shadow-red-900/25 transition-all duration-300">
+              <Button asChild className="w-full bg-linear-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/25 dark:shadow-red-900/25 transition-all duration-300">
                 <Link href="/auth/forgot-password">Request New Reset Link</Link>
               </Button>
               <Button asChild variant="outline" className={`w-full ${borderColor} ${isDark ? "hover:bg-gray-800/50" : "hover:bg-gray-50"} transition-all duration-300`}>
@@ -116,7 +115,7 @@ function ResetPasswordContent() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await authClient.resetPassword({
+      const { error } = await authClient.resetPassword({
         newPassword: password,
         token: token,
       });
@@ -129,7 +128,6 @@ function ResetPasswordContent() {
         icon: <CheckCircle className="h-5 w-5 text-green-500" />,
       });
 
-      // Redirect to sign in after successful reset
       setTimeout(() => {
         router.push("/auth/signin");
       }, 2000);
@@ -153,10 +151,8 @@ function ResetPasswordContent() {
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 relative overflow-hidden ${bgColor}`}>
-      {/* Background Elements */}
       <div className={`absolute inset-0 ${isDark ? "bg-grid-slate-900" : "bg-grid-slate-100"} mask-linear-to-0 dark:mask-linear-to-0-dark`} />
 
-      {/* Animated blobs */}
       {isDark ? (
         <>
           <div className="absolute top-1/4 -left-20 w-72 h-72 bg-gray-800 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob" />
@@ -179,11 +175,11 @@ function ResetPasswordContent() {
               <ChevronLeft className={`h-5 w-5 ${isDark ? "text-gray-400 group-hover:text-white" : "text-gray-600 group-hover:text-gray-900"} transition-colors`} />
             </Link>
             <div className="flex items-center gap-3 flex-1">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 dark:from-gray-500 dark:to-gray-600 flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 rounded-full bg-linear-to-br from-gray-600 to-gray-700 dark:from-gray-500 dark:to-gray-600 flex items-center justify-center shadow-lg">
                 <Lock className="h-6 w-6 text-white" />
               </div>
               <div className="flex-1">
-                <CardTitle className={`text-2xl font-bold ${isDark ? "bg-gradient-to-r from-white via-gray-200 to-gray-300" : "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-700"} bg-clip-text text-transparent`}>
+                <CardTitle className={`text-2xl font-bold ${isDark ? "bg-linear-to-r from-white via-gray-200 to-gray-300" : "bg-linear-to-r from-gray-900 via-gray-800 to-gray-700"} bg-clip-text text-transparent`}>
                   Set New Password
                 </CardTitle>
                 <CardDescription className={isDark ? "text-gray-400" : "text-gray-600"}>
@@ -233,7 +229,6 @@ function ResetPasswordContent() {
                   </button>
                 </div>
 
-                {/* Password Strength Indicator */}
                 {password && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
@@ -326,7 +321,7 @@ function ResetPasswordContent() {
             <Button
               type="submit"
               disabled={isLoading || password !== confirmPassword || passwordStrength < 3}
-              className="w-full h-11 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg shadow-gray-500/25 dark:shadow-gray-900/25 hover:shadow-xl hover:shadow-gray-500/40 dark:hover:shadow-gray-900/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-11 bg-linear-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white shadow-lg shadow-gray-500/25 dark:shadow-gray-900/25 hover:shadow-xl hover:shadow-gray-500/40 dark:hover:shadow-gray-900/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
@@ -356,7 +351,6 @@ function ResetPasswordContent() {
         </CardContent>
       </Card>
 
-      {/* Add CSS for blob animation and masks */}
       <style jsx>{`
         @keyframes blob {
           0% {
@@ -389,7 +383,6 @@ function ResetPasswordContent() {
   );
 }
 
-// Wrapper component for Suspense boundary
 export default function ResetPasswordPage() {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";

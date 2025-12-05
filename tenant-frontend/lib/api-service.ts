@@ -1,4 +1,3 @@
-// lib/api-service.ts
 import authClient from "./auth-client";
 
 import {
@@ -70,6 +69,32 @@ export const authApi = {
 
   updateUser: async (data: { name?: string; image?: string }) =>
     authClient.updateUser(data),
+
+  changePassword: async (data: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<ApiResponse<{ message: string }>> =>
+    apiFetch<{ message: string }>("/api/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  forgotPassword: async (
+    email: string
+  ): Promise<ApiResponse<{ message: string }>> =>
+    apiFetch<{ message: string }>("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: async (data: {
+    token: string;
+    newPassword: string;
+  }): Promise<ApiResponse<{ message: string }>> =>
+    apiFetch<{ message: string }>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };
 
 export const userApi = {
@@ -82,6 +107,23 @@ export const userApi = {
   updateProfile: async (data: UpdateUserDto): Promise<UserProfileResponse> =>
     apiFetch<UserProfile>("/users/profile", {
       method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  uploadImage: async (
+    formData: FormData
+  ): Promise<ApiResponse<{ imageUrl: string }>> =>
+    apiFetch<{ imageUrl: string }>("/users/upload-image", {
+      method: "POST",
+      body: formData,
+    }),
+
+  changePassword: async (data: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<ApiResponse<{ message: string }>> =>
+    apiFetch<{ message: string }>("/users/change-password", {
+      method: "POST",
       body: JSON.stringify(data),
     }),
 
@@ -120,15 +162,6 @@ export const userApi = {
       total: res.total ?? 0,
     };
   },
-
-  getUserOrganizations: async (userId: string, page = 1, perPage = 10) =>
-    apiFetch<OrganizationListResponse>(
-      `/users/${userId}/organizations?page=${page}&perPage=${perPage}`,
-      { method: "GET" }
-    ),
-
-  deleteUser: async (userId: string) =>
-    apiFetch<ApiSuccessResponse>(`/users/${userId}`, { method: "DELETE" }),
 };
 
 export const invitationApi = {

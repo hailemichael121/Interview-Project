@@ -28,16 +28,13 @@ export function AnimatedTitle({
     xl: "text-7xl sm:text-8xl md:text-9xl",
   };
 
-  // Get text color based on theme and wave position
   const getTextColor = () => {
     const isDark = resolvedTheme === "dark";
 
     if (isDark) {
-      // In dark mode, always use white text
       return "text-white";
     }
 
-    // In light mode, change color based on wave position
     return isOverWave ? "text-gray-900" : "text-white";
   };
 

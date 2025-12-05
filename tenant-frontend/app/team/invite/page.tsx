@@ -15,7 +15,6 @@ import DashboardLayout from "@/components/layout/dashboard-layout";
 import { useTheme } from "next-themes";
 import { EmailSuggestions } from "@/components/auth/email-suggestions";
 
-// Loading component for Suspense fallback
 function InviteFormSkeleton() {
     return (
         <DashboardLayout>
@@ -35,7 +34,6 @@ function InviteFormSkeleton() {
 
                     <CardContent className="px-10 pb-10">
                         <div className="space-y-8">
-                            {/* Email skeleton */}
                             <div className="space-y-2">
                                 <Label className="text-base font-medium flex items-center gap-2">
                                     <Mail className="h-4 w-4" />
@@ -44,7 +42,6 @@ function InviteFormSkeleton() {
                                 <div className="h-14 bg-gray-200 dark:bg-gray-800 rounded-md animate-pulse"></div>
                             </div>
 
-                            {/* Role skeleton */}
                             <div className="space-y-2">
                                 <Label className="text-base font-medium flex items-center gap-2">
                                     <Shield className="h-4 w-4" />
@@ -53,7 +50,6 @@ function InviteFormSkeleton() {
                                 <div className="h-14 bg-gray-200 dark:bg-gray-800 rounded-md animate-pulse"></div>
                             </div>
 
-                            {/* Button skeleton */}
                             <div className="h-14 bg-gray-200 dark:bg-gray-800 rounded-md animate-pulse"></div>
                         </div>
                     </CardContent>
@@ -63,7 +59,6 @@ function InviteFormSkeleton() {
     );
 }
 
-// Main component wrapped in Suspense
 function InviteMemberContent() {
     const searchParams = useSearchParams();
     const orgId = searchParams.get("org");
@@ -137,7 +132,6 @@ function InviteMemberContent() {
 
                     <CardContent className="px-10 pb-10">
                         <form onSubmit={handleInvite} className="space-y-8">
-                            {/* Email */}
                             <div className="space-y-2">
                                 <Label className="text-base font-medium flex items-center gap-2">
                                     <Mail className="h-4 w-4" />
@@ -157,7 +151,6 @@ function InviteMemberContent() {
                                 </div>
                             </div>
 
-                            {/* Role */}
                             <div className="space-y-2">
                                 <Label className="text-base font-medium flex items-center gap-2">
                                     <Shield className="h-4 w-4" />
@@ -174,7 +167,6 @@ function InviteMemberContent() {
                                 </Select>
                             </div>
 
-                            {/* Info */}
                             <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 flex gap-4">
                                 <Shield className="h-6 w-6 text-primary mt-0.5 shrink-0" />
                                 <div>
@@ -185,7 +177,6 @@ function InviteMemberContent() {
                                 </div>
                             </div>
 
-                            {/* Submit */}
                             <Button
                                 type="submit"
                                 size="lg"
@@ -212,7 +203,6 @@ function InviteMemberContent() {
     );
 }
 
-// Main page component with Suspense boundary
 export default function InviteMemberPage() {
     return (
         <Suspense fallback={<InviteFormSkeleton />}>

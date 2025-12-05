@@ -1,4 +1,3 @@
-// src/outlines/dto/create-outline.dto.ts
 import { IsString, IsOptional, IsEnum, IsNumber, Min } from 'class-validator';
 import { SectionType, Status } from '@prisma/client';
 
@@ -28,6 +27,6 @@ export class CreateOutlineDto {
   reviewerMemberId?: string;
 
   @IsOptional()
-  @IsString() // Changed from @IsUUID() to @IsString()
+  @IsString()
   organizationId?: string;
 }

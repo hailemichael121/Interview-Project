@@ -1,4 +1,3 @@
-// src/auth/types/request.types.ts
 import { Request } from 'express';
 import { Role } from '@prisma/client';
 
@@ -52,8 +51,4 @@ export interface RequestWithAuth extends Request {
   };
   user?: ExtendedUser;
   organizationContext?: OrganizationContext | null;
-  // Remove the cookies property - it's already part of Request
-  // cookies?: {
-  //   [key: string]: string;
-  // };
 }

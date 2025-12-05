@@ -1,4 +1,4 @@
-// src/auth/decorators/current-user.decorator.ts
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { RequestWithAuth } from '../types/request.types';
 
@@ -12,7 +12,6 @@ export const CurrentUser = createParamDecorator(
       return null;
     }
 
-    // Special cases for organization data
     switch (data) {
       case 'organizationId':
         return orgContext?.organizationId || null;
@@ -45,7 +44,6 @@ export const CurrentUser = createParamDecorator(
       case 'updatedAt':
         return user.updatedAt;
       default:
-        // Return a specific field if requested, otherwise the full user object
         return data ? user[data as keyof typeof user] : user;
     }
   },

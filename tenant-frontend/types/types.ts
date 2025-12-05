@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
-// lib/types.ts - FIXED VERSION
 // ==================== BASE RESPONSE TYPE ====================
 export interface ApiResponse<T = unknown> {
   // Changed from 'any' to 'unknown'
@@ -108,14 +107,13 @@ export interface Outline {
   status: "PENDING" | "IN_PROGRESS" | "COMPLETED";
   target: number;
   limit: number;
-  reviewerMemberId: string | null; // CHANGED: reviewerId -> reviewerMemberId
+  reviewerMemberId: string | null;
   organizationId: string;
   createdByMemberId: string;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
   reviewerMember?: {
-    // CHANGED: reviewer -> reviewerMember
     id: string;
     role: string;
     joinedAt: string;
@@ -237,17 +235,11 @@ export interface OutlineListResponse extends ApiResponse<Outline[]> {
   total: number;
 }
 
-export interface OutlineStatsResponse extends ApiResponse<OutlineStats> {
-  // Add properties if needed, otherwise remove extends
-}
+export interface OutlineStatsResponse extends ApiResponse<OutlineStats> {}
 
-export interface UserProfileResponse extends ApiResponse<UserProfile> {
-  // Add properties if needed, otherwise remove extends
-}
+export interface UserProfileResponse extends ApiResponse<UserProfile> {}
 
-export interface InvitationListResponse extends ApiResponse<ApiInvitation[]> {
-  // Add properties if needed, otherwise remove extends
-}
+export interface InvitationListResponse extends ApiResponse<ApiInvitation[]> {}
 
 export interface UserListResponse
   extends ApiResponse<Array<UserProfile & { organizationCount: number }>> {

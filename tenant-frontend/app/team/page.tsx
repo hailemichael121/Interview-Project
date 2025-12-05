@@ -1,4 +1,3 @@
-// app/team/page.tsx
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -11,7 +10,6 @@ import { apiService } from "@/lib/api-service";
 import { toast } from "sonner";
 import { OrganizationMember, ApiInvitation } from "@/types/types";
 
-// Import reusable components
 import { TeamMembersTable } from "@/components/team/team-members-table";
 import { InvitationsTable, TableInvitation } from "@/components/team/invitations-table";
 import { InviteMemberDialog } from "@/components/team/invite-member-dialog";
@@ -59,9 +57,7 @@ export default function TeamPage() {
       }
 
       if (invitesRes?.success) {
-        // Transform ApiInvitation to TableInvitation
         const transformedInvitations: TableInvitation[] = (invitesRes.data || []).map((inv: ApiInvitation) => {
-          // Extract properties from the invitation object
           const organizationId = inv.organization?.id || "";
           const email = inv.email || "";
 
@@ -69,9 +65,9 @@ export default function TeamPage() {
             id: inv.id,
             email: email,
             role: inv.role,
-            status: "PENDING", // Assuming pending since we're fetching pending invitations
-            expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Default 7 days from now
-            createdAt: new Date().toISOString(), // Use current date since ApiInvitation doesn't have createdAt
+            status: "PENDING",
+            expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            createdAt: new Date().toISOString(),
             organizationId: organizationId,
             organization: inv.organization,
           };
@@ -160,7 +156,6 @@ export default function TeamPage() {
     fetchTeamData(true);
   };
 
-  // Loading states
   if (!hasOrganization && !orgLoading) {
     return (
       <DashboardLayout>
@@ -191,7 +186,6 @@ export default function TeamPage() {
   return (
     <DashboardLayout>
       <div className="container mx-auto max-w-7xl px-4 py-8 space-y-8">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
             <h1 className="text-4xl font-bold">Team Management</h1>
@@ -232,10 +226,8 @@ export default function TeamPage() {
           </div>
         </div>
 
-        {/* Stats */}
         <TeamStats members={members} invitations={invitations} />
 
-        {/* Members Table */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -252,7 +244,6 @@ export default function TeamPage() {
           </CardContent>
         </Card>
 
-        {/* Pending Invitations (Owner Only) */}
         {isOwner && invitations.length > 0 && (
           <Card>
             <CardHeader>

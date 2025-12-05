@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -18,7 +18,7 @@ import authClient from "@/lib/auth-client";
 
 function SignInContent() {
   const router = useRouter();
-  const { signIn, isLoading: authLoading } = useAuthActionsSimple();
+  const { isLoading: authLoading } = useAuthActionsSimple();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,15 +33,13 @@ function SignInContent() {
     setIsSubmitting(true);
 
     try {
-      console.log("🌐 Frontend URL:", window.location.origin);
-      console.log("🔗 Making sign in request...");
+
 
       const response = await authClient.signIn.email({
         email: formData.email.trim(),
         password: formData.password,
       });
 
-      console.log("✅ Sign in response:", response);
 
       if (response?.error) {
         throw new Error(response.error.message || "Sign in failed");
@@ -49,24 +47,16 @@ function SignInContent() {
 
       toast.success("Signed in successfully!");
 
-      // Wait for cookies
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Check cookies
-      console.log("🍪 Cookies after sign in:", document.cookie);
 
-      // Check session
-      const session = await authClient.getSession();
-      console.log("📋 Session after sign in:", session);
 
       const redirectTo =
         sessionStorage.getItem("redirectAfterAuth") || "/dashboard";
       sessionStorage.removeItem("redirectAfterAuth");
 
-      console.log("🔄 Redirecting to:", redirectTo);
       router.replace(redirectTo);
     } catch (error: unknown) {
-      console.error("❌ Sign in error:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -90,23 +80,8 @@ function SignInContent() {
     buttonLink: "/auth/signup",
   };
 
-  useEffect(() => {
-    const debugAuth = async () => {
-      console.log("🔍 Auth Debug Info:");
-      console.log("Frontend URL:", window.location.origin);
-      console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
-      console.log("Current cookies:", document.cookie);
 
-      try {
-        const session = await authClient.getSession();
-        console.log("Current session:", session);
-      } catch (error) {
-        console.log("No session yet");
-      }
-    };
 
-    debugAuth();
-  }, []);
 
   return (
     <AuthLayout

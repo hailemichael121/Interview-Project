@@ -1,4 +1,3 @@
-// src/organization/dto/create-organization.dto.ts
 import { IsNotEmpty, IsString, Matches, Length } from 'class-validator';
 
 export class CreateOrganizationDto {

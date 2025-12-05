@@ -1,4 +1,3 @@
-// components/protected-route.tsx - OPTIMIZED VERSION
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -30,7 +29,6 @@ export function ProtectedRoute({
   const router = useRouter();
   const pathname = usePathname();
 
-  // Check authentication (lightweight check)
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -71,7 +69,6 @@ export function ProtectedRoute({
     checkAuth();
   }, [requireAuth, router, redirectTo, pathname]);
 
-  // Check organization requirement (only after auth is confirmed)
   useEffect(() => {
     if (isChecking || !authStatus.isAuthenticated || !requireOrganization) return;
 
@@ -80,7 +77,6 @@ export function ProtectedRoute({
     }
   }, [authStatus.isAuthenticated, requireOrganization, orgLoading, hasOrganization, pathname, router, isChecking]);
 
-  // Show loading state
   if (isChecking || (requireAuth && authStatus.isAuthenticated && orgLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -92,7 +88,6 @@ export function ProtectedRoute({
     );
   }
 
-  // Final checks
   if (requireAuth && !authStatus.isAuthenticated) {
     return null;
   }

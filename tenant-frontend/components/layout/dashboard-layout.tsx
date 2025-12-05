@@ -1,4 +1,3 @@
-// components/layout/dashboard-layout.tsx - FIXED VERSION
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
@@ -36,7 +35,6 @@ import authClient from "@/lib/auth-client";
 import { AppSidebar } from "../sidebar";
 import { useTheme } from "next-themes";
 
-// Create a wrapper component that uses useSearchParams inside Suspense
 function DashboardHeader() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -46,7 +44,7 @@ function DashboardHeader() {
   const bgColor = isDark ? "bg-[#141414]" : "bg-[#DEDEDE]";
   const textColor = isDark ? "text-white" : "text-gray-900";
 
-  const { data: session, isPending: sessionLoading } = authClient.useSession();
+  const { data: session, } = authClient.useSession();
 
   const handleSignOut = async () => {
     await authClient.signOut();
@@ -59,7 +57,6 @@ function DashboardHeader() {
     return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   };
 
-  // Smart Breadcrumb Logic
   const segments = pathname.replace(/^\//, "").split("/").filter(Boolean);
   const hasQuery = searchParams.toString().length > 0;
 
@@ -110,7 +107,6 @@ function DashboardHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
       <div className="flex h-16 items-center justify-between px-4 lg:px-8">
-        {/* Breadcrumb */}
         <div className="flex items-center gap-2">
           <Breadcrumb>
             <BreadcrumbList>
@@ -132,7 +128,6 @@ function DashboardHeader() {
           </Breadcrumb>
         </div>
 
-        {/* Search + User */}
         <div className="flex items-center gap-4">
           <div className="relative hidden md:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -144,7 +139,7 @@ function DashboardHeader() {
               <Button variant="ghost" className="rounded-full p-0 h-10 w-10">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={session?.user?.image || ""} />
-                  <AvatarFallback className="bg-gradient-to-br from-gray-500 to-gray-700 text-white font-medium">
+                  <AvatarFallback className="bg-linear-to-br from-gray-500 to-gray-700 text-white font-medium">
                     {getInitials()}
                   </AvatarFallback>
                 </Avatar>
@@ -195,12 +190,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <ProtectedRoute requireAuth requireOrganization={false}>
       <div className="flex h-screen bg-background">
-        {/* Desktop Sidebar */}
         <div className="hidden lg:block lg:w-80 lg:border-r lg:border-border">
           <AppSidebar />
         </div>
 
-        {/* Mobile Sidebar */}
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <Button
             variant="ghost"
@@ -215,7 +208,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </SheetContent>
         </Sheet>
 
-        {/* Main Content */}
         <div className="flex flex-1 flex-col overflow-hidden lg:ml-0">
           <Suspense fallback={
             <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">

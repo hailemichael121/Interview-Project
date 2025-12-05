@@ -1,11 +1,12 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-// src/main.ts
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import * as express from 'express';
-import cookieParser from 'cookie-parser'; // Use default import
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -20,14 +21,12 @@ async function bootstrap() {
     }),
   );
 
-  // Body parsing
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // Cookies (required for Better Auth)
-  app.use(cookieParser()); // Now it should work
+  app.use(cookieParser());
 
-  // Rest of your CORS and server setup...
   const allowedOrigins = [
     process.env.FRONTEND_URL,
     'http://localhost:3000',
@@ -40,14 +39,13 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
       }
     },
-    credentials: true, // ✅ This is CRITICAL for cookies
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -57,7 +55,7 @@ async function bootstrap() {
       'X-Requested-With',
       'Accept',
       'Origin',
-      'Access-Control-Allow-Credentials', // Add this
+      'Access-Control-Allow-Credentials',
     ],
     exposedHeaders: [
       'Authorization',

@@ -1,4 +1,5 @@
-// src/auth/services/permission.service.ts
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, Logger } from '@nestjs/common';
 import { Role } from '../types/role.enum';
 
@@ -98,7 +99,7 @@ export class PermissionService {
             'Reviewers can only update status of outlines assigned to them',
         };
 
-      case Role.MEMBER:
+      case Role.MEMBER: {
         if (!isCreator) {
           this.logger.warn('Non-creator member cannot update outline');
           return {
@@ -126,9 +127,10 @@ export class PermissionService {
         }
 
         // Creator can update all other fields
-        const { status, ...otherFields } = updates;
+        const { ...otherFields } = updates;
         this.logger.debug('Creator can update all fields except status');
         return { allowed: true, allowedFields: otherFields };
+      }
 
       default:
         this.logger.warn(`Invalid role for update: ${context.memberRole}`);

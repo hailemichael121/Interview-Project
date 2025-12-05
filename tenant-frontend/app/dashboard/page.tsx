@@ -4,22 +4,21 @@
 import { ProtectedRoute } from "@/components/protected-route";
 import { useOrganizationContext } from "@/hooks/use-session";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
   Building, Plus, Users, FileText, Target, TrendingUp, Mail,
-  Shield, RefreshCw, UserPlus, Eye, CheckSquare, Loader2,
+  Shield, RefreshCw, UserPlus, Eye, Loader2,
   Settings
 } from "lucide-react";
 import {
   useOutlines, useOrganizationMembers, useOrganizationStats,
-  usePendingInvitations, queryKeys
+  usePendingInvitations
 } from "@/hooks/use-api-optimized";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -70,7 +69,6 @@ function DashboardContent() {
 
   const isLoading = orgLoading;
 
-  // No organization
   if (!hasOrganization && !orgLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
@@ -91,7 +89,6 @@ function DashboardContent() {
     );
   }
 
-  // Select organization
   if (!currentOrganizationId && hasOrganization) {
     return (
       <div className="p-8 text-center">
@@ -130,7 +127,6 @@ function DashboardContent() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-4xl font-bold">Dashboard</h1>
@@ -157,7 +153,6 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid gap-6 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-3">
@@ -208,7 +203,6 @@ function DashboardContent() {
         </Card>
       </div>
 
-      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -218,7 +212,6 @@ function DashboardContent() {
 
         <TabsContent value="overview" className="space-y-6 mt-6">
           <div className="grid gap-6 md:grid-cols-2">
-            {/* Quick Actions */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -233,7 +226,6 @@ function DashboardContent() {
               </CardContent>
             </Card>
 
-            {/* Recent Members */}
             <Card>
               <CardHeader>
                 <CardTitle>Team Members</CardTitle>

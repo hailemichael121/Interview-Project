@@ -1,4 +1,5 @@
-// app/components/outlines/outline-table-compact.tsx
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import * as React from "react";
@@ -195,7 +196,6 @@ export function OutlineTableCompact({
     }
   };
 
-  // Handle inline editing
   const startEditing = (rowId: string, columnId: string, value: any) => {
     setEditingCell({ rowId, columnId, value });
     setEditingValue(value.toString());
@@ -228,7 +228,7 @@ export function OutlineTableCompact({
       await onUpdateOutline(rowId, updateData);
       setEditingCell(null);
       setEditingValue("");
-    } catch (error) {
+    } catch {
       toast.error("Failed to save changes");
     } finally {
       setIsSaving(false);
@@ -394,11 +394,11 @@ export function OutlineTableCompact({
                 disabled={isSaving}
               >
                 <SelectTrigger
-                  className="h-8 w-32 border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:ring-2 data-[state=open]:ring-ring"
+                  className="h-8 w-32 border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:ring-2 data-[state=open]:ring-ring"
                 >                  <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent
-                  className="border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50 min-w-48"
+                  className="border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50 min-w-48"
                 >                  <SelectItem value="PENDING">Pending</SelectItem>
                   <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
                   <SelectItem value="COMPLETED">Completed</SelectItem>
@@ -578,7 +578,7 @@ export function OutlineTableCompact({
               }}
             >
               <SelectTrigger
-                className="h-8 w-full min-w-32 justify-between border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:ring-2 data-[state=open]:ring-ring"
+                className="h-8 w-full min-w-32 justify-between border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:ring-2 data-[state=open]:ring-ring"
               >
                 {isLoading ? (
                   <Loader2 className="size-3 animate-spin" />
@@ -587,7 +587,7 @@ export function OutlineTableCompact({
                 )}
               </SelectTrigger>
               <SelectContent
-                className="border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50 min-w-48"
+                className="border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50 min-w-48"
 
               >                <SelectItem value="unassigned">Unassigned</SelectItem>
                 {organizationMembers.map((member) => (
@@ -658,7 +658,7 @@ export function OutlineTableCompact({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-72 border bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50"
+              className="w-72 border bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/80 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50"
             >              <DropdownMenuItem
               className="cursor-pointer"
               onClick={() => openViewModal(outline)}
@@ -911,12 +911,12 @@ export function OutlineTableCompact({
                 >
                   <SelectTrigger
                     size="sm"
-                    className="h-8 w-20 border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=open]:ring-2 data-[state=open]:ring-ring"
+                    className="h-8 w-20 border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=open]:ring-2 data-[state=open]:ring-ring"
                     id="rows-per-page"
                   >                    <SelectValue placeholder={table.getState().pagination.pageSize} />
                   </SelectTrigger>
                   <SelectContent
-                    className="border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50  "
+                    className="border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50  "
                     side="top"
                     align="end"
                   >                    {[10, 20, 30, 40, 50].map((pageSize) => (
@@ -975,7 +975,6 @@ export function OutlineTableCompact({
           </div>
         </TabsContent>
 
-        {/* Other tabs content remains the same... */}
         <TabsContent value="in-progress" className="flex flex-col px-4 lg:px-6">
           <div className="aspect-video w-full flex-1 rounded-lg border border-dashed">
             <div className="flex h-full items-center justify-center">

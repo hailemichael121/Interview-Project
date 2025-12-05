@@ -1,4 +1,3 @@
-// src/outlines/outlines.controller.ts
 import {
   Controller,
   Get,
@@ -24,7 +23,6 @@ import { Role } from '../users/enums/role.enum';
 export class OutlinesController {
   constructor(private readonly outlinesService: OutlinesService) {}
 
-  // Create a new outline
   @Post()
   async create(
     @CurrentUser('id') userId: string,
@@ -33,7 +31,6 @@ export class OutlinesController {
     @CurrentUser('memberRole') memberRole: Role,
     @Body() createOutlineDto: CreateOutlineDto,
   ) {
-    // Use organizationId from context, override if provided in DTO
     const targetOrganizationId =
       createOutlineDto.organizationId || organizationId;
 
@@ -55,7 +52,6 @@ export class OutlinesController {
     );
   }
 
-  // List all outlines for the user's organization with optional pagination
   @Get()
   async findAll(
     @CurrentUser('organizationId') organizationId: string,
@@ -77,7 +73,6 @@ export class OutlinesController {
     );
   }
 
-  // Get a single outline by ID
   @Get(':id')
   async findOne(
     @CurrentUser('organizationId') organizationId: string,
@@ -92,7 +87,6 @@ export class OutlinesController {
     return await this.outlinesService.findOne(organizationId, id);
   }
 
-  // Update an outline
   @Put(':id')
   async update(
     @CurrentUser('id') userId: string,
@@ -118,7 +112,6 @@ export class OutlinesController {
     );
   }
 
-  // Soft delete an outline (only creator or owner)
   @Delete(':id')
   async remove(
     @CurrentUser('organizationId') organizationId: string,
@@ -140,7 +133,6 @@ export class OutlinesController {
     );
   }
 
-  // Get organization statistics
   @Get('organization/stats')
   async getOrganizationOutlineStats(
     @CurrentUser('organizationId') organizationId: string,
@@ -156,7 +148,6 @@ export class OutlinesController {
     );
   }
 
-  //  Get outlines assigned to current user as reviewer
   @Get('reviewer/assigned')
   async getAssignedOutlines(
     @CurrentUser('organizationId') organizationId: string,
@@ -180,7 +171,6 @@ export class OutlinesController {
     );
   }
 
-  //   Get outlines created by current user
   @Get('creator/my-outlines')
   async getMyOutlines(
     @CurrentUser('organizationId') organizationId: string,

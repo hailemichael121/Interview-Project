@@ -1,4 +1,4 @@
-// hooks/use-api.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import apiService from "@/lib/api-service";
 import {
   UpdateUserDto,
@@ -220,9 +220,7 @@ export const useApi = () => {
     }, []);
 
     return {
-      // List of invitations
       ...listState,
-      // Action result (accept/decline)
       action: actionState,
       getPendingInvitations,
       acceptInvitation,

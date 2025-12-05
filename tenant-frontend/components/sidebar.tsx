@@ -1,4 +1,3 @@
-// components/layout/app-sidebar.tsx
 "use client";
 
 import * as React from "react";
@@ -84,7 +83,6 @@ export function AppSidebar() {
     }
   };
 
-  // This keeps sidebar mounted and data fresh
   React.useEffect(() => { }, [currentOrganizationId]);
 
   if (authLoading || orgLoading) {
@@ -108,7 +106,6 @@ export function AppSidebar() {
 
   return (
     <div className="flex h-full flex-col bg-background text-foreground">
-      {/* Organization Switcher */}
       {currentOrganization ? (
         <div className="p-5 border-b border-border">
           <DropdownMenu>
@@ -118,7 +115,7 @@ export function AppSidebar() {
                 className="flex w-full items-center gap-3 rounded-lg p-3 hover:bg-accent"
                 disabled={switching}
               >
-                <div className="flex h-10 w-10 items-center justify-center bg-gradient-to-br from-gray-500 to-white-600 text-white overflow-hidden rounded-lg border">
+                <div className="flex h-10 w-10 items-center justify-center bg-linear-to-br from-gray-500 to-white-600 text-white overflow-hidden rounded-lg border">
                   <Image
                     src={logoSrc}
                     alt="Logo"
@@ -177,7 +174,6 @@ export function AppSidebar() {
         </div>
       )}
 
-      {/* Navigation - Use router.push instead of Link */}
       {currentOrganization && (
         <nav className="flex-1 space-y-1 px-3 py-4">
           {navigation.map((item) => {
@@ -203,14 +199,13 @@ export function AppSidebar() {
         </nav>
       )}
 
-      {/* User Menu */}
       <div className="border-t border-border p-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="w-full justify-start gap-3 rounded-lg p-3 hover:bg-accent">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={session.user?.image || ""} />
-                <AvatarFallback className="bg-gradient-to-br from-gray-500 to-white-600 text-white font-medium">
+                <AvatarFallback className="bg-linear-to-br from-gray-500 to-white-600 text-white font-medium">
                   {profile?.name?.[0] || "U"}                        </AvatarFallback>
               </Avatar>
               <div className="flex-1 text-left">
@@ -225,7 +220,7 @@ export function AppSidebar() {
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={session.user?.image || ""} />
-                  <AvatarFallback className="bg-gradient-to-br from-gray-500 to-white-600 text-white font-medium">
+                  <AvatarFallback className="bg-linear-to-br from-gray-500 to-white-600 text-white font-medium">
                     {profile?.name?.[0] || "U"}                        </AvatarFallback>
                 </Avatar>
                 <div>

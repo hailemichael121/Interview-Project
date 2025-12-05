@@ -11,7 +11,6 @@ async function proxyRequest(
 ) {
   const url = `${BACKEND_URL}/users/${path}`;
 
-  // Get ALL cookies from the incoming request
   const cookies = request.cookies;
   const cookieHeader = cookies.toString();
 
@@ -33,20 +32,16 @@ async function proxyRequest(
     try {
       const body = await request.json();
       init.body = JSON.stringify(body);
-    } catch {
-      // No body
-    }
+    } catch {}
   }
 
   const response = await fetch(url, init);
   const data = await response.json();
 
-  // Create response with backend data
   const nextResponse = NextResponse.json(data, {
     status: response.status,
   });
 
-  // Forward Set-Cookie headers from backend
   const setCookieHeaders = response.headers.getSetCookie();
   if (setCookieHeaders && setCookieHeaders.length > 0) {
     setCookieHeaders.forEach((cookie) => {

@@ -9,19 +9,15 @@ async function proxyRequest(
   path: string,
   method: string
 ) {
-  // Construct the full backend URL
   const url = `${BACKEND_URL}/api/outlines/${path}`;
 
-  // ✅ Get ALL cookies from the incoming request
   const cookieHeader = request.cookies.toString();
 
-  // Prepare headers to forward to the backend
   const headers: Record<string, string> = {
     Cookie: cookieHeader,
     Origin: request.headers.get("origin") || "https://tenanncy.onrender.com",
   };
 
-  // Add Content-Type for non-GET requests
   if (method !== "GET" && method !== "HEAD") {
     headers["Content-Type"] = "application/json";
   }
@@ -31,26 +27,20 @@ async function proxyRequest(
     headers,
   };
 
-  // Add body for non-GET/HEAD requests
   if (method !== "GET" && method !== "HEAD") {
     try {
       const body = await request.json();
       init.body = JSON.stringify(body);
-    } catch {
-      // If there's no JSON body, continue without it
-    }
+    } catch {}
   }
 
-  // Forward the request to the backend
   const response = await fetch(url, init);
   const data = await response.json();
 
-  // Create a Next.js response with the backend's data
   const nextResponse = NextResponse.json(data, {
     status: response.status,
   });
 
-  // ✅ CRITICAL: Forward Set-Cookie headers from backend
   const setCookieHeaders = response.headers.getSetCookie();
   if (setCookieHeaders && setCookieHeaders.length > 0) {
     setCookieHeaders.forEach((cookie) => {
@@ -61,7 +51,6 @@ async function proxyRequest(
   return nextResponse;
 }
 
-// Handler for each HTTP method
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ all: string[] }> }

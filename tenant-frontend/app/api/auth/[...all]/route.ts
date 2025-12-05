@@ -13,14 +13,11 @@ export async function POST(
     const path = resolvedParams.all.join("/");
     const url = `${BACKEND_URL}/api/auth/${path}`;
 
-    // Get ALL cookies from the incoming request
     const cookies = request.cookies;
     const cookieHeader = cookies.toString();
 
-    // Get request body
     const body = await request.json();
 
-    // Forward the request to backend
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -34,12 +31,10 @@ export async function POST(
 
     const data = await response.json();
 
-    // Create response with backend data
     const nextResponse = NextResponse.json(data, {
       status: response.status,
     });
 
-    // Forward Set-Cookie headers from backend
     const setCookieHeaders = response.headers.getSetCookie();
     if (setCookieHeaders && setCookieHeaders.length > 0) {
       setCookieHeaders.forEach((cookie) => {
@@ -66,11 +61,9 @@ export async function GET(
     const path = resolvedParams.all.join("/");
     const url = `${BACKEND_URL}/api/auth/${path}`;
 
-    // Get ALL cookies from the incoming request
     const cookies = request.cookies;
     const cookieHeader = cookies.toString();
 
-    // Forward the request to backend
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -82,12 +75,10 @@ export async function GET(
 
     const data = await response.json();
 
-    // Create response with backend data
     const nextResponse = NextResponse.json(data, {
       status: response.status,
     });
 
-    // Forward Set-Cookie headers from backend
     const setCookieHeaders = response.headers.getSetCookie();
     if (setCookieHeaders && setCookieHeaders.length > 0) {
       setCookieHeaders.forEach((cookie) => {

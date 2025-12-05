@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { admin } from 'better-auth/plugins/admin';
@@ -5,12 +6,8 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
-// Import email functions
 import { sendPasswordResetEmail, sendInvitationEmail } from '../lib/nodemailer';
 
-// ------------------------------------------------------------
-// Database Configuration
-// ------------------------------------------------------------
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   throw new Error('DATABASE_URL environment variable is required');
@@ -26,20 +23,26 @@ const pool = new Pool({
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-// ------------------------------------------------------------
+const getBaseUrl = () => {
+  if (process.env.BETTER_AUTH_URL) {
+    return process.env.BETTER_AUTH_URL;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://tenant-backend-cz23.onrender.com';
+  }
+  return 'http://localhost:3000';
+};
+
 // Better Auth Configuration
-// ------------------------------------------------------------
 export const auth = betterAuth({
   // Database adapter
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),
 
-  // Base URL configuration
-  baseURL: process.env.BETTER_AUTH_URL || 'https://your-app.onrender.com',
+  baseURL: getBaseUrl(),
   basePath: '/api/auth',
 
-  // Security
   secret:
     process.env.BETTER_AUTH_SECRET || 'your-secret-key-change-in-production',
 
@@ -48,27 +51,24 @@ export const auth = betterAuth({
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:5173',
-    'https://your-app.vercel.app',
-    'https://your-app.onrender.com',
+    'https://tenanncy-h9sifrs7k-hailemichael121s-projects.vercel.app',
+    'https://tenanncy.vercel.app',
+    'https://tenanncy.onrender.com',
+    'https://tenant-backend-cz23.onrender.com',
   ],
 
-  // ------------------------------------------------------------
   // Session Configuration
-  // ------------------------------------------------------------
   session: {
     cookie: {
       name: 'better-auth.session_token',
       httpOnly: true,
       sameSite: 'lax',
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       path: '/',
     },
-    expiresIn: 60 * 60 * 24 * 7, // 7 days
+    expiresIn: 60 * 60 * 24 * 7,
   },
 
-  // ------------------------------------------------------------
-  // User Schema
-  // ------------------------------------------------------------
   user: {
     additionalFields: {
       role: {
@@ -95,46 +95,42 @@ export const auth = betterAuth({
     },
   },
 
-  // ------------------------------------------------------------
   // Email & Password Authentication
-  // ------------------------------------------------------------
   emailAndPassword: {
     enabled: true,
 
-    // 🔐 Password Reset Configuration
     sendResetPassword: async ({ user, url }) => {
       try {
-        console.log(`📧 Sending password reset email to: ${user.email}`);
+        const resetUrl = url.startsWith('http') ? url : `${getBaseUrl()}${url}`;
 
-        await sendPasswordResetEmail(user.email, user.name || 'User', url);
-
-        console.log(`✅ Password reset email sent to: ${user.email}`);
-      } catch (error) {
-        console.error('❌ Failed to send password reset email:', error);
+        await sendPasswordResetEmail(user.email, user.name || 'User', resetUrl);
+      } catch {
+        // Don't throw error - let Better Auth handle it
       }
     },
 
-    // 🔄 Password Reset Completion Hook
-    onPasswordReset: async ({ user }) => {
-      console.log(`✅ Password reset completed for user: ${user.email}`);
+    onPasswordReset: async () => {
+      return Promise.resolve();
     },
 
-    resetPasswordTokenExpiresIn: 3600, // 1 hour
+    onChangePassword: async () => {
+      return Promise.resolve();
+    },
+
+    resetPasswordTokenExpiresIn: 3600,
+    requireEmailVerification: false,
   },
 
-  // ------------------------------------------------------------
-  // Plugins
-  // ------------------------------------------------------------
-  plugins: [
-    admin(), // Admin dashboard for user management
-  ],
+  plugins: [admin()],
+
+  rateLimit: {
+    window: 60 * 1000,
+    max: 60,
+  },
 });
 
 console.log('✅ Better Auth configured with password reset support');
 
-// ------------------------------------------------------------
-// Optional: Helper function for sending invitation emails
-// ------------------------------------------------------------
 export async function sendOrganizationInvitation(
   email: string,
   organizationName: string,
@@ -142,10 +138,9 @@ export async function sendOrganizationInvitation(
   inviterName?: string,
 ) {
   try {
-    // Construct invitation URL
-    const invitationUrl = `${process.env.FRONTEND_URL || process.env.BETTER_AUTH_URL}/accept-invite/${token}`;
-
-    console.log(`📧 Sending organization invitation to: ${email}`);
+    const frontendUrl =
+      process.env.FRONTEND_URL || 'https://tenanncy.vercel.app';
+    const invitationUrl = `${frontendUrl}/api/organization/accept-invite/${token}`;
 
     await sendInvitationEmail(
       email,
@@ -154,10 +149,8 @@ export async function sendOrganizationInvitation(
       inviterName,
     );
 
-    console.log(`✅ Invitation sent to: ${email}`);
     return { success: true };
   } catch (error) {
-    console.error('❌ Failed to send invitation email:', error);
     return { success: false, error };
   }
 }

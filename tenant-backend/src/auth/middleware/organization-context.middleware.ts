@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-// src/auth/middleware/organization-context.middleware.ts
 import {
   Injectable,
   NestMiddleware,

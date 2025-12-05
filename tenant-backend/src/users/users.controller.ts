@@ -1,4 +1,4 @@
-// In users.controller.ts
+/* eslint-disable @typescript-eslint/require-await */
 import {
   Controller,
   Get,
@@ -10,11 +10,42 @@ import {
   Post,
   Delete,
   Param,
+  UploadedFile,
+  UseInterceptors,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { EnhancedAuthGuard } from '../auth/guards/enhanced-auth.guard';
 import { UsersService } from './users.service';
+
+interface CurrentUserType {
+  id: string;
+  email: string;
+  name?: string;
+  role?: string;
+  tenantId?: string;
+  image?: string;
+  emailVerified?: boolean;
+  banned?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface MembershipType {
+  organizationId: string;
+  organization?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  role: string;
+  id: string;
+  joinedAt: Date;
+}
 
 @Controller('users')
 @UseGuards(EnhancedAuthGuard)
@@ -32,6 +63,23 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.updateUser(userId, updateUserDto);
+  }
+
+  @Post('upload-image')
+  @UseInterceptors(FileInterceptor('image'))
+  async uploadImage(
+    @CurrentUser('id') userId: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
+          new FileTypeValidator({ fileType: 'image/*' }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.usersService.uploadImage(userId, file);
   }
 
   @Get()
@@ -53,8 +101,8 @@ export class UsersController {
 
   @Get('me')
   async getCurrentUser(
-    @CurrentUser() user: any,
-    @CurrentUser('memberships') memberships: any[],
+    @CurrentUser() user: CurrentUserType,
+    @CurrentUser('memberships') memberships: MembershipType[],
     @CurrentUser('organizationId') organizationId: string,
     @CurrentUser('memberRole') memberRole: string,
   ) {

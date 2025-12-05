@@ -1,4 +1,3 @@
-// app/organization/create/page.tsx - FIXED VERSION
 "use client";
 
 import { useState, Suspense } from "react";
@@ -10,14 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building, ArrowRight, Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { apiService } from "@/lib/api-service";
-import authClient from "@/lib/auth-client";
 
 import Link from "next/link";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 
 function CreateOrganizationContent() {
   const router = useRouter();
-  const { data: session } = authClient.useSession();
 
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -72,8 +69,8 @@ function CreateOrganizationContent() {
   return (
     <div className="max-w-2xl mx-auto">
       <Card className="border-0 shadow-2xl rounded-2xl overflow-hidden bg-card/95 backdrop-blur">
-        <CardHeader className="text-center space-y-4 pb-8 pt-10 bg-gradient-to-b from-primary/5 to-transparent">
-          <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center shadow-xl">
+        <CardHeader className="text-center space-y-4 pb-8 pt-10 bg-linear-to-b from-primary/5 to-transparent">
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-linear-to-br from-gray-500 to-gray-600 flex items-center justify-center shadow-xl">
             <Building className="h-10 w-10 text-white" />
           </div>
           <div>
@@ -86,7 +83,6 @@ function CreateOrganizationContent() {
 
         <CardContent className="px-10 pb-10">
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Name */}
             <div className="space-y-2">
               <Label className="text-base font-medium">Workspace Name *</Label>
               <Input
@@ -102,7 +98,6 @@ function CreateOrganizationContent() {
               </p>
             </div>
 
-            {/* Slug */}
             <div className="space-y-2">
               <Label className="text-base font-medium">URL Slug</Label>
               <div className="flex items-center gap-3">
@@ -122,9 +117,8 @@ function CreateOrganizationContent() {
               </p>
             </div>
 
-            {/* Owner Note */}
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 flex gap-4">
-              <Shield className="h-6 w-6 text-primary mt-0.5 flex-shrink-0" />
+              <Shield className="h-6 w-6 text-primary mt-0.5 shrink-0" />
               <div>
                 <p className="font-medium">You&apos;ll be the Owner</p>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -133,7 +127,6 @@ function CreateOrganizationContent() {
               </div>
             </div>
 
-            {/* Submit */}
             <Button
               type="submit"
               size="lg"
@@ -154,7 +147,6 @@ function CreateOrganizationContent() {
             </Button>
           </form>
 
-          {/* Alternative */}
           <div className="mt-10 text-center">
             <p className="text-sm text-muted-foreground">
               Already have a workspace?{" "}

@@ -1,4 +1,3 @@
-// components/team/invite-member-dialog.tsx
 "use client";
 
 import * as React from "react";
@@ -23,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { UserPlus, Loader2, Mail, Shield } from "lucide-react";
 import { EmailSuggestions } from "@/components/auth/email-suggestions";
+import { useTheme } from "next-themes";
 
 interface InviteMemberDialogProps {
   isOpen: boolean;
@@ -46,7 +46,7 @@ export function InviteMemberDialog({
 
   const handleSubmit = async () => {
     if (!email.includes("@")) return;
-    await onInvite(email.trim(), role, organizationId); // ← Now passes all 3 args
+    await onInvite(email.trim(), role, organizationId);
     if (!isLoading) {
       setEmail("");
       setRole("MEMBER");
@@ -79,7 +79,6 @@ export function InviteMemberDialog({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Email */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <Mail className="h-4 w-4" />
@@ -102,7 +101,6 @@ export function InviteMemberDialog({
             </div>
           </div>
 
-          {/* Role */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
@@ -119,7 +117,6 @@ export function InviteMemberDialog({
             </Select>
           </div>
 
-          {/* Info */}
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 flex gap-3">
             <Shield className="h-5 w-5 text-primary mt-0.5" />
             <div className="text-sm">
@@ -156,8 +153,4 @@ export function InviteMemberDialog({
       </DialogContent>
     </Dialog>
   );
-}
-
-function useTheme(): { resolvedTheme: any; } {
-  throw new Error("Function not implemented.");
 }

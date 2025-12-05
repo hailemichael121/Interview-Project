@@ -1,4 +1,3 @@
-// src/organization/dto/update-organization.dto.ts
 import { IsOptional, IsString, Matches, Length } from 'class-validator';
 
 export class UpdateOrganizationDto {

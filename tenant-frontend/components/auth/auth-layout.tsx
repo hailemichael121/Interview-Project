@@ -23,16 +23,13 @@ interface AuthLayoutProps {
 export function AuthLayout({
   children,
   branding,
-  formTitle,
-  formDescription,
   transitionClass = ""
 }: AuthLayoutProps) {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       <GradientBackground />
-      
+
       <div className={`relative z-10 flex min-h-screen ${transitionClass}`}>
-        {/* Left: Branding */}
         <div className="hidden lg:flex lg:w-1/2 items-center justify-center px-12">
           <div className="text-center max-w-md">
             <Logo className="w-32 h-32 mx-auto mb-8" />
@@ -55,7 +52,6 @@ export function AuthLayout({
           </div>
         </div>
 
-        {/* Right: Form */}
         <div className="flex-1 flex items-center justify-center py-12 px-6">
           <div className="w-full max-w-md animate-in slide-in-from-right-32 duration-700">
             {children}

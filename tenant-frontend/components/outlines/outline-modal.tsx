@@ -1,4 +1,4 @@
-// app/components/outlines/outline-modal.tsx
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -80,7 +80,6 @@ export function OutlineModal({
                 status: outline.status,
                 target: outline.target,
                 limit: outline.limit,
-                // Use reviewerMemberId from the data
                 reviewerMemberId: (outline as any).reviewerMemberId || outline.reviewerMember?.id || null,
             });
             setIsEditing(mode === "edit");
@@ -120,7 +119,6 @@ export function OutlineModal({
 
     const canEdit = ["OWNER", "REVIEWER"].includes(currentUserRole || "") || outline.createdBy?.user?.id === "currentUserId";
 
-    // Get reviewer name from either reviewerMember or reviewer
     const getReviewerName = () => {
         if (outline.reviewerMember?.user?.name) {
             return outline.reviewerMember.user.name;
@@ -131,7 +129,6 @@ export function OutlineModal({
         return "Not assigned";
     };
 
-    // Get reviewer email
     const getReviewerEmail = () => {
         if (outline.reviewerMember?.user?.email) {
             return outline.reviewerMember.user.email;
@@ -142,24 +139,20 @@ export function OutlineModal({
         return "";
     };
 
-    // Shared select style
     const selectTriggerClass = isDark
         ? "bg-white/10 border-white/20 text-white placeholder:text-white/50"
         : "bg-white border-gray-300 text-gray-900";
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl p-0 border-0 overflow-hidden bg-transparent">
-                {/* Backdrop */}
+            <DialogContent className="max-w-5xl p-0 border-0 overflow-hidden bg-transparent">
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-md" aria-hidden="true" />
 
-                {/* Modal Card */}
                 <div
                     className={`relative z-10 mx-auto w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden ${isDark ? "bg-[#141414] text-white" : "bg-[#DEDEDE] text-gray-900"
                         }`}
                 >
                     <div className="p-6 space-y-8">
-                        {/* Header */}
                         <div className="flex items-start justify-between">
                             <div>
                                 <DialogTitle className="text-2xl font-bold">
@@ -183,7 +176,6 @@ export function OutlineModal({
 
                             <form onSubmit={handleSubmit} className="mt-8 space-y-8">
                                 <TabsContent value="overview" className="space-y-8">
-                                    {/* Header */}
                                     <div className="space-y-2">
                                         <Label>Header</Label>
                                         {isEditing ? (
@@ -198,7 +190,6 @@ export function OutlineModal({
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-8">
-                                        {/* Section Type */}
                                         <div className="space-y-2">
                                             <Label>Section Type</Label>
                                             {isEditing ? (
@@ -224,7 +215,6 @@ export function OutlineModal({
                                             )}
                                         </div>
 
-                                        {/* Status */}
                                         <div className="space-y-2">
                                             <Label>Status</Label>
                                             {isEditing ? (
@@ -249,7 +239,6 @@ export function OutlineModal({
                                         </div>
                                     </div>
 
-                                    {/* Target & Limit */}
                                     <div className="grid grid-cols-2 gap-8">
                                         <div className="space-y-2">
                                             <Label>Target Word Count</Label>
@@ -280,7 +269,6 @@ export function OutlineModal({
                                     </div>
                                 </TabsContent>
 
-                                {/* Details Tab */}
                                 <TabsContent value="details" className="space-y-8">
                                     <div className="grid grid-cols-2 gap-8">
                                         <div className="space-y-6">
@@ -353,7 +341,6 @@ export function OutlineModal({
                                     </div>
                                 </TabsContent>
 
-                                {/* Activity Tab */}
                                 <TabsContent value="activity" className="space-y-6">
                                     <div className="space-y-4">
                                         <div className="flex gap-4">
@@ -377,7 +364,6 @@ export function OutlineModal({
                                     </div>
                                 </TabsContent>
 
-                                {/* Footer */}
                                 <div className="flex items-center justify-between pt-8 border-t border-white/10">
                                     <div>
                                         {canEdit && onDelete && (

@@ -1,4 +1,4 @@
-// app/components/outlines/create-outline-form.tsx
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -153,7 +153,6 @@ export function CreateOutlineForm({
                     </div>
                 </div>
 
-                {/* Real reviewers from organization */}
                 <div className="space-y-2">
                     <Label className="text-base font-medium">Assign Reviewer (Optional)</Label>
                     <Select

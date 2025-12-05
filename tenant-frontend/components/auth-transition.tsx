@@ -1,4 +1,3 @@
-// components/auth-transition.tsx
 "use client";
 
 import { useState } from "react";

@@ -1,11 +1,9 @@
-// hooks/use-auth-actions.ts
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
 import authClient from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 
-// Define types for the main hook
 interface MainAuthActions {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
@@ -15,7 +13,6 @@ interface MainAuthActions {
   error: string | null;
 }
 
-// Define types for the simple hook (without updateProfile and getSession)
 interface SimpleAuthActions {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
@@ -23,7 +20,6 @@ interface SimpleAuthActions {
   error: string | null;
 }
 
-// Main hook with all features
 export function useAuthActions(): MainAuthActions {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -118,7 +114,6 @@ export function useAuthActions(): MainAuthActions {
   };
 }
 
-// Simple hook for basic auth (signin/signup only)
 export function useAuthActionsSimple(): SimpleAuthActions {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
