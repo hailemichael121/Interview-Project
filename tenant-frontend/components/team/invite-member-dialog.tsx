@@ -61,12 +61,16 @@ export function InviteMemberDialog({
     }
     onOpenChange(open);
   };
-
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const bgColor = isDark ? "bg-[#141414]" : "bg-[#DEDEDE]";
+  const textColor = isDark ? "text-white" : "text-gray-900";
+  const borderColor = isDark ? "border-gray-800" : "border-gray-300";
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
 
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={`sm:max-w-md ${bgColor} ${textColor} ${borderColor} `}>
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Invite Team Member</DialogTitle>
           <DialogDescription>
@@ -152,4 +156,8 @@ export function InviteMemberDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function useTheme(): { resolvedTheme: any; } {
+  throw new Error("Function not implemented.");
 }
