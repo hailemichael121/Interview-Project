@@ -108,20 +108,22 @@ export interface Outline {
   status: "PENDING" | "IN_PROGRESS" | "COMPLETED";
   target: number;
   limit: number;
-  reviewerId: string | null;
+  reviewerMemberId: string | null; // CHANGED: reviewerId -> reviewerMemberId
   organizationId: string;
   createdByMemberId: string;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
-  reviewer?: {
+  reviewerMember?: {
+    // CHANGED: reviewer -> reviewerMember
     id: string;
-    name: string;
-    userId?: string | null;
+    role: string;
+    joinedAt: string;
     user?: {
       id: string;
       name: string | null;
       email: string;
+      image?: string | null;
     };
   };
   createdBy?: {
@@ -292,7 +294,7 @@ export interface CreateOutlineDto {
   status?: "PENDING" | "IN_PROGRESS" | "COMPLETED";
   target?: number;
   limit?: number;
-  reviewerId?: string | null;
+  reviewerMemberId?: string | null;
   organizationId?: string;
 }
 
@@ -302,7 +304,7 @@ export interface UpdateOutlineDto {
   status?: "PENDING" | "IN_PROGRESS" | "COMPLETED";
   target?: number;
   limit?: number;
-  reviewerId?: string | null;
+  reviewerMemberId?: string | null;
 }
 
 export interface UpdateUserDto {

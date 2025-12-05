@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Key, Mail, Shield, ArrowRight, Users, Plus } from "lucide-react";
+import { Loader2, Key, Mail, Shield, ArrowRight, Users } from "lucide-react";
 import { toast } from "sonner";
 import { apiService } from "@/lib/api-service";
 import authClient from "@/lib/auth-client";
@@ -47,11 +47,9 @@ function JoinOrganizationContent() {
 
   return (
     <div className="max-w-2xl mx-auto">
-
-
       <Card className="border-0 shadow-2xl rounded-2xl overflow-hidden bg-card/95 backdrop-blur">
         <CardHeader className="text-center space-y-4 pb-8 pt-10">
-          <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-500 to-white-600 flex items-center justify-center shadow-xl">
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center shadow-xl">
             <Users className="h-10 w-10 text-white" />
           </div>
           <div>
@@ -144,19 +142,19 @@ function JoinOrganizationContent() {
 
 export default function JoinOrganizationPage() {
   return (
-    <DashboardLayout>
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center">
-              <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-              <p className="text-lg text-muted-foreground">Loading invitation...</p>
-            </div>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-lg text-muted-foreground">Loading invitation page...</p>
           </div>
-        }
-      >
+        </div>
+      }
+    >
+      <DashboardLayout>
         <JoinOrganizationContent />
-      </Suspense>
-    </DashboardLayout>
+      </DashboardLayout>
+    </Suspense>
   );
 }

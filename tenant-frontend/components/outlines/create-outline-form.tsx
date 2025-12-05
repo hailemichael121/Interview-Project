@@ -41,7 +41,7 @@ export function CreateOutlineForm({
         sectionType: "EXECUTIVE_SUMMARY" as const,
         target: 1000,
         limit: 1200,
-        reviewerId: undefined as string | undefined,
+        reviewerMemberId: undefined as string | undefined,
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -59,7 +59,7 @@ export function CreateOutlineForm({
                     sectionType: formData.sectionType,
                     target: formData.target,
                     limit: formData.limit,
-                    reviewerId: formData.reviewerId || null,
+                    reviewerMemberId: formData.reviewerMemberId || null,
                 },
                 organizationId
             );
@@ -157,8 +157,8 @@ export function CreateOutlineForm({
                 <div className="space-y-2">
                     <Label className="text-base font-medium">Assign Reviewer (Optional)</Label>
                     <Select
-                        value={formData.reviewerId || "unassigned"}
-                        onValueChange={(v) => setFormData({ ...formData, reviewerId: v === "unassigned" ? undefined : v })}
+                        value={formData.reviewerMemberId || "unassigned"}
+                        onValueChange={(v) => setFormData({ ...formData, reviewerMemberId: v === "unassigned" ? undefined : v })}
                     >
                         <SelectTrigger className={selectClass}>
                             <SelectValue placeholder="No reviewer assigned" />
@@ -166,8 +166,7 @@ export function CreateOutlineForm({
                         <SelectContent className={`${isDark ? "bg-[#141414] text-white" : "bg-[#DEDEDE] text-gray-900"
                             }`}>                            <SelectItem value="unassigned">Unassigned</SelectItem>
                             {organizationMembers
-                                .filter(m => m.role === "REVIEWER" || m.role === "OWNER")
-                                .map((member) => (
+                                .filter(m => m.role === "REVIEWER" || m.role === "OWNER" || m.role === "MEMBER").map((member) => (
                                     <SelectItem key={member.id} value={member.id}>
                                         {member.user?.name || member.user?.email}
                                     </SelectItem>

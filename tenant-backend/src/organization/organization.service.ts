@@ -16,6 +16,7 @@ import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { PermissionService } from '../auth/services/permission.service';
 import { Role } from '../users/enums/role.enum';
+import { sendEmail } from '../lib/nodemailer';
 
 @Injectable()
 export class OrganizationService {
@@ -126,7 +127,6 @@ export class OrganizationService {
   // --------------------------
   // List organizations for a user (using pre-fetched memberships)
   // --------------------------
-  // In listUserOrganizations method, add proper typing:
   async listUserOrganizations(
     userId: string,
     memberships: any[],
@@ -189,6 +189,7 @@ export class OrganizationService {
       );
     }
   }
+
   // --------------------------
   // Get organization details
   // --------------------------
@@ -334,9 +335,15 @@ export class OrganizationService {
         throw new NotFoundException('Organization not found');
       }
 
+      // Get inviter details for email
+      const inviterUser = await this.prisma.user.findUnique({
+        where: { id: inviterUserId },
+        select: { name: true, email: true },
+      });
+
       // Check if user is already a member (use normalized email)
       const existingUser = await this.prisma.user.findUnique({
-        where: { email: normalizedEmail }, // Use normalized email
+        where: { email: normalizedEmail },
       });
 
       if (existingUser) {
@@ -358,7 +365,7 @@ export class OrganizationService {
       const existingInvite = await this.prisma.organizationInvite.findFirst({
         where: {
           organizationId: orgId,
-          email: normalizedEmail, // Use normalized email
+          email: normalizedEmail,
           deletedAt: null,
           expires: { gt: new Date() },
         },
@@ -368,10 +375,13 @@ export class OrganizationService {
           'An active invitation already exists for this email',
         );
       }
+
+      // Generate invitation token
       const token =
         Math.random().toString(36).substring(2) + Date.now().toString(36);
       const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
+      // Create invitation in database
       const invite = await this.prisma.organizationInvite.create({
         data: {
           organizationId: orgId,
@@ -383,6 +393,7 @@ export class OrganizationService {
         },
       });
 
+      // Log invitation
       await this.prisma.invitationLog.create({
         data: {
           inviteToken: token,
@@ -393,6 +404,18 @@ export class OrganizationService {
           inviterMemberId: inviterMemberId,
         },
       });
+
+      // Send invitation email
+      await this.sendInvitationEmail(
+        email,
+        token,
+        organization.name,
+        inviterUser?.name || inviterUser?.email || 'A team member',
+      );
+
+      this.logger.log(
+        `Invitation sent to ${email} for org ${organization.name}`,
+      );
 
       return {
         success: true,
@@ -420,6 +443,111 @@ export class OrganizationService {
       throw new BadRequestException(
         'Failed to invite member. Please try again.',
       );
+    }
+  }
+
+  // --------------------------
+  // Send invitation email
+  // --------------------------
+  private async sendInvitationEmail(
+    toEmail: string,
+    token: string,
+    organizationName: string,
+    inviterName?: string,
+  ) {
+    try {
+      // Construct invitation URL
+      const baseUrl =
+        process.env.FRONTEND_URL || 'https://tenanncy.onrender.com';
+      const invitationUrl = `${baseUrl}/api/organization/accept-invite/${token}`;
+
+      // Email subject
+      const subject = `You've been invited to join ${organizationName} on Tenanncy`;
+
+      // HTML email template
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+            .container { background: #fff; border-radius: 8px; border: 1px solid #eaeaea; padding: 40px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .logo { color: #2563eb; font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+            .title { font-size: 20px; font-weight: 600; margin: 0 0 10px 0; }
+            .button { display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; margin: 20px 0; }
+            .info-box { background: #f0f9ff; border: 1px solid #bae6fd; padding: 15px; border-radius: 6px; margin: 20px 0; }
+            .url-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; font-family: monospace; word-break: break-all; font-size: 14px; margin: 20px 0; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eaeaea; color: #666; font-size: 14px; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="logo">Tenanncy</div>
+              <h1 class="title">Organization Invitation</h1>
+            </div>
+            
+            <p>Hello,</p>
+            
+            <p>You've been invited to join <strong>${organizationName}</strong> on Tenanncy!</p>
+            
+            ${inviterName ? `<p><strong>${inviterName}</strong> has invited you to collaborate.</p>` : ''}
+            
+            <div class="info-box">
+              <p><strong>Organization:</strong> ${organizationName}</p>
+              <p>Tenanncy helps teams manage tenant relationships and property documentation efficiently.</p>
+            </div>
+            
+            <div style="text-align: center;">
+              <a href="${invitationUrl}" class="button">Accept Invitation</a>
+            </div>
+            
+            <p>Or copy this link:</p>
+            <div class="url-box">${invitationUrl}</div>
+            
+            <p><small>This invitation expires in 7 days.</small></p>
+            
+            <div class="footer">
+              <p>© ${new Date().getFullYear()} Tenanncy. All rights reserved.</p>
+              <p>This is an automated message. Please do not reply.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Plain text version
+      const text = `
+Organization Invitation - Tenanncy
+===================================
+
+You've been invited to join ${organizationName} on Tenanncy!
+
+${inviterName ? `Invited by: ${inviterName}\n` : ''}
+Organization: ${organizationName}
+
+Accept your invitation here: ${invitationUrl}
+
+This invitation expires in 7 days.
+
+If you don't have a Tenanncy account yet, you'll be prompted to create one.
+
+© ${new Date().getFullYear()} Tenanncy. All rights reserved.
+      `;
+
+      // Send email using nodemailer
+      await sendEmail(toEmail, subject, html, text);
+
+      this.logger.log(`Invitation email sent to ${toEmail}`);
+    } catch (emailError) {
+      this.logger.error(
+        `Failed to send invitation email to ${toEmail}:`,
+        emailError,
+      );
+      // Don't throw - log error but don't fail the invitation
     }
   }
 
@@ -500,6 +628,10 @@ export class OrganizationService {
         where: { id: invite.id },
         data: { deletedAt: new Date() },
       });
+
+      this.logger.log(
+        `User ${userId} accepted invitation to org ${invite.organization.name}`,
+      );
 
       return {
         success: true,
@@ -640,6 +772,10 @@ export class OrganizationService {
         where: { id: targetMemberId },
         data: { deletedAt: new Date() },
       });
+
+      this.logger.log(
+        `Member ${targetMember.user.email} revoked from org ${orgId}`,
+      );
 
       return {
         success: true,

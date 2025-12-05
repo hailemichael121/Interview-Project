@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { Outline } from "@/types/types";
+import { Outline, OrganizationMember } from "@/types/types";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import {
@@ -37,7 +37,6 @@ import {
     Edit,
     Eye,
     X,
-    Users,
     BarChart3,
     Save,
 } from "lucide-react";
@@ -54,6 +53,7 @@ interface OutlineModalProps {
     onSave?: (data: Partial<Outline>) => Promise<void>;
     onDelete?: (outlineId: string) => Promise<void>;
     currentUserRole?: string;
+    organizationMembers?: OrganizationMember[];
 }
 
 export function OutlineModal({
@@ -64,6 +64,7 @@ export function OutlineModal({
     onSave,
     onDelete,
     currentUserRole,
+    organizationMembers = [],
 }: OutlineModalProps) {
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === "dark";
@@ -79,7 +80,8 @@ export function OutlineModal({
                 status: outline.status,
                 target: outline.target,
                 limit: outline.limit,
-                reviewerId: outline.reviewerId,
+                // Use reviewerMemberId from the data
+                reviewerMemberId: (outline as any).reviewerMemberId || outline.reviewerMember?.id || null,
             });
             setIsEditing(mode === "edit");
         }
@@ -89,7 +91,7 @@ export function OutlineModal({
 
     const statusConfig = {
         PENDING: { icon: <Clock className="size-4" />, label: "Pending", class: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300" },
-        IN_PROGRESS: { icon: <Clock className="size-4" />, label: "In Progress", class: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
+        IN_PROGRESS: { icon: <Clock className="size-4" />, label: "In Progress", class: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300" },
         COMPLETED: { icon: <CheckCircle className="size-4" />, label: "Completed", class: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
     }[outline.status];
 
@@ -118,7 +120,29 @@ export function OutlineModal({
 
     const canEdit = ["OWNER", "REVIEWER"].includes(currentUserRole || "") || outline.createdBy?.user?.id === "currentUserId";
 
-    // Shared select style — this fixes ALL dropdowns
+    // Get reviewer name from either reviewerMember or reviewer
+    const getReviewerName = () => {
+        if (outline.reviewerMember?.user?.name) {
+            return outline.reviewerMember.user.name;
+        }
+        if ((outline as any).reviewer?.name) {
+            return (outline as any).reviewer.name;
+        }
+        return "Not assigned";
+    };
+
+    // Get reviewer email
+    const getReviewerEmail = () => {
+        if (outline.reviewerMember?.user?.email) {
+            return outline.reviewerMember.user.email;
+        }
+        if ((outline as any).reviewer?.email) {
+            return (outline as any).reviewer.email;
+        }
+        return "";
+    };
+
+    // Shared select style
     const selectTriggerClass = isDark
         ? "bg-white/10 border-white/20 text-white placeholder:text-white/50"
         : "bg-white border-gray-300 text-gray-900";
@@ -178,12 +202,15 @@ export function OutlineModal({
                                         <div className="space-y-2">
                                             <Label>Section Type</Label>
                                             {isEditing ? (
-                                                <Select value={formData.sectionType} onValueChange={(v) => setFormData({ ...formData, sectionType: v as any })}>
+                                                <Select
+                                                    value={formData.sectionType}
+                                                    onValueChange={(v: Outline["sectionType"]) => setFormData({ ...formData, sectionType: v })}
+                                                >
                                                     <SelectTrigger className={selectTriggerClass}>
                                                         <SelectValue />
                                                     </SelectTrigger>
-                                                    <SelectContent className={` ${isDark ? "bg-[#141414] text-white" : "bg-[#DEDEDE] text-gray-900"
-                                                        }`}>                                                        <SelectItem value="EXECUTIVE_SUMMARY">Executive Summary</SelectItem>
+                                                    <SelectContent className={isDark ? "bg-[#141414] text-white" : "bg-[#DEDEDE] text-gray-900"}>
+                                                        <SelectItem value="EXECUTIVE_SUMMARY">Executive Summary</SelectItem>
                                                         <SelectItem value="TECHNICAL_APPROACH">Technical Approach</SelectItem>
                                                         <SelectItem value="DESIGN">Design</SelectItem>
                                                         <SelectItem value="CAPABILITIES">Capabilities</SelectItem>
@@ -201,12 +228,14 @@ export function OutlineModal({
                                         <div className="space-y-2">
                                             <Label>Status</Label>
                                             {isEditing ? (
-                                                <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v as any })}>
+                                                <Select
+                                                    value={formData.status}
+                                                    onValueChange={(v: Outline["status"]) => setFormData({ ...formData, status: v })}
+                                                >
                                                     <SelectTrigger className={selectTriggerClass}>
                                                         <SelectValue />
                                                     </SelectTrigger>
-                                                    <SelectContent className={` ${isDark ? "bg-[#141414] text-white" : "bg-[#DEDEDE] text-gray-900"
-                                                        }`}>
+                                                    <SelectContent className={isDark ? "bg-[#141414] text-white" : "bg-[#DEDEDE] text-gray-900"}>
                                                         <SelectItem value="PENDING">Pending</SelectItem>
                                                         <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
                                                         <SelectItem value="COMPLETED">Completed</SelectItem>
@@ -281,17 +310,22 @@ export function OutlineModal({
                                                 <Label className="text-sm opacity-70">Reviewer</Label>
                                                 {isEditing ? (
                                                     <Select
-                                                        value={formData.reviewerId || "unassigned"}
-                                                        onValueChange={(v) => setFormData({ ...formData, reviewerId: v === "unassigned" ? null : v })}
+                                                        value={formData.reviewerMemberId || "unassigned"}
+                                                        onValueChange={(v) => setFormData({
+                                                            ...formData,
+                                                            reviewerMemberId: v === "unassigned" ? null : v
+                                                        })}
                                                     >
                                                         <SelectTrigger className={selectTriggerClass}>
                                                             <SelectValue placeholder="Assign reviewer" />
                                                         </SelectTrigger>
-                                                        <SelectContent className={` ${isDark ? "bg-[#141414] text-white" : "bg-[#DEDEDE] text-gray-900"
-                                                            }`}>                                                            <SelectItem value="unassigned">Unassigned</SelectItem>
-                                                            <SelectItem value="eddie-lake">Eddie Lake</SelectItem>
-                                                            <SelectItem value="jamik-tashpulatov">Jamik Tashpulatov</SelectItem>
-                                                            <SelectItem value="emily-whalen">Emily Whalen</SelectItem>
+                                                        <SelectContent className={isDark ? "bg-[#141414] text-white" : "bg-[#DEDEDE] text-gray-900"}>
+                                                            <SelectItem value="unassigned">Unassigned</SelectItem>
+                                                            {organizationMembers.map((member) => (
+                                                                <SelectItem key={member.id} value={member.id}>
+                                                                    {member.user?.name || member.user?.email}
+                                                                </SelectItem>
+                                                            ))}
                                                         </SelectContent>
                                                     </Select>
                                                 ) : (
@@ -300,7 +334,10 @@ export function OutlineModal({
                                                             <User className="w-5 h-5" />
                                                         </div>
                                                         <div>
-                                                            <p className="font-medium">{outline.reviewer?.name || "Not assigned"}</p>
+                                                            <p className="font-medium">{getReviewerName()}</p>
+                                                            {getReviewerEmail() && (
+                                                                <p className="text-sm opacity-70">{getReviewerEmail()}</p>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
@@ -320,7 +357,7 @@ export function OutlineModal({
                                 <TabsContent value="activity" className="space-y-6">
                                     <div className="space-y-4">
                                         <div className="flex gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                                            <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
                                                 <CheckCircle className="w-5 h-5 text-green-500" />
                                             </div>
                                             <div>
@@ -329,8 +366,8 @@ export function OutlineModal({
                                             </div>
                                         </div>
                                         <div className="flex gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                                                <Edit className="w-5 h-5 text-blue-500" />
+                                            <div className="w-10 h-10 rounded-full bg-gray-500/20 flex items-center justify-center shrink-0">
+                                                <Edit className="w-5 h-5 text-gray-500" />
                                             </div>
                                             <div>
                                                 <p className="font-medium">Last updated</p>

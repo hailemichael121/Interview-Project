@@ -8,11 +8,11 @@ interface SocialButtonsProps {
   disabled?: boolean;
 }
 
-export function SocialButtons({ 
-  onGitHubClick, 
-  onGoogleClick, 
-  onAppleClick, 
-  disabled = false 
+export function SocialButtons({
+  onGitHubClick,
+  onGoogleClick,
+  onAppleClick,
+  disabled = false
 }: SocialButtonsProps) {
   return (
     <div className="grid grid-cols-3 gap-3 mb-8">
@@ -21,7 +21,7 @@ export function SocialButtons({
         variant="outline"
         onClick={onGitHubClick}
         disabled={disabled}
-        className="relative w-full h-16 text-xl font-semibold text-foreground hover:bg-gray-900 hover:text-amber-50 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-blue-600/40 overflow-hidden group rounded-2xl"
+        className="relative w-full h-16 text-xl font-semibold text-foreground hover:bg-gray-900 hover:text-amber-50 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-gray-600/40 overflow-hidden group rounded-2xl"
       >
         <span className="relative z-10">
           <Github className="h-5 w-5" />
@@ -34,7 +34,7 @@ export function SocialButtons({
         variant="outline"
         onClick={onGoogleClick}
         disabled={disabled}
-        className="relative w-full h-16 text-xl font-semibold text-foreground hover:bg-gray-900 hover:text-amber-50 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-blue-600/40 overflow-hidden group rounded-2xl"
+        className="relative w-full h-16 text-xl font-semibold text-foreground hover:bg-gray-900 hover:text-amber-50 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-gray-600/40 overflow-hidden group rounded-2xl"
       >
         <span className="relative z-10">
           <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -64,7 +64,7 @@ export function SocialButtons({
         variant="outline"
         onClick={onAppleClick}
         disabled={disabled}
-        className="relative w-full h-16 text-xl font-semibold text-foreground hover:bg-gray-900 hover:text-amber-50 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-blue-600/40 overflow-hidden group rounded-2xl"
+        className="relative w-full h-16 text-xl font-semibold text-foreground hover:bg-gray-900 hover:text-amber-50 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-gray-600/40 overflow-hidden group rounded-2xl"
       >
         <span className="relative z-10">
           <Apple className="h-5 w-5" />

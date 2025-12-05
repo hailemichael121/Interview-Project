@@ -1,7 +1,7 @@
-// components/layout/dashboard-layout.tsx - FINAL PERFECT VERSION
+// components/layout/dashboard-layout.tsx - FIXED VERSION
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import {
   Menu,
@@ -36,8 +36,8 @@ import authClient from "@/lib/auth-client";
 import { AppSidebar } from "../sidebar";
 import { useTheme } from "next-themes";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+// Create a wrapper component that uses useSearchParams inside Suspense
+function DashboardHeader() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -47,8 +47,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const textColor = isDark ? "text-white" : "text-gray-900";
 
   const { data: session, isPending: sessionLoading } = authClient.useSession();
-
-  useEffect(() => { }, []);
 
   const handleSignOut = async () => {
     await authClient.signOut();
@@ -109,6 +107,81 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   };
 
+  return (
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+      <div className="flex h-16 items-center justify-between px-4 lg:px-8">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink
+                  href="/dashboard"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    router.push("/dashboard");
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Home className="h-4 w-4" />
+                  Dashboard
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              {buildBreadcrumb()}
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+
+        {/* Search + User */}
+        <div className="flex items-center gap-4">
+          <div className="relative hidden md:block">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search..." className="w-64 pl-10 border-0 focus-visible:ring-1" />
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="rounded-full p-0 h-10 w-10">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={session?.user?.image || ""} />
+                  <AvatarFallback className="bg-gradient-to-br from-gray-500 to-gray-700 text-white font-medium">
+                    {getInitials()}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className={`w-72 ${bgColor} ${textColor}`}>
+              <DropdownMenuLabel>
+                <div className="flex flex-col">
+                  <p className="font-medium">{session?.user?.name || "User"}</p>
+                  <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => router.push("/settings")}>
+                <UserIcon className="mr-2 h-4 w-4" /> Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => router.push("/settings")}>
+                <SettingsIcon className="mr-2 h-4 w-4" /> Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={handleSignOut} className="text-red-600">
+                <LogOutIcon className="mr-2 h-4 w-4" /> Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { data: session, isPending: sessionLoading } = authClient.useSession();
+
+  useEffect(() => { }, []);
+
   if (sessionLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -144,71 +217,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Main Content */}
         <div className="flex flex-1 flex-col overflow-hidden lg:ml-0">
-          <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-            <div className="flex h-16 items-center justify-between px-4 lg:px-8">
-              {/* Breadcrumb */}
-              <div className="flex items-center gap-2">
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    <BreadcrumbItem>
-                      <BreadcrumbLink
-                        href="/dashboard"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          router.push("/dashboard");
-                        }}
-                        className="flex items-center gap-2"
-                      >
-                        <Home className="h-4 w-4" />
-                        Dashboard
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                    {buildBreadcrumb()}
-                  </BreadcrumbList>
-                </Breadcrumb>
-              </div>
-
-              {/* Search + User */}
-              <div className="flex items-center gap-4">
-                <div className="relative hidden md:block">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search..." className="w-64 pl-10 border-0 focus-visible:ring-1" />
+          <Suspense fallback={
+            <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+              <div className="flex h-16 items-center justify-between px-4 lg:px-8">
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-48 bg-muted animate-pulse rounded"></div>
                 </div>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="rounded-full p-0 h-10 w-10">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={session.user?.image || ""} />
-                        <AvatarFallback className="bg-gradient-to-br from-gray-500 to-gray-700 text-white font-medium">
-                          {getInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className={`w-72 ${bgColor} ${textColor}`}>
-                    <DropdownMenuLabel>
-                      <div className="flex flex-col">
-                        <p className="font-medium">{session.user?.name || "User"}</p>
-                        <p className="text-xs text-muted-foreground">{session.user?.email}</p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => router.push("/settings")}>
-                      <UserIcon className="mr-2 h-4 w-4" /> Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => router.push("/settings")}>
-                      <SettingsIcon className="mr-2 h-4 w-4" /> Settings
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={handleSignOut} className="text-red-600">
-                      <LogOutIcon className="mr-2 h-4 w-4" /> Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="h-10 w-10 rounded-full bg-muted animate-pulse"></div>
               </div>
-            </div>
-          </header>
+            </header>
+          }>
+            <DashboardHeader />
+          </Suspense>
 
           <main className="flex-1 overflow-y-auto bg-muted/20">
             <div className="container mx-auto max-w-7xl px-4 py-8 lg:px-8">

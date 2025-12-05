@@ -76,7 +76,7 @@ export default function InviteMemberPage() {
             <div className="max-w-2xl mx-auto">
                 <Card className="border-0 shadow-2xl rounded-2xl overflow-hidden bg-card">
                     <CardHeader className="text-center space-y-4 pb-8 pt-10 bg-linear-to-b from-primary/5 to-transparent">
-                        <div className="mx-auto w-20 h-20 rounded-2xl bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-xl">
+                        <div className="mx-auto w-20 h-20 rounded-2xl bg-linear-to-br from-white-500 to-white-600 flex items-center justify-center shadow-xl">
                             <UserPlus className="h-10 w-10 text-white" />
                         </div>
                         <div>

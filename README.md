@@ -6,7 +6,7 @@ A **production-ready full-stack application** for team collaboration built with 
 ## Project Status
 
 [![Status](https://img.shields.io/badge/status-active-success)](https://github.com/hailemichael121/Interview-Project)
-[![Frontend Deployment](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://tenanncy.vercel.app)
+[![Frontend Deployment](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://tenanncy.onrender.com)
 [![Backend Deployment](https://img.shields.io/badge/Backend-Render-blue?logo=render)](https://tenant-backend-cz23.onrender.com)
 [![GitHub Repository](https://img.shields.io/badge/Repository-GitHub-000?logo=github)](https://github.com/hailemichael121/Interview-Project)
 

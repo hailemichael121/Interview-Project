@@ -133,9 +133,13 @@ export default function OutlinesPage() {
     }
   };
   const { session } = useSession();
-  const handleAssignReviewer = async (id: string, reviewerId: string | null) => {
+  const handleAssignReviewer = async (id: string, reviewerMemberId: string | null) => {
     try {
-      const res = await apiService.outline.updateOutline(id, { reviewerId }, currentOrganizationId!);
+      const res = await apiService.outline.updateOutline(
+        id,
+        { reviewerMemberId },
+        currentOrganizationId!
+      );
       if (res.success) {
         toast.success("Reviewer assigned");
         fetchOutlines();
@@ -237,7 +241,7 @@ export default function OutlinesPage() {
               {[
                 { label: "Total", value: stats.totalOutlines, color: "text-white" },
                 { label: "Completed", value: stats.completedOutlines, color: "text-green-400" },
-                { label: "In Progress", value: stats.inProgressOutlines, color: "text-blue-400" },
+                { label: "In Progress", value: stats.inProgressOutlines, color: "text-gray-400" },
                 { label: "Pending", value: stats.pendingOutlines, color: "text-yellow-400" },
               ].map((stat) => (
                 <div key={stat.label} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 text-center shadow-xl">
@@ -307,7 +311,7 @@ export default function OutlinesPage() {
                         ? "ring-2 ring-white/30 shadow-2xl scale-105 text-white"
                         : "hover:scale-105"
                       }
-                      ${s === "IN_PROGRESS" && statusFilter === s && "bg-blue-600"}
+                      ${s === "IN_PROGRESS" && statusFilter === s && "bg-gray-600"}
                       ${s === "COMPLETED" && statusFilter === s && "bg-green-600"}
                       ${s === "PENDING" && statusFilter === s && "bg-yellow-600"}
                     `}

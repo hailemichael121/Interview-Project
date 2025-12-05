@@ -1,11 +1,10 @@
-// hooks/use-api-optimized.ts - FIXED VERSION
+// hooks/use-api-optimized.ts
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiService } from "@/lib/api-service";
 import { CreateOutlineDto } from "@/types/types";
 
-// Query keys
 export const queryKeys = {
   profile: ["profile"],
   outlines: (orgId?: string) => ["outlines", orgId],
@@ -14,7 +13,6 @@ export const queryKeys = {
   invitations: ["invitations"],
 };
 
-// Custom hooks
 export function useProfile() {
   return useQuery({
     queryKey: queryKeys.profile,
@@ -24,7 +22,7 @@ export function useProfile() {
         throw new Error(res.message || "Failed to fetch profile");
       return res.data;
     },
-    staleTime: 60 * 1000, // 1 minute
+    staleTime: 60 * 1000,
   });
 }
 
@@ -48,7 +46,7 @@ export function useOutlines(
       };
     },
     enabled: !!orgId,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 30 * 1000,
   });
 }
 
@@ -76,7 +74,7 @@ export function useOrganizationMembers(
       };
     },
     enabled: !!orgId,
-    staleTime: 60 * 1000, // 1 minute
+    staleTime: 60 * 1000,
   });
 }
 
@@ -90,7 +88,7 @@ export function useOrganizationStats(orgId?: string) {
       return res.data;
     },
     enabled: !!orgId,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 30 * 1000,
   });
 }
 
@@ -103,11 +101,10 @@ export function usePendingInvitations() {
         throw new Error(res.message || "Failed to fetch invitations");
       return res.data;
     },
-    staleTime: 60 * 1000, // 1 minute
+    staleTime: 60 * 1000,
   });
 }
 
-// Mutation hooks
 export function useCreateOutline() {
   const queryClient = useQueryClient();
 
@@ -119,7 +116,6 @@ export function useCreateOutline() {
       target?: number;
       limit?: number;
     }) => {
-      // Cast the sectionType to match CreateOutlineDto
       const createData: CreateOutlineDto = {
         header: data.header,
         sectionType: data.sectionType as CreateOutlineDto["sectionType"],
@@ -137,7 +133,6 @@ export function useCreateOutline() {
       return res.data;
     },
     onSuccess: (data, variables) => {
-      // Invalidate the outlines query for the organization
       queryClient.invalidateQueries({
         queryKey: queryKeys.outlines(variables.organizationId),
       });
@@ -168,6 +163,10 @@ export function useUpdateOutline() {
       }>;
       organizationId?: string;
     }) => {
+      if (!organizationId) {
+        throw new Error("Organization ID is required to update outline");
+      }
+
       const res = await apiService.outline.updateOutline(
         outlineId,
         data,
@@ -178,7 +177,6 @@ export function useUpdateOutline() {
       return res.data;
     },
     onSuccess: (data, variables) => {
-      // Invalidate the outlines query for the organization
       queryClient.invalidateQueries({
         queryKey: queryKeys.outlines(variables.organizationId),
       });
@@ -197,6 +195,10 @@ export function useDeleteOutline() {
       outlineId: string;
       organizationId?: string;
     }) => {
+      if (!organizationId) {
+        throw new Error("Organization ID is required to delete outline");
+      }
+
       const res = await apiService.outline.deleteOutline(
         outlineId,
         organizationId
@@ -206,7 +208,6 @@ export function useDeleteOutline() {
       return res.data;
     },
     onSuccess: (data, variables) => {
-      // Invalidate the outlines query for the organization
       queryClient.invalidateQueries({
         queryKey: queryKeys.outlines(variables.organizationId),
       });

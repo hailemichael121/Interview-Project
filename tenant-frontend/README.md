@@ -5,7 +5,7 @@ Multi-tenant collaboration frontend built with **Next.js 14** and **TypeScript**
 
 [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
-[![Deployed](https://img.shields.io/badge/deployed-Vercel-black)](https://tenanncy.vercel.app)
+[![Deployed](https://img.shields.io/badge/deployed-Vercel-black)](https://tenanncy.onrender.com)
 
 ---
 
@@ -98,7 +98,7 @@ The frontend connects to the backend API via a **Next.js API proxy** to manage c
 | Environment | Frontend Proxy URL | Backend Destination |
 | :--- | :--- | :--- |
 | **Local** | `http://localhost:3000/api/*` | `https://tenant-backend-cz23.onrender.com/api/*` |
-| **Production** | `https://tenanncy.vercel.app/api/*` | `https://tenant-backend-cz23.onrender.com/api/*` |
+| **Production** | `https://tenanncy.onrender.com/api/*` | `https://tenant-backend-cz23.onrender.com/api/*` |
 
 ### Authentication Flow
 
@@ -166,7 +166,7 @@ The project is designed for seamless deployment on **Vercel**.
     NEXT_PUBLIC_BACKEND_URL=[https://tenant-backend-cz23.onrender.com](https://tenant-backend-cz23.onrender.com)
     ```
 
-The live demo is deployed at: [**https://tenanncy.vercel.app**](https://tenanncy.vercel.app)
+The live demo is deployed at: [**https://tenanncy.onrender.com**](https://tenanncy.onrender.com)
 
 -----
 
@@ -208,7 +208,7 @@ npm run build
 
   * **Full Project**: [https://github.com/hailemichael121/Interview-Project](https://github.com/hailemichael121/Interview-Project)
   * **Backend Directory**: `/tenant-backend`
-  * **Live Demo**: [https://tenanncy.vercel.app](https://tenanncy.vercel.app)
+  * **Live Demo**: [https://tenanncy.onrender.com](https://tenanncy.onrender.com)
 
 -----
  

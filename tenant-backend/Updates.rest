@@ -1,7 +1,7 @@
 @baseUrl = http://localhost:3001
 # @baseUrl = https://tenant-backend-cz23.onrender.com
 
-@frontendUrl = https://tenanncy.vercel.app
+@frontendUrl = https://tenanncy.onrender.com
 @contentType = application/json
 
 # ============================================
@@ -153,7 +153,7 @@ Cookie: {{newSessionCookie}}
 # ============================================
 
 # Create a test member user first
-@memberEmail = yihunaa@example.com
+@memberEmail = yihunaashe@gmail.com
 @memberPassword = MemberPass123!
 @memberName = Test Member User
 
@@ -395,7 +395,7 @@ Cookie: {{newSessionCookie}}
 Content-Type: {{contentType}}
 
 {
-  "memberId": "cmismpgdg00023k6x63ajowm7"  
+  "memberId": "cmisqusod00085g6xldx6io1i"  
 }
 
 # ============================================

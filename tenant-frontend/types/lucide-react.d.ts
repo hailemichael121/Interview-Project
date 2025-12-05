@@ -6,6 +6,7 @@ declare module "lucide-react" {
 
   // Export individual icons (alphabetical order)
   export const AlertCircle: Icon;
+  export const Send: Icon;
   export const ArrowRight: Icon;
   export const AudioWaveform: Icon;
   export const BadgeCheck: Icon;

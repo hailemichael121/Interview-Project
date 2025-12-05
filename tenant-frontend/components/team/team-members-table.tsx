@@ -24,7 +24,7 @@ export function TeamMembersTable({
   onRevokeMember,
   isLoading,
   isOwner,
- }: TeamMembersTableProps) {
+}: TeamMembersTableProps) {
   const [revokingId, setRevokingId] = React.useState<string | null>(null);
 
   const handleRevoke = async (memberId: string, name: string) => {
@@ -50,11 +50,11 @@ export function TeamMembersTable({
       avatar: user?.image,
       initials: user?.name
         ? user.name
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-            .toUpperCase()
-            .slice(0, 2)
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2)
         : user?.email?.slice(0, 2).toUpperCase() || "??",
     };
   };
@@ -66,7 +66,7 @@ export function TeamMembersTable({
       icon: Crown,
     },
     REVIEWER: {
-      color: "bg-blue-500/20 text-blue-700 dark:text-blue-400",
+      color: "bg-gray-500/20 text-gray-700 dark:text-gray-400",
       icon: Shield,
     },
     MEMBER: {
@@ -82,7 +82,7 @@ export function TeamMembersTable({
       cell: ({ row }) => {
         const member = row.original;
         const display = getMemberDisplay(member);
-        
+
         return (
           <div className="flex items-center gap-3">
             <Avatar>
@@ -104,7 +104,7 @@ export function TeamMembersTable({
         const role = row.original.role;
         const config = roleConfig[role] || roleConfig.MEMBER;
         const Icon = config.icon;
-        
+
         return (
           <Badge className={config.color}>
             <Icon className="h-3 w-3 mr-1" />
@@ -118,36 +118,36 @@ export function TeamMembersTable({
     }),
     ...(isOwner
       ? [
-          {
-            id: "actions",
-            header: "Actions",
-            cell: ({ row }) => {
-              const member = row.original;
-              const display = getMemberDisplay(member);
-              
-              // Don't show delete button for owners
-              if (member.role === "OWNER") {
-                return <span className="text-muted-foreground text-sm">Cannot remove owners</span>;
-              }
+        {
+          id: "actions",
+          header: "Actions",
+          cell: ({ row }) => {
+            const member = row.original;
+            const display = getMemberDisplay(member);
 
-              return (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-600 hover:bg-red-50"
-                  onClick={() => handleRevoke(member.id, display.name)}
-                  disabled={revokingId === member.id}
-                >
-                  {revokingId === member.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash className="h-4 w-4" />
-                  )}
-                </Button>
-              );
-            },
-          } as ColumnDef<OrganizationMember>,
-        ]
+            // Don't show delete button for owners
+            if (member.role === "OWNER") {
+              return <span className="text-muted-foreground text-sm">Cannot remove owners</span>;
+            }
+
+            return (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-600 hover:bg-red-50"
+                onClick={() => handleRevoke(member.id, display.name)}
+                disabled={revokingId === member.id}
+              >
+                {revokingId === member.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash className="h-4 w-4" />
+                )}
+              </Button>
+            );
+          },
+        } as ColumnDef<OrganizationMember>,
+      ]
       : []),
   ];
 

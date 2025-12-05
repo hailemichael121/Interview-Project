@@ -89,7 +89,7 @@ You can save the following content as `api-test.rest` and use the VS Code REST C
 
 ```http
 @baseUrl = [https://tenant-backend-cz23.onrender.com](https://tenant-backend-cz23.onrender.com)
-@frontendUrl = [https://tenanncy.vercel.app](https://tenanncy.vercel.app)
+@frontendUrl = [https://tenanncy.onrender.com](https://tenanncy.onrender.com)
 @contentType = application/json
 
 # REPLACE with the session token from your sign-in response

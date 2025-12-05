@@ -31,8 +31,8 @@ export function TeamStats({ members, invitations }: TeamStatsProps) {
       title: "Total Members",
       value: totalMembers,
       icon: Users,
-      color: "text-blue-600",
-      bgColor: "bg-blue-500/10",
+      color: "text-gray-600",
+      bgColor: "bg-gray-500/10",
     },
     {
       title: "Owners",
@@ -45,8 +45,8 @@ export function TeamStats({ members, invitations }: TeamStatsProps) {
       title: "Pending Invites",
       value: pendingInvitations,
       icon: Mail,
-      color: "text-purple-600",
-      bgColor: "bg-purple-500/10",
+      color: "text-white-600",
+      bgColor: "bg-white-500/10",
     },
   ];
 

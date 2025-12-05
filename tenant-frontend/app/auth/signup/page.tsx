@@ -156,7 +156,7 @@ export default function SignUpPage() {
             type="submit"
             size="lg"
             disabled={isLoading}
-            className="relative w-full h-16 text-xl font-semibold  hover:text-amber-50 hover:bg-gray-900 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-blue-600/40 overflow-hidden group rounded-2xl"
+            className="relative w-full h-16 text-xl font-semibold  hover:text-amber-50 hover:bg-gray-900 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-gray-600/40 overflow-hidden group rounded-2xl"
           >
             <span className="relative z-10">
               {isLoading ? "Creating Account..." : "Create Account"}
@@ -170,7 +170,7 @@ export default function SignUpPage() {
             Already have an account?{" "}
             <Link
               href="/auth/signin"
-              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+              className="text-gray-600 dark:text-gray-400 hover:underline font-medium"
             >
               Sign in
             </Link>

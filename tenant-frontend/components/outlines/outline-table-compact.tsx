@@ -33,7 +33,6 @@ import {
   MoreVertical,
   GripVertical,
   Loader2,
-  Plus,
   Eye,
   Edit,
   Trash,
@@ -93,11 +92,8 @@ import {
 import {
   Tabs,
   TabsContent,
-  TabsList,
-  TabsTrigger,
 } from "@/components/ui/tabs";
 import { Outline, OrganizationMember } from "@/types/types";
-import Link from "next/link";
 import { OutlineModal } from "./outline-modal";
 import { EditTooltip } from "../ui/tooltip";
 import { useTheme } from "next-themes";
@@ -290,13 +286,13 @@ export function OutlineTableCompact({
     );
   };
 
-  const getReviewers = () => {
-    return organizationMembers.filter(member =>
-      member.role === "REVIEWER" || member.role === "OWNER"
-    );
-  };
+  // const getReviewers = () => {
+  //   return organizationMembers.filter(member =>
+  //     member.role === "REVIEWER" || member.role === "OWNER"
+  //   );
+  // };
 
-  const reviewers = getReviewers();
+  // const reviewers = getReviewers();
 
   const columns: ColumnDef<Outline>[] = [
     {
@@ -376,9 +372,9 @@ export function OutlineTableCompact({
             className: "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900 dark:bg-yellow-900/30",
           },
           IN_PROGRESS: {
-            icon: <Clock className="size-3 fill-blue-500 text-blue-500" />,
+            icon: <Clock className="size-3 fill-gray-500 text-gray-500" />,
             label: "In Progress",
-            className: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-900/30",
+            className: "border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-900 dark:bg-gray-900/30",
           },
           COMPLETED: {
             icon: <CheckCircle2 className="size-3 fill-green-500 text-green-500" />,
@@ -557,14 +553,14 @@ export function OutlineTableCompact({
       header: () => <div className="w-full text-center">Reviewer</div>,
       cell: ({ row }) => {
         const outline = row.original;
-        const isAssigned = outline.reviewer && outline.reviewer.name;
+        const isAssigned = outline.reviewerMember && outline.reviewerMember.user?.name;
         const isLoading = assigningReviewerId === outline.id;
 
         if (isAssigned) {
           return (
             <div className="flex items-center justify-center gap-2 cursor-pointer hover:bg-accent rounded p-1">
               <User className="size-3 text-muted-foreground" />
-              <span className="text-sm">{outline.reviewer?.name}</span>
+              <span className="text-sm">{outline.reviewerMember?.user?.name}</span>
             </div>
           );
         }
@@ -572,7 +568,7 @@ export function OutlineTableCompact({
         return (
           <div className="flex items-center justify-center">
             <Select
-              disabled={isLoading || reviewers.length === 0}
+              disabled={isLoading || organizationMembers.length === 0}
               onValueChange={(value) => {
                 if (value === "unassigned") {
                   handleReviewerAssignment(outline.id, null);
@@ -594,7 +590,7 @@ export function OutlineTableCompact({
                 className="border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50 min-w-48"
 
               >                <SelectItem value="unassigned">Unassigned</SelectItem>
-                {reviewers.map((member) => (
+                {organizationMembers.map((member) => (
                   <SelectItem
                     key={member.id}
                     value={member.id}
@@ -1032,6 +1028,7 @@ export function OutlineTableCompact({
           onSave={handleSaveOutline}
           onDelete={onDelete}
           currentUserRole={currentUserRole}
+          organizationMembers={organizationMembers}
         />
       )}
     </>

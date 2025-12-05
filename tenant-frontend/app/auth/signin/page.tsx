@@ -152,7 +152,7 @@ function SignInContent() {
               </label>
               <Link
                 href="/auth/forgot-password"
-                className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                className="text-sm text-gray-600 dark:text-gray-400 hover:underline"
               >
                 Forgot password?
               </Link>
@@ -189,7 +189,7 @@ function SignInContent() {
             type="submit"
             size="lg"
             disabled={isSubmitting || authLoading}
-            className="relative w-full h-16 text-xl font-semibold  hover:text-amber-50 hover:bg-gray-900 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-blue-600/40 overflow-hidden group rounded-2xl"
+            className="relative w-full h-16 text-xl font-semibold  hover:text-amber-50 hover:bg-gray-900 disabled:opacity-70 transition-all duration-300 shadow-2xl hover:shadow-gray-600/40 overflow-hidden group rounded-2xl"
           >
             <span className="relative z-10">
               {authLoading || isSubmitting ? "Signing in..." : "Sign In"}
@@ -203,7 +203,7 @@ function SignInContent() {
             Don&apos;t have an account?{" "}
             <Link
               href="/auth/signup"
-              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+              className="text-gray-600 dark:text-gray-400 hover:underline font-medium"
             >
               Sign up
             </Link>

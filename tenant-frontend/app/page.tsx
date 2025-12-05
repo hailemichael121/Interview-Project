@@ -191,7 +191,7 @@ export default function HomePage() {
                   <ul className="space-y-3 text-muted-foreground">
                     {item.features.map((feat, idx) => (
                       <li key={idx} className="flex items-center gap-3">
-                        <span className="text-blue-600 dark:text-blue-400 font-bold">
+                        <span className="text-gray-600 dark:text-gray-400 font-bold">
                           •
                         </span>
                         <span className="text-sm md:text-base">{feat}</span>

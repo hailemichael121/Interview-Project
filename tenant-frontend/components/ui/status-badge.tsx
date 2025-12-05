@@ -1,4 +1,4 @@
- 
+
 import { AlertCircle, Clock, CheckCircle, Loader2 } from "lucide-react";
 
 export type StatusType = "PENDING" | "IN_PROGRESS" | "COMPLETED" | string;
@@ -63,8 +63,8 @@ export const DEFAULT_STATUS_CONFIG: Record<string, StatusConfig> = {
   },
   IN_PROGRESS: {
     icon: Clock,
-    color: "text-blue-600 dark:text-blue-400",
-    bg: "bg-blue-100 dark:bg-blue-900/30",
+    color: "text-gray-600 dark:text-gray-400",
+    bg: "bg-gray-100 dark:bg-gray-900/30",
     label: "In Progress",
   },
   COMPLETED: {
