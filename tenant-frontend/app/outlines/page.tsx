@@ -10,18 +10,88 @@ import { Plus, RefreshCw, FileText } from "lucide-react";
 import Link from "next/link";
 import { Outline, OrganizationMember } from "@/types/types";
 import { OutlineTableCompact } from "@/components/outlines/outline-table-compact";
-import { CreateOutlineForm } from "@/components/outlines/create-outline-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTheme } from "next-themes";
+import { CreateOutlineForm } from "@/components/outlines/create-outline-form";
 
 type ScopeType = "all" | "assigned" | "my";
 type StatusType = "all" | "IN_PROGRESS" | "COMPLETED" | "PENDING";
 
+const TableSkeleton = () => (
+  <div className="space-y-4">
+    {/* Header Row Skeleton */}
+    <div className="rounded-xl border bg-card/70 p-4 shadow-lg">
+      <div className="space-y-3">
+        {/* Adjusted for a cleaner, more realistic loading header */}
+        <div className="grid w-full grid-cols-12 gap-4">
+          <div className="col-span-1">
+            <Skeleton className="h-5 w-5 rounded animate-glow-wave" />
+          </div>
+          <div className="col-span-3">
+            <Skeleton className="h-5 w-3/4 rounded-md animate-glow-wave" />
+          </div>
+          <div className="col-span-2">
+            <Skeleton className="h-5 w-full rounded-md animate-glow-wave" />
+          </div>
+          <div className="col-span-2">
+            <Skeleton className="h-5 w-2/3 rounded-md animate-glow-wave" />
+          </div>
+          <div className="col-span-1">
+            <Skeleton className="h-5 w-1/2 rounded-md animate-glow-wave" />
+          </div>
+          <div className="col-span-2">
+            <Skeleton className="h-8 w-24 rounded-full animate-glow-wave" />
+          </div>
+          <div className="col-span-1">
+            <Skeleton className="h-5 w-full rounded-md animate-glow-wave" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Data Row Skeletons */}
+    {[...Array(6)].map((_, i) => (
+      <div key={i} className="rounded-xl border bg-card/50 p-4 shadow-md transition-shadow hover:shadow-xl">
+        <div className="space-y-3">
+          <div className="grid w-full grid-cols-12 gap-4">
+            <div className="col-span-1">
+              {/* Checkbox Placeholder */}
+              <Skeleton className="h-4 w-4 rounded-sm animate-glow-wave" style={{ animationDelay: `${i * 0.1}s` }} />
+            </div>
+            <div className="col-span-3">
+              {/* Title Placeholder */}
+              <Skeleton className="h-5 w-[80%] rounded-md animate-glow-wave" style={{ animationDelay: `${i * 0.1 + 0.05}s` }} />
+            </div>
+            <div className="col-span-2">
+              {/* Creator/Assignee Placeholder */}
+              <Skeleton className="h-5 w-[70%] rounded-md animate-glow-wave" style={{ animationDelay: `${i * 0.1 + 0.1}s` }} />
+            </div>
+            <div className="col-span-2">
+              {/* Status/Date Placeholder */}
+              <Skeleton className="h-5 w-[50%] rounded-md animate-glow-wave" style={{ animationDelay: `${i * 0.1 + 0.15}s` }} />
+            </div>
+            <div className="col-span-1">
+              {/* Revisions Placeholder */}
+              <Skeleton className="h-5 w-[30px] rounded-md animate-glow-wave" style={{ animationDelay: `${i * 0.1 + 0.2}s` }} />
+            </div>
+            <div className="col-span-2">
+              {/* Actions/Button Placeholder */}
+              <Skeleton className="h-8 w-full rounded-full animate-glow-wave" style={{ animationDelay: `${i * 0.1 + 0.25}s` }} />
+            </div>
+            <div className="col-span-1">
+              {/* Menu Placeholder */}
+              <Skeleton className="h-5 w-5 rounded-md animate-glow-wave" style={{ animationDelay: `${i * 0.1 + 0.3}s` }} />
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
 export default function OutlinesPage() {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const bgColor = isDark ? "bg-[#141414]" : "bg-[#DEDEDE]";
-
 
   const {
     currentOrganizationId,
@@ -162,24 +232,6 @@ export default function OutlinesPage() {
     }
   };
 
-  const LoadingSkeleton = () => (
-    <div className="space-y-4">
-      {[...Array(6)].map((_, i) => (
-        <div key={i} className="flex items-center gap-6 p-5 border rounded-xl bg-card/50">
-          <Skeleton className="h-12 w-12 rounded-lg" />
-          <div className="flex-1 space-y-3">
-            <Skeleton className="h-6 w-80" />
-            <Skeleton className="h-4 w-48" />
-          </div>
-          <div className="flex gap-4">
-            <Skeleton className="h-9 w-28 rounded-md" />
-            <Skeleton className="h-9 w-9 rounded-full" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
   if (!hasOrganization && !orgLoading) {
     return (
       <DashboardLayout>
@@ -268,7 +320,7 @@ export default function OutlinesPage() {
           <div className="mb-12 grid md:grid-cols-2 gap-8">
             <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-xl">
               <h3 className="text-lg font-semibold mb-5 opacity-90">Filter by Scope</h3>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap  justify-between gap-3">
                 {(["all", "assigned", "my"] as const).map((s) => (
                   <Button
                     key={s}
@@ -291,15 +343,14 @@ export default function OutlinesPage() {
 
             <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-xl">
               <h3 className="text-lg font-semibold mb-5 opacity-90">Filter by Status</h3>
-              <div className="flex flex-4 gap-2">
+              <div className="flex flex-wrap justify-evenly gap-2">
                 {(["all", "IN_PROGRESS", "COMPLETED", "PENDING"] as const).map((s) => (
                   <Button
                     key={s}
                     variant={statusFilter === s ? "default" : "outline"}
-                    size="lg"
                     onClick={() => setStatusFilter(s)}
                     className={`
-                      font-medium transition-all duration-300
+                      font-medium transition-all duration-300 
                       ${statusFilter === s
                         ? "ring-2 ring-white/30 shadow-2xl scale-105 text-white"
                         : "hover:scale-105"
@@ -309,14 +360,14 @@ export default function OutlinesPage() {
                       ${s === "PENDING" && statusFilter === s && "bg-yellow-600"}
                     `}
                   >
-                    {s === "all" ? "All Status" : s.replace("_", " ")}
+                    {s === "all" ? "All" : s.replace("_", " ")}
                   </Button>
                 ))}
               </div>
             </div>
           </div>
 
-          {isLoading && <LoadingSkeleton />}
+          {isLoading && <TableSkeleton />}
 
           {!isLoading && outlines.length === 0 && (
             <div className="rounded-2xl border-2 border-dashed border-white/30 bg-white/5 backdrop-blur p-20 text-center">

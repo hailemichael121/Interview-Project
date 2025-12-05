@@ -141,5 +141,34 @@ body {
 .dark .bg-light-200 { background-color: hsl(var(--hover-800)); }
 .dark .active-bg-light-200:active { background-color: hsl(var(--active-700)); }
 
+  
+@keyframes glow-wave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-glow-wave {
+   background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%, 
+    rgba(255, 255, 255, 0.1) 25%,  
+    rgba(255, 255, 255, 0.3) 50%, 
+    rgba(255, 255, 255, 0.1) 75%, 
+    rgba(255, 255, 255, 0) 100%  
+  );
+  background-size: 200% 100%;
+  animation: glow-wave 1.5s infinite ease-in-out; 
+}
+
+ @keyframes pulse-glow {
+    0%, 100% { opacity: 0.9; }
+    50% { opacity: 0.7; }
+}
  
- 
+.h-4.w-4.rounded {  
+    animation: pulse-glow 2s infinite ease-in-out;
+}

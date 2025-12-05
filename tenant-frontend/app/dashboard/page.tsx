@@ -204,7 +204,7 @@ function DashboardContent() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid gap-4 justify-arround grid-cols-3 w-full">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="organizations">Workspaces</TabsTrigger>

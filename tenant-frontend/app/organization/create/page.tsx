@@ -9,13 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building, ArrowRight, Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { apiService } from "@/lib/api-service";
+import { useOrganizationContext } from "@/hooks/use-session";
 
 import Link from "next/link";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 
 function CreateOrganizationContent() {
   const router = useRouter();
-
+  const { refreshProfile } = useOrganizationContext();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -47,6 +48,7 @@ function CreateOrganizationContent() {
       });
 
       if (res.success) {
+        await refreshProfile();
         toast.success("Workspace created successfully!");
         router.push("/dashboard");
       } else {

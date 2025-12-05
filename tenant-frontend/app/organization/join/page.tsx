@@ -13,6 +13,7 @@ import authClient from "@/lib/auth-client";
 
 import Link from "next/link";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { useOrganizationContext } from "@/hooks/use-session";
 
 function JoinOrganizationContent() {
   const router = useRouter();
@@ -20,6 +21,7 @@ function JoinOrganizationContent() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [token, setToken] = useState("");
+  const { refreshProfile } = useOrganizationContext();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +34,7 @@ function JoinOrganizationContent() {
     try {
       const res = await apiService.organization.acceptInvite(token.trim());
       if (res.success) {
+        await refreshProfile();
         toast.success("Welcome! You've joined the workspace");
         router.push("/dashboard");
       } else {

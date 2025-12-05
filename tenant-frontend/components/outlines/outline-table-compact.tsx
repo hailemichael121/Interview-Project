@@ -135,7 +135,6 @@ export function OutlineTableCompact({
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [assigningReviewerId, setAssigningReviewerId] = React.useState<string | null>(null);
 
-  // Inline editing states
   const [editingCell, setEditingCell] = React.useState<{
     rowId: string;
     columnId: string;
@@ -286,14 +285,6 @@ export function OutlineTableCompact({
     );
   };
 
-  // const getReviewers = () => {
-  //   return organizationMembers.filter(member =>
-  //     member.role === "REVIEWER" || member.role === "OWNER"
-  //   );
-  // };
-
-  // const reviewers = getReviewers();
-
   const columns: ColumnDef<Outline>[] = [
     {
       id: "drag",
@@ -395,11 +386,13 @@ export function OutlineTableCompact({
               >
                 <SelectTrigger
                   className="h-8 w-32 border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:ring-2 data-[state=open]:ring-ring"
-                >                  <SelectValue placeholder="Select status" />
+                >
+                  <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent
                   className="border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50 min-w-48"
-                >                  <SelectItem value="PENDING">Pending</SelectItem>
+                >
+                  <SelectItem value="PENDING">Pending</SelectItem>
                   <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
                   <SelectItem value="COMPLETED">Completed</SelectItem>
                 </SelectContent>
@@ -589,7 +582,8 @@ export function OutlineTableCompact({
               <SelectContent
                 className="border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50 min-w-48"
 
-              >                <SelectItem value="unassigned">Unassigned</SelectItem>
+              >
+                <SelectItem value="unassigned">Unassigned</SelectItem>
                 {organizationMembers.map((member) => (
                   <SelectItem
                     key={member.id}
@@ -659,10 +653,11 @@ export function OutlineTableCompact({
             <DropdownMenuContent
               align="end"
               className="w-72 border bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/80 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50"
-            >              <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={() => openViewModal(outline)}
             >
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => openViewModal(outline)}
+              >
                 <Eye className="mr-2 size-4" />
                 View
               </DropdownMenuItem>
@@ -810,33 +805,29 @@ export function OutlineTableCompact({
               <DropdownMenuContent
                 align="end"
                 className={`w-52 ${isDark ? "bg-[#141414] text-white" : "bg-[#DEDEDE] text-gray-900"
-                  }`}              >                {table
-                    .getAllColumns()
-                    .filter(
-                      (column) =>
-                        typeof column.accessorFn !== "undefined" && column.getCanHide()
-                    )
-                    .map((column) => {
-                      return (
-                        <DropdownMenuCheckboxItem
-                          key={column.id}
-                          className="capitalize"
-                          checked={column.getIsVisible()}
-                          onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                        >
-                          {column.id}
-                        </DropdownMenuCheckboxItem>
-                      );
-                    })}
+                  }`}
+              >
+                {table
+                  .getAllColumns()
+                  .filter(
+                    (column) =>
+                      typeof column.accessorFn !== "undefined" && column.getCanHide()
+                  )
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
               </DropdownMenuContent>
             </DropdownMenu>
             <div>
-              {/* <Link href="/outlines/create">
-              <Button variant="outline" size="sm">
-                <Plus />
-                <span className="hidden lg:inline">Add Section</span>
-              </Button>
-            </Link> */}
             </div>
 
           </div>
@@ -913,17 +904,19 @@ export function OutlineTableCompact({
                     size="sm"
                     className="h-8 w-20 border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=open]:ring-2 data-[state=open]:ring-ring"
                     id="rows-per-page"
-                  >                    <SelectValue placeholder={table.getState().pagination.pageSize} />
+                  >
+                    <SelectValue placeholder={table.getState().pagination.pageSize} />
                   </SelectTrigger>
                   <SelectContent
                     className="border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 z-50  "
                     side="top"
                     align="end"
-                  >                    {[10, 20, 30, 40, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                      {pageSize}
-                    </SelectItem>
-                  ))}
+                  >
+                    {[10, 20, 30, 40, 50].map((pageSize) => (
+                      <SelectItem key={pageSize} value={`${pageSize}`}>
+                        {pageSize}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

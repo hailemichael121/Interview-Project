@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import authClient from "@/lib/auth-client";
 import { toast } from "sonner";
 import { useOrganizationContext, useSession } from "@/hooks/use-session";
+import Link from "next/link"; // Ensure Link is imported
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -102,10 +103,9 @@ export function AppSidebar() {
 
   if (!session?.user) return null;
   const isDark = resolvedTheme === "dark";
-  const bgColor = isDark ? "bg-[#141414]" : "bg-[#DEDEDE]";
 
   return (
-    <div className="flex h-full flex-col bg-background text-foreground">
+    <div className="flex h-full flex-col bg-background text-foreground overflow-hidden">
       {currentOrganization ? (
         <div className="p-5 border-b border-border">
           <DropdownMenu>
@@ -132,7 +132,11 @@ export function AppSidebar() {
               </Button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent side="right" align="start" sideOffset={10} className={`w-72  ${bgColor}  ${isDark ? "text-white" : "text-gray-900"}`}
+            <DropdownMenuContent
+              side="right"
+              align="start"
+              sideOffset={10}
+              className="w-72 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 border shadow-2xl"
             >
               <DropdownMenuLabel>Your Organizations</DropdownMenuLabel>
               <div className="max-h-64 overflow-y-auto">
@@ -155,12 +159,16 @@ export function AppSidebar() {
                 })}
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => router.push("/organization/create")}>
-                <Plus className="h-4 w-4 mr-2" /> Create Organization
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => router.push("/organization/join")}>
-                <Users className="h-4 w-4 mr-2" /> Join Organization
-              </DropdownMenuItem>
+              <Link href="/organization/create" passHref legacyBehavior>
+                <DropdownMenuItem>
+                  <Plus className="h-4 w-4 mr-2" /> Create Organization
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/organization/join" passHref legacyBehavior>
+                <DropdownMenuItem>
+                  <Users className="h-4 w-4 mr-2" /> Join Organization
+                </DropdownMenuItem>
+              </Link>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -168,9 +176,11 @@ export function AppSidebar() {
         <div className="p-5 border-b border-border text-center">
           <p className="text-sm font-medium mb-2">No Workspace</p>
           <p className="text-xs text-muted-foreground mb-4">Create or join one to start</p>
-          <Button onClick={() => router.push("/organization/create")} className="w-full">
-            <Plus className="h-4 w-4 mr-2" /> Create Workspace
-          </Button>
+          <Link href="/organization/create">
+            <Button className="w-full">
+              <Plus className="h-4 w-4 mr-2" /> Create Workspace
+            </Button>
+          </Link>
         </div>
       )}
 
@@ -178,22 +188,27 @@ export function AppSidebar() {
         <nav className="flex-1 space-y-1 px-3 py-4">
           {navigation.map((item) => {
             const isActive = pathname.startsWith(item.href);
+
+            const activeClass = isDark
+              ? "bg-white/10 text-foreground shadow-lg"
+              : "bg-gray-100/70 text-foreground shadow-md";
+
             return (
-              <button
+              <Link
                 key={item.name}
-                onClick={() => router.push(item.href)}
+                href={item.href}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all",
                   "hover:bg-accent hover:text-accent-foreground",
                   isActive
-                    ? "bg-accent text-accent-foreground shadow-md"
+                    ? activeClass
                     : "text-muted-foreground"
                 )}
               >
                 <item.icon className="h-5 w-5" />
                 <span>{item.name}</span>
                 {isActive && <div className="ml-auto h-2 w-2 rounded-full bg-primary" />}
-              </button>
+              </Link>
             );
           })}
         </nav>
@@ -206,7 +221,8 @@ export function AppSidebar() {
               <Avatar className="h-10 w-10">
                 <AvatarImage src={session.user?.image || ""} />
                 <AvatarFallback className="bg-linear-to-br from-gray-500 to-white-600 text-white font-medium">
-                  {profile?.name?.[0] || "U"}                        </AvatarFallback>
+                  {profile?.name?.[0] || "U"}
+                </AvatarFallback>
               </Avatar>
               <div className="flex-1 text-left">
                 <p className="text-sm font-medium truncate">{profile?.name || "User"}</p>
@@ -215,13 +231,18 @@ export function AppSidebar() {
               <ChevronsUpDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent side="top" align="center" className="w-72 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 border shadow-2xl">
+          <DropdownMenuContent
+            side="top"
+            align="center"
+            className="w-72 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 border shadow-2xl"
+          >
             <DropdownMenuLabel>
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={session.user?.image || ""} />
                   <AvatarFallback className="bg-linear-to-br from-gray-500 to-white-600 text-white font-medium">
-                    {profile?.name?.[0] || "U"}                        </AvatarFallback>
+                    {profile?.name?.[0] || "U"}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="text-sm font-medium">{profile?.name || "User"}</p>
@@ -229,13 +250,18 @@ export function AppSidebar() {
                 </div>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className={`w-4  ${isDark ? " text-white" : "text-gray-900"}`} />
-            <DropdownMenuItem onSelect={() => router.push("/settings")}>
-              <User className="h-4 w-4 mr-2" /> Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => router.push("/settings")}>
-              <Settings className="h-4 w-4 mr-2" /> Settings
-            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {/* FIX 3 & 4: Use Link inside DropdownMenuItem for Profile and Settings */}
+            <Link href="/settings" passHref legacyBehavior>
+              <DropdownMenuItem>
+                <User className="h-4 w-4 mr-2" /> Profile
+              </DropdownMenuItem>
+            </Link>
+            <Link href="/settings" passHref legacyBehavior>
+              <DropdownMenuItem>
+                <Settings className="h-4 w-4 mr-2" /> Settings
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={handleSignOut} className="text-destructive">
               <LogOut className="h-4 w-4 mr-2" /> Sign Out
